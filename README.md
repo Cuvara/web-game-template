@@ -1,151 +1,157 @@
 # Web Game Template
 
-Reusable template repository for web games produced by the **Web Game Factory**.
+The template every game produced by the **Web Game Factory** is created from. It carries the
+game loop, the platform abstraction, the build, the test layout and seven CI/CD pipelines, so
+that a new title starts with all of them rather than an approximation of them.
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:5173
-pnpm test       # unit + integration
-pnpm build      # packages, then dist/
+pnpm dev          # http://localhost:5173
+pnpm test         # unit + integration
+pnpm build        # packages, then dist/
 ```
 
-See [docs/architecture.md](docs/architecture.md) for how the pieces fit, and
-[docs/development.md](docs/development.md) for working in it.
+Node 20+, pnpm 9. `corepack enable pnpm`, or `npm i -g pnpm@9` if you would rather not run an
+elevated shell on Windows.
 
-## Purpose
+- [docs/architecture.md](docs/architecture.md) — how the pieces fit
+- [docs/development.md](docs/development.md) — working in it day to day
+- [docs/testing.md](docs/testing.md) — the three test layers
+- [docs/ci-cd.md](docs/ci-cd.md) — the seven pipelines and the two gates
+- [docs/release.md](docs/release.md) — freezing a candidate
+- [docs/publishing.md](docs/publishing.md) — what is automated and what cannot be
+- [CHANGELOG.md](CHANGELOG.md)
 
-This template provides the common technical foundation from which individual web game projects are created. Each game produced by Web Game Factory starts as a clone of this template and is customized for its specific genre, mechanics, and target platforms.
-
-## Relationship with Web Game Factory
+## Where it sits
 
 ```
-web-game-factory          (orchestration & AI workflows)
+web-game-factory          methodology, schemas, platform profiles, portfolio data
        |
-       | creates project from
+       |  gh repo create --template, at the ref the tech plan pins
        v
-web-game-template         (this repo — shared game foundation)
+web-game-template         this repository
        |
-       | cloned into
+       |  one repository per title
        v
-actual game repository    (e.g., Cooking Rush, Puzzle Quest)
+<game>                    game source and release artifacts
 ```
 
-The Factory orchestrates game creation. This template provides the technical starting point. The Factory does **not** contain individual game source code.
+The Factory holds no game source. This template holds no game. A game repository holds one.
 
-## Engine Support
+## The split that runs through everything
 
-### PixiJS (2D)
+| Location     | Owned by     | A game may          |
+| ------------ | ------------ | ------------------- |
+| `packages/*` | the template | use it, not edit it |
+| `src/*`      | the game     | fill it in          |
 
-- 2D rendering foundation
-- Sprite management
-- Animation system
-- Particle effects
-
-### Three.js (3D)
-
-- 3D rendering foundation
-- Scene management
-- Model loading (GLB/GLTF)
-- Compressed textures (KTX2)
-
-Engine selection is configured in `game.config.yaml`.
-
-## CI/CD Infrastructure
-
-GitHub Actions workflows provide:
-
-| Workflow        | Purpose                                             |
-| --------------- | --------------------------------------------------- |
-| `ci.yml`        | Lint, type-check, and test on every push/PR         |
-| `build.yml`     | Production builds for target platforms              |
-| `verify.yml`    | Smoke tests, performance benchmarks, mobile checks  |
-| `release.yml`   | Versioning, changelog, artifact packaging           |
-| `publish.yml`   | Platform-specific packaging and portal submission   |
-| `campaign.yml`  | Campaign metadata and analytics setup               |
-| `bootstrap.yml` | One-time setup in a repo created from this template |
-
-`ci.yml` and `verify.yml` are what the Factory names as implementing the `ci_green` and
-`verify_suite_green` guards. `publish.yml` and `campaign.yml` run in GitHub environments with
-required reviewers — that is gate G6 and gate G7 made real, and neither may auto-approve.
-
-See [docs/ci-cd.md](docs/ci-cd.md).
-
-## Platform Abstraction
-
-Game code calls `@wgf/platform-sdk` and never a portal SDK directly. Each platform has a
-profile in the Factory (`core/reference/platforms/<id>.yaml`) and an adapter here.
-
-| Platform     | Profile | Adapter         |
-| ------------ | ------- | --------------- |
-| Generic Web  | ✅      | ✅              |
-| Yandex Games | ✅      | not written yet |
-| Poki         | ✅      | not written yet |
-| CrazyGames   | ✅      | not written yet |
-| GameVui      | ✅      | not written yet |
-
-An id with a profile but no adapter throws at startup rather than silently degrading.
-
-## Testing Architecture
+Reimplementing in `src/` something `packages/` already provides is the most common scaffolding
+mistake, and this split is what makes it visible in review.
 
 ```
-tests/
-  unit/          — Fast, isolated unit tests
-  integration/   — Cross-module integration tests
-  e2e/           — Playwright end-to-end tests
+packages/
+  game-core         fixed-timestep loop, scenes, events, pause, the Renderer interface
+  platform-sdk      the platform abstraction, ad policy, storage, portal adapters
+  analytics-sdk     one batched event vocabulary
+  pixi-framework    Renderer for engine.type: pixijs
+  three-framework   Renderer for engine.type: threejs
+
+src/
+  core/             config, i18n, the verify probe
+  game/             the game itself — replace boot-scene.ts
+  platform/         wiring between platform signals and Game.pause
+  rendering/        engine selection; engine-specific game code
+  ui/ audio/ input/ assets/ analytics/     slots, currently empty
+
+config/platforms/   platform profiles vendored from the Factory at the pinned version
+scripts/            verify, release and publish tooling (plain ESM, no framework)
+tests/              unit, integration, e2e, verify
 ```
 
-Test configuration: `playwright.config.ts` (E2E), standard test runner for unit/integration.
+## Three ideas worth knowing before reading the code
 
-## Publishing Architecture (Future)
+**Pause counts reasons.** `Game.pause("ad")` and `Game.pause("hidden")` are separate holds; the
+game runs again only when every one is released. An ad that ends while the tab is still hidden
+does not resume play. Portals reject for audio and input leaking through an ad break, and a
+single boolean is how that happens.
 
-The template will support automated publishing to multiple game portals:
+**The platform contract mirrors a profile.** Every field of `PlatformCapabilities` is the
+runtime counterpart of a field in `core/reference/platforms/<id>.yaml`. `AdPolicy` enforces the
+profile's own rules locally, so an unsupported ad kind or an interstitial inside the minimum
+interval fails the first time it runs instead of weeks later in review.
 
-1. Build the game for a target platform
-2. Run verification (smoke, performance, mobile)
-3. Package with platform-specific metadata
-4. Submit to the portal
-5. Verify post-publish status
+**Game code never imports a portal SDK.** That is what lets one build target several portals,
+and release validation checks it: every profile carries a `package.platform_sdk` assertion.
 
-## Project Structure
+## Engines
 
-```
-web-game-template/
-  .github/workflows/    — CI/CD pipeline definitions
-  src/                  — Game source code
-    core/               — Core game systems
-    game/               — Game-specific logic
-    rendering/          — PixiJS and Three.js renderers
-    ui/                 — UI components
-    audio/              — Audio system
-    input/              — Input handling
-    assets/             — Asset loading and management
-    platform/           — Platform abstraction layer
-    analytics/          — Analytics abstraction
-  packages/             — Shared workspace packages
-  tests/                — Unit, integration, and E2E tests
-  public/               — Static assets and metadata
-  config/               — Platform, performance, environment configs
-  scripts/              — Build, verify, release, publish scripts
-  docs/                 — Documentation
-  game.config.yaml      — Game configuration
-```
+PixiJS for 2D, Three.js for 3D, chosen in `game.config.yaml` as `engine.type` and justified in
+the title's tech plan. Only the selected engine is bundled — the frameworks are imported
+dynamically, because shipping both would put an unused megabyte into every build against caps
+as low as GameVui's 50 MB.
+
+## Platforms
+
+Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory and an adapter
+here.
+
+| Platform     | Profile | Adapter     | Upload automated   |
+| ------------ | ------- | ----------- | ------------------ |
+| Generic Web  | ✅      | ✅          | n/a — self-hosted  |
+| Yandex Games | ✅      | not written | no — no public API |
+| Poki         | ✅      | not written | yes — `@poki/cli`  |
+| CrazyGames   | ✅      | not written | no — no public API |
+| GameVui      | ✅      | not written | no — no public API |
+
+An id with a profile but no adapter throws at startup. Degrading silently to no-ads would ship
+a title that thinks it has a portal SDK and does not, which is a blocking assertion failure at
+release validation.
+
+## Pipelines
+
+| Workflow        | Trigger                      | What it is                           |
+| --------------- | ---------------------------- | ------------------------------------ |
+| `ci.yml`        | every push, forked PRs       | the `ci_green` guard                 |
+| `build.yml`     | push to `develop`, or called | build + Cloudflare Pages preview     |
+| `verify.yml`    | PR into `main`, or called    | the `verify_suite_green` guard       |
+| `release.yml`   | tag `v*`, or dispatch        | freeze a candidate. Does not publish |
+| `publish.yml`   | dispatch only                | gate **G6**                          |
+| `campaign.yml`  | dispatch only                | gate **G7**                          |
+| `bootstrap.yml` | first push in a new repo     | one-time setup, then deletes itself  |
+
+`publish.yml` and `campaign.yml` run in GitHub environments with required reviewers. That is
+the gate — and both workflows refuse to run if their environment has none, because an
+environment nobody configured is created implicitly with no protection and holds nothing back.
+
+**Required reviewers are unavailable on private repositories under a free plan.** A private
+game repository on a free organization cannot enforce G6 or G7 this way.
+
+## Testing
+
+| Layer       | Runner     | Runs against                              |
+| ----------- | ---------- | ----------------------------------------- |
+| unit        | Vitest     | package sources                           |
+| integration | Vitest     | real files on disk                        |
+| e2e         | Playwright | the built bundle via `pnpm preview`       |
+| verify      | Playwright | the built bundle, measuring package facts |
+
+Nothing sleeps waiting for real time to pass: the loop takes an injected scheduler, and
+`AdPolicy` and `Analytics` take an injected clock.
 
 ## Status
 
-**Foundation implemented.** `pnpm build`, `pnpm test` and `pnpm test:e2e` all run green on
-the untouched template.
+Foundation and pipelines implemented and exercised on real runners.
 
 | Area                                                                         | State       |
 | ---------------------------------------------------------------------------- | ----------- |
-| `@wgf/game-core` — loop, scenes, events, pause                               | done        |
-| `@wgf/platform-sdk` — abstraction, ad policy, storage                        | done        |
-| `@wgf/analytics-sdk`                                                         | done        |
-| `@wgf/pixi-framework`, `@wgf/three-framework`                                | done        |
-| `game.config.yaml` load + validation                                         | done        |
-| Unit, integration, e2e smoke                                                 | done        |
-| Package-fact measurement + platform assertion evaluator                      | done        |
-| Seven GitHub Actions workflows                                               | done        |
+| `@wgf/game-core` — loop, scenes, events, pause, renderer seam                | done        |
+| `@wgf/platform-sdk` — abstraction, ad policy, storage, usage recorder        | done        |
+| `@wgf/analytics-sdk`, `@wgf/pixi-framework`, `@wgf/three-framework`          | done        |
+| `game.config.yaml` load, validation, virtual module                          | done        |
+| Minimal i18n from `public/locales/`                                          | done        |
+| Package-fact measurement and the assertion evaluator                         | done        |
 | Release packaging, manifest, publication records                             | done        |
-| Minimal i18n (`public/locales/`)                                             | done        |
-| Portal adapters (yandex, poki, crazygames, gamevui)                          | not written |
-| `src/{audio,input,ui,assets,analytics}`, `config/{environments,performance}` | empty       |
+| Seven workflows, both gates                                                  | done        |
+| Portal adapters — yandex, poki, crazygames, gamevui                          | not written |
+| `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty       |
+| `scripts/build`, `scripts/campaign`                                          | empty       |

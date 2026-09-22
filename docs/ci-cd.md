@@ -67,8 +67,20 @@ satisfy a blocking rule by omission.
 Put **required reviewers** on both. GitHub then holds the job until a human approves and
 records who did — which is G6 and G7 made real.
 
-An environment with no reviewers is not a gate. Creating those two environments is part of
-setting up a game repository, not an optional hardening step.
+An environment with no reviewers is not a gate, and this is a trap rather than an oversight:
+GitHub creates an environment **implicitly, with no protection**, the first time a job names
+one. A workflow can say `environment: production`, run unimpeded, and look gated. So both gate
+workflows read their environment's protection rules as their first step and **refuse to run**
+when there are no required reviewers.
+
+`bootstrap.yml` creates all three environments in a new repository and seeds the person who
+pushed as the reviewer, so the gap never exists.
+
+> **Required reviewers are unavailable on private repositories under a free plan.** A private
+> game repository on a free organization cannot enforce G6 or G7 through environments. The
+> options are to make the repository public, upgrade the plan, or accept that publication is
+> guarded by convention — and in the third case both gate workflows will refuse to run, which
+> is the intended outcome for an irreversible action.
 
 ## Publishing is not automated, and mostly cannot be
 
