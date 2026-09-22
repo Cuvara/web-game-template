@@ -35,7 +35,10 @@ function changelogFrom(root, args) {
   if (args.changelog) return String(args.changelog).split("\n").filter(Boolean);
   try {
     const log = execFileSync("git", ["log", "-20", "--pretty=%s"], { cwd: root, encoding: "utf8" });
-    const lines = log.split("\n").map((line) => line.trim()).filter(Boolean);
+    const lines = log
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
     // changelog has minItems: 1 — an empty one would be schema-invalid, and a release with
     // nothing to say about itself is worth noticing rather than papering over.
     return lines.length > 0 ? lines : ["No changelog entries were supplied."];
@@ -70,7 +73,9 @@ function main() {
   const packagesPath = resolve(outDir, "packages.json");
 
   if (!existsSync(packagesPath)) {
-    console.error(`release/${releaseId}/packages.json is missing — run \`pnpm release:package\` first`);
+    console.error(
+      `release/${releaseId}/packages.json is missing — run \`pnpm release:package\` first`,
+    );
     process.exit(1);
   }
   const packages = JSON.parse(readFileSync(packagesPath, "utf8"));

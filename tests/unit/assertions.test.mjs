@@ -75,6 +75,47 @@ describe("containment", () => {
   });
 });
 
+describe("right_path", () => {
+  const two = {
+    package: { size_mb: 4.9, budget_mb: 50, locales: ["en"], required_locales: ["en", "ru"] },
+  };
+
+  it("compares two measured values", () => {
+    expect(
+      evaluate({ left: "package.size_mb", op: "lte", right_path: "package.budget_mb" }, two).holds,
+    ).toBe(true);
+    expect(
+      evaluate({ left: "package.budget_mb", op: "lte", right_path: "package.size_mb" }, two).holds,
+    ).toBe(false);
+  });
+
+  it("applies containment against a resolved path too", () => {
+    expect(
+      evaluate({ left: "package.required_locales", op: "in", right_path: "package.locales" }, two)
+        .holds,
+    ).toBe(true);
+    expect(
+      evaluate({ left: "package.locales", op: "in", right_path: "package.required_locales" }, two)
+        .holds,
+    ).toBe(false);
+  });
+
+  it("refuses a comparison that gives both sides", () => {
+    expect(() =>
+      evaluate(
+        { left: "package.size_mb", op: "lte", right: 1, right_path: "package.budget_mb" },
+        two,
+      ),
+    ).toThrow(/both right and right_path/);
+  });
+
+  it("treats an unmeasured right_path as unevaluable, not as false", () => {
+    expect(() =>
+      evaluate({ left: "package.size_mb", op: "lte", right_path: "package.missing" }, two),
+    ).toThrow(/was not measured/);
+  });
+});
+
 describe("presence", () => {
   it("distinguishes measured from unmeasured", () => {
     expect(holds({ left: "package.size_mb", op: "exists" })).toBe(true);

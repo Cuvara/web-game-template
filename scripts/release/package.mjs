@@ -31,7 +31,9 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const releaseId = args.release;
   if (!releaseId || !RELEASE_ID.test(releaseId)) {
-    console.error("usage: package.mjs --release r<n> [--platform <id>]   (release id must match ^r[0-9]+$)");
+    console.error(
+      "usage: package.mjs --release r<n> [--platform <id>]   (release id must match ^r[0-9]+$)",
+    );
     process.exit(2);
   }
 

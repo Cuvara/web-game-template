@@ -102,19 +102,55 @@ function main() {
     const profile = parse(
       readFileSync(resolve(root, "config/platforms", `${target.id}.yaml`), "utf8"),
     );
+    // Assertions are evaluated once, against the frozen candidate, at validation time. When
+    // this script runs again to advance the state — publish.yml moving a platform to
+    // `submitted` — it carries those results forward rather than recomputing them.
+    //
+    // Recomputing would be wrong twice over: the publish job holds no measured facts, so it
+    // would produce an empty list, and that list is the record of which rules were checked.
+    // Erasing it at the moment of publication is the worst possible time to lose it.
+    const existingPath = resolve(outDir, `${target.id}.json`);
+    const existing = existsSync(existingPath)
+      ? JSON.parse(readFileSync(existingPath, "utf8"))
+      : null;
     const resultsPath = resolve(root, "build/assertions", `${target.id}.json`);
-    const results = existsSync(resultsPath) ? JSON.parse(readFileSync(resultsPath, "utf8")) : [];
+    const fresh = existsSync(resultsPath) ? JSON.parse(readFileSync(resultsPath, "utf8")) : null;
 
-    const blocking = results.filter((r) => r.breached && (r.severity ?? "blocking") === "blocking");
-    const derivedState = blocking.length > 0 ? "validation-failed" : "validated";
-    const state = args.state ?? derivedState;
+    let results;
+    let blocking;
+    let baseState;
 
-    if (blocking.length > 0) anyFailed = true;
-    if (args.state && blocking.length > 0) {
+    if (fresh) {
+      results = fresh;
+      blocking = fresh.filter((r) => r.breached && (r.severity ?? "blocking") === "blocking");
+      baseState = blocking.length > 0 ? "validation-failed" : "validated";
+    } else if (existing) {
+      // criterionResult forbids extra properties, so severity cannot be stored alongside the
+      // results — which means a carried-forward list cannot be re-judged. The earlier verdict
+      // is re-read instead. Re-deriving it would treat every breached warning as blocking.
+      results = existing.assertion_results ?? [];
+      blocking = [];
+      baseState = existing.state;
+      console.log(`${target.id}: carrying forward ${results.length} assertion result(s)`);
+    } else {
       console.error(
-        `refusing to set ${target.id} to "${args.state}": ${blocking.length} blocking assertion(s) breached`,
+        `${target.id}: no assertion results, and no existing publication to carry them ` +
+          `forward from. Run \`pnpm assert --platform ${target.id} --out build/assertions/${target.id}.json\` first.`,
       );
       process.exit(1);
+    }
+
+    const state = args.state ?? baseState;
+
+    if (baseState === "validation-failed") {
+      anyFailed = true;
+      if (args.state) {
+        console.error(
+          `refusing to set ${target.id} to "${args.state}": it is validation-failed` +
+            (blocking.length > 0 ? ` (${blocking.length} blocking assertion(s) breached)` : ""),
+        );
+        process.exit(1);
+      }
     }
 
     const publication = {

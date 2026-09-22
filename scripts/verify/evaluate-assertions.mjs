@@ -64,7 +64,7 @@ function contains(measured, right) {
 }
 
 function evaluateComparison(expression, facts) {
-  const { left, op, right } = expression;
+  const { left, op, right_path: rightPath } = expression;
   const { found, value } = readPath(facts, left);
 
   if (op === "exists") return { measured: value ?? null, holds: found && value !== null };
@@ -72,6 +72,21 @@ function evaluateComparison(expression, facts) {
 
   if (!found) {
     throw new Error(`fact "${left}" was not measured, so "${op}" cannot be evaluated`);
+  }
+
+  // `right` is a literal; `right_path` is another measured value. The schema makes them
+  // mutually exclusive, because nothing mechanical can tell `right: casual` (a literal) from
+  // `right: platform.capabilities.ads` (a path) — so the rarer one is declared.
+  let right = expression.right;
+  if (rightPath !== undefined) {
+    if (right !== undefined) {
+      throw new Error(`comparison on "${left}" gives both right and right_path`);
+    }
+    const resolved = readPath(facts, rightPath);
+    if (!resolved.found) {
+      throw new Error(`fact "${rightPath}" was not measured, so "${op}" cannot be evaluated`);
+    }
+    right = resolved.value;
   }
 
   switch (op) {
