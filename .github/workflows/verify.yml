@@ -1,8 +1,141 @@
-# Web Game Factory — Verification Pipeline
-# TODO: Implement verification pipeline.
-# Scaffold only. No implementation yet.
+# Verify — the `verify_suite_green` guard.
 #
-# Future responsibilities:
-# - Smoke tests against built artifacts
-# - Performance benchmarks
-# - Mobile compatibility checks
+# The Factory names this file as what implements `verify_suite_green`, and unlike `ci_green`
+# that guard is read at exactly one place: gate G5, where a release candidate is approved.
+# It is the heavier suite, and everything in it runs against BUILT ARTIFACTS rather than
+# source — a dev-server run proves nothing about the bundle a portal would receive.
+#
+# It also produces the platform assertion results. Every profile is resolved at the version
+# game.config.yaml pins, from config/platforms/, never at whatever version is current: the
+# Factory's platform-validation stage names validating against the latest profile as a
+# failure mode, and a build must be judged by the rules in force when its plan was approved.
+
+name: Verify
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+    outputs:
+      blocking-failures:
+        description: Total blocking assertions breached across every targeted platform.
+        value: ${{ jobs.verify.outputs.blocking-failures }}
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: smoke, facts, platform assertions
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      blocking-failures: ${{ steps.assert.outputs.blocking }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: ./.github/actions/setup-workspace
+        with:
+          install-browsers: "true"
+
+      - name: build
+        run: pnpm build
+
+      - name: smoke
+        run: pnpm test:e2e
+
+      - name: measure runtime facts
+        run: pnpm test:verify
+
+      - name: List targeted platforms
+        id: targets
+        # The platforms come from game.config.yaml, so adding one to the config is the only
+        # step needed to have it verified here.
+        run: |
+          platforms=$(node -e "
+            const {readFileSync}=require('fs');
+            const {parse}=require('yaml');
+            const cfg=parse(readFileSync('game.config.yaml','utf8'));
+            console.log(cfg.platforms.map(p=>p.id).join(' '));
+          ")
+          echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
+          echo "targeting: $platforms"
+
+      - name: collect facts and evaluate assertions
+        id: assert
+        run: |
+          blocking=0
+          {
+            echo "### Platform assertions"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for platform in ${{ steps.targets.outputs.platforms }}; do
+            echo "::group::$platform"
+            node scripts/verify/collect-facts.mjs --platform "$platform"
+
+            {
+              echo "<details><summary><code>$platform</code></summary>"
+              echo
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            # Capture the result without letting a non-zero exit abort the loop: every
+            # platform is reported, then the job fails once at the end. Reporting only the
+            # first failure turns one fix-and-rerun cycle into several.
+            set +e
+            node scripts/verify/evaluate-assertions.mjs \
+              --platform "$platform" \
+              --out "build/assertions/$platform.json" 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+            status=${PIPESTATUS[0]}
+            set -e
+
+            {
+              echo '```'
+              echo "</details>"
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            if [ "$status" -ne 0 ]; then
+              blocking=$((blocking + 1))
+              echo "::error title=$platform::blocking assertion(s) breached — see the job summary"
+            fi
+            echo "::endgroup::"
+          done
+
+          echo "blocking=$blocking" >> "$GITHUB_OUTPUT"
+          if [ "$blocking" -ne 0 ]; then
+            echo "$blocking platform(s) failed validation" >&2
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verify-facts-${{ github.run_id }}
+          path: |
+            build/facts
+            build/assertions
+            build/runtime-facts.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,8 +1,167 @@
-# Web Game Factory — Publish Pipeline
-# TODO: Implement publish pipeline.
-# Scaffold only. No implementation yet.
+# Publish — gate G6, made real.
 #
-# Future responsibilities:
-# - Platform-specific packaging
-# - Portal submission (Yandex, CrazyGames, GameVui)
-# - Post-publish verification
+# Manual dispatch only, behind the `production` environment. Put required reviewers on that
+# environment and GitHub will hold this job until a human approves it, and record who did.
+# That is the whole mechanism: G6 is irreversible — portals cache and index what they
+# receive — and the Factory's gate data rejects a non-human decision on it.
+#
+# What this does NOT do is integrate with portal APIs. That is a deliberate choice recorded
+# in the Factory's publish stage, and it is also the truth on the ground: of the platforms in
+# the profile set only Poki has a CLI that works headlessly. Everything else gets a package
+# and a checklist, and a person uploads it.
+#
+# Uploading to Poki is not releasing on Poki. The CLI pushes a build; requesting review is
+# still a human action in their dashboard.
+
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Release id to publish, e.g. r1
+        required: true
+        type: string
+      platforms:
+        description: Space-separated platform ids. Empty means every targeted platform.
+        required: false
+        type: string
+      confirm:
+        description: Type the release id again to confirm this is intentional.
+        required: true
+        type: string
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: prepare submissions
+    runs-on: ubuntu-latest
+    # Required reviewers on this environment are what enforce G6. Without them this workflow
+    # is still manual, but it is no longer a gate.
+    environment: production
+
+    steps:
+      - name: Confirm intent
+        if: inputs.confirm != inputs.release_id
+        run: |
+          echo "::error::confirmation \"${{ inputs.confirm }}\" does not match release id \"${{ inputs.release_id }}\""
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Fetch the frozen release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          mkdir -p "release/${RELEASE_ID}"
+          # Prefer the workflow artifact the release run produced; it is the complete
+          # directory including publications and assertion results.
+          if gh run download --name "release-${RELEASE_ID}" --dir "release/${RELEASE_ID}" 2>/dev/null; then
+            echo "restored release-${RELEASE_ID} from the release run artifact"
+          else
+            echo "::error::no artifact named release-${RELEASE_ID}. Run release.yml first."
+            exit 1
+          fi
+          ls -la "release/${RELEASE_ID}"
+
+      - name: Refuse to publish a candidate that failed validation
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          # The publications were written by release.yml with a state derived from the
+          # assertions. Re-reading that state here means a failed candidate cannot be
+          # published by dispatching this workflow directly.
+          failed=0
+          for file in "release/${RELEASE_ID}"/publications/*.json; do
+            state=$(node -e "console.log(require('./$file').state)")
+            platform=$(basename "$file" .json)
+            echo "$platform: $state"
+            if [ "$state" = "validation-failed" ]; then failed=$((failed + 1)); fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::$failed platform(s) are validation-failed — fix the build, do not publish"
+            exit 1
+          fi
+
+      - name: Upload to Poki
+        id: poki
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          POKI_AUTH_JSON: ${{ secrets.WGF_POKI_AUTH_JSON }}
+          POKI_GAME_ID: ${{ vars.WGF_POKI_GAME_ID }}
+        run: |
+          if ! ls "release/${RELEASE_ID}/poki.zip" >/dev/null 2>&1; then
+            echo "poki is not a target of this release — nothing to upload"
+            exit 0
+          fi
+          if [ -z "$POKI_AUTH_JSON" ] || [ "$POKI_AUTH_JSON" = "__UNSET__" ]; then
+            echo "::warning title=Poki upload skipped::WGF_POKI_AUTH_JSON is not set. The package is attached; upload it by hand."
+            exit 0
+          fi
+
+          # The CLI's login is an interactive browser flow, so CI reuses an auth.json
+          # captured once on a developer machine.
+          mkdir -p "$HOME/.config/poki"
+          printf '%s' "$POKI_AUTH_JSON" > "$HOME/.config/poki/auth.json"
+
+          mkdir -p build/poki && unzip -q "release/${RELEASE_ID}/poki.zip" -d build/poki
+          npx --yes @poki/cli upload \
+            --game "$POKI_GAME_ID" \
+            --build-dir build/poki \
+            --name "${RELEASE_ID} ${GITHUB_SHA::7}"
+
+          echo "::notice title=Poki::Build uploaded. Requesting review is still a manual step in the Poki dashboard."
+
+      - name: Write the submission records
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          args="--release ${RELEASE_ID} --state submitted --submitted-by ${GITHUB_ACTOR}"
+          if [ -n "${{ inputs.platforms }}" ]; then
+            for platform in ${{ inputs.platforms }}; do
+              node scripts/publish/make-publication.mjs $args --platform "$platform"
+            done
+          else
+            node scripts/publish/make-publication.mjs $args
+          fi
+
+      - name: Submission checklists
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          {
+            echo "### Publish ${RELEASE_ID} — approved by @${GITHUB_ACTOR}"
+            echo
+            echo "Packages are attached below. Portals other than Poki have no API; work"
+            echo "through each checklist and record the portal reference in the publication file."
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for file in "release/${RELEASE_ID}"/publications/*.json; do
+            platform=$(basename "$file" .json)
+            {
+              echo "#### $platform"
+              node -e "
+                const pub = require('./$file');
+                for (const entry of pub.submission?.checklist ?? []) {
+                  console.log('- [ ] ' + entry.item + (entry.note ? '  _(' + entry.note + ')_' : ''));
+                }
+              "
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: submission-${{ inputs.release_id }}
+          path: release/${{ inputs.release_id }}
+          retention-days: 90

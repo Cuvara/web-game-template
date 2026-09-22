@@ -28,6 +28,18 @@ platforms:
   # SDK. The Factory overwrites this list from tech_plan.repo_params.game_config.
   - { id: generic-web, profile: generic-web@1.0.0, role: required }
 
+monetization:
+  # The ad kinds this title commits to, written from
+  # tech_plan.repo_params.game_config.monetization, which in turn comes from
+  # game_design.monetization.placements.
+  #
+  # Release validation evaluates `package.uses_banner_ads` and `package.uses_rewarded_ads`
+  # against THIS list, not against whatever an end-to-end run happened to trigger. A run can
+  # prove an ad was requested; it can never prove one is never requested — and on GameVui
+  # `uses_rewarded_ads` is a blocking assertion.
+  ad_kinds: []
+  iap: false
+
 build:
   command: pnpm build
   output: dist

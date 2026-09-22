@@ -10,6 +10,7 @@
 
 import { AdPolicy } from "../ad-policy.js";
 import { LocalStorageBackend } from "../storage.js";
+import { UsageRecorder, type PlatformUsage } from "../usage.js";
 import type {
   AdResult,
   Platform,
@@ -41,11 +42,16 @@ export class GenericWebPlatform implements Platform {
   readonly storage: PlatformStorage;
 
   readonly #ads = new AdPolicy(GENERIC_WEB_CAPABILITIES);
+  readonly #usage = new UsageRecorder();
   #loadingFraction = 0;
   #ready = false;
 
   constructor(options: GenericWebOptions) {
     this.storage = new LocalStorageBackend(options.namespace);
+  }
+
+  get usage(): PlatformUsage {
+    return this.#usage.snapshot();
   }
 
   get loadingFraction(): number {
@@ -62,11 +68,13 @@ export class GenericWebPlatform implements Platform {
 
   reportLoadingProgress(fraction: number): void {
     this.#loadingFraction = Math.min(Math.max(fraction, 0), 1);
+    this.#usage.recordLoadingProgress();
   }
 
   signalReady(): Promise<void> {
     this.#ready = true;
     this.#loadingFraction = 1;
+    this.#usage.recordSignalReady();
     return Promise.resolve();
   }
 
@@ -74,6 +82,7 @@ export class GenericWebPlatform implements Platform {
   gameplayStop(): void {}
 
   showInterstitial(): Promise<AdResult> {
+    this.#usage.recordAdRequested("interstitial");
     return Promise.resolve({
       shown: false,
       reason: this.#ads.check("interstitial") ?? "unsupported",
@@ -81,6 +90,7 @@ export class GenericWebPlatform implements Platform {
   }
 
   showRewarded(): Promise<RewardedResult> {
+    this.#usage.recordAdRequested("rewarded");
     return Promise.resolve({
       shown: false,
       rewarded: false,

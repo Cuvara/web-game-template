@@ -40,10 +40,15 @@ describe("validateGameConfig", () => {
     game: { id: "g", name: "G", version: "0.1.0" },
     engine: { type: "pixijs" },
     platforms: [{ id: "generic-web", profile: "generic-web@1.0.0", role: "required" }],
+    monetization: { ad_kinds: [], iap: false },
     build: { command: "pnpm build", output: "dist" },
     verification: {},
     publishing: { enabled: false },
   };
+
+  it("accepts a well-formed config", () => {
+    expect(() => validateGameConfig(valid)).not.toThrow();
+  });
 
   it("rejects a bare string platform", () => {
     expect(() => validateGameConfig({ ...valid, platforms: ["yandex"] })).toThrow(/pinned object/);
@@ -72,5 +77,25 @@ describe("validateGameConfig", () => {
   it("rejects a role that is neither required nor optional", () => {
     const platforms = [{ id: "poki", profile: "poki@1.0.0", role: "maybe" }];
     expect(() => validateGameConfig({ ...valid, platforms })).toThrow(/role must be/);
+  });
+
+  it("requires monetization, because a missing ad declaration is not the same as no ads", () => {
+    const { monetization: _dropped, ...withoutMonetization } = valid;
+    expect(() => validateGameConfig(withoutMonetization)).toThrow(/monetization must be a mapping/);
+  });
+
+  it("rejects an ad kind no platform profile knows about", () => {
+    const monetization = { ad_kinds: ["playable"], iap: false };
+    expect(() => validateGameConfig({ ...valid, monetization })).toThrow(/ad_kinds\[0\]/);
+  });
+
+  it("rejects a repeated ad kind", () => {
+    const monetization = { ad_kinds: ["rewarded", "rewarded"], iap: false };
+    expect(() => validateGameConfig({ ...valid, monetization })).toThrow(/must not repeat/);
+  });
+
+  it("rejects a non-boolean iap", () => {
+    const monetization = { ad_kinds: [], iap: "no" };
+    expect(() => validateGameConfig({ ...valid, monetization })).toThrow(/iap must be a boolean/);
   });
 });

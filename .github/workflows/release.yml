@@ -1,9 +1,155 @@
-# Web Game Factory — Release Pipeline
-# TODO: Implement release pipeline.
-# Scaffold only. No implementation yet.
+# Release — freeze a candidate. It does not publish.
 #
-# Future responsibilities:
-# - Version bumping
-# - Changelog generation
-# - Release artifact packaging
-# - Checksum generation
+# Everything up to the moment a build becomes public is automated here: CI, the verify
+# suite, per-platform packaging, the immutable manifest, checksums, and one
+# platform-publication record per target carrying its assertion results.
+#
+# Then it stops. Making a build public is gate G6, which is irreversible and never
+# auto-approves — portals cache and index, so there is no undo. publish.yml is a separate,
+# manually dispatched workflow behind an environment with required reviewers.
+#
+# The candidate is immutable from here. Any change produces a new release rather than an
+# edit to this one, which is what makes a rollback a republish of a known-good manifest
+# instead of a rebuild.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semver, e.g. 1.2.0
+        required: true
+        type: string
+      kind:
+        description: Release kind
+        required: false
+        default: content
+        type: choice
+        options: [initial, content, hotfix, rollback]
+
+concurrency:
+  # Never cancel: a half-written release directory is worse than a slow queue.
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  verify:
+    needs: ci
+    uses: ./.github/workflows/verify.yml
+
+  candidate:
+    name: freeze candidate
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # creates the GitHub Release
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the changelog is read from it.
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-workspace
+        with:
+          install-browsers: "true"
+
+      - name: Resolve version and release id
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::version \"$version\" is not semver" && exit 1
+          fi
+
+          # Release ids are r1, r2, ... per the Factory's release machine. Counting the
+          # releases that already exist keeps the numbering monotonic without storing state.
+          existing=$(gh release list --limit 200 --json tagName --jq 'length')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release_id=r$((existing + 1))" >> "$GITHUB_OUTPUT"
+          echo "resolved r$((existing + 1)) at $version"
+
+      - name: build
+        run: pnpm build
+
+      # The verify job already measured these, but it ran on its own runner and artifacts do
+      # not carry across without a download. Re-measuring against the build that is actually
+      # being packaged is the stronger guarantee anyway.
+      - name: measure runtime facts
+        run: pnpm test:verify
+
+      - name: package, evaluate, record
+        env:
+          RELEASE_ID: ${{ steps.meta.outputs.release_id }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          node scripts/release/package.mjs --release "$RELEASE_ID"
+
+          for platform in $(node -e "
+            const {readFileSync}=require('fs');const {parse}=require('yaml');
+            console.log(parse(readFileSync('game.config.yaml','utf8')).platforms.map(p=>p.id).join(' '));
+          "); do
+            node scripts/verify/collect-facts.mjs --platform "$platform"
+            node scripts/verify/evaluate-assertions.mjs \
+              --platform "$platform" --out "build/assertions/$platform.json"
+          done
+
+          node scripts/release/make-manifest.mjs \
+            --release "$RELEASE_ID" --version "$VERSION" \
+            --kind "${{ inputs.kind || 'content' }}" --state rc
+          node scripts/publish/make-publication.mjs --release "$RELEASE_ID"
+
+      - name: Summary
+        env:
+          RELEASE_ID: ${{ steps.meta.outputs.release_id }}
+        run: |
+          {
+            echo "### Release ${RELEASE_ID} — ${{ steps.meta.outputs.version }}"
+            echo
+            echo "State \`rc\`, frozen. **Not published** — publication is gate G6, run \`publish.yml\`."
+            echo
+            echo '```'
+            cat "release/${RELEASE_ID}/checksums.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.meta.outputs.release_id }}
+          path: release/${{ steps.meta.outputs.release_id }}
+          retention-days: 90
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.meta.outputs.release_id }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          # A draft: the GitHub Release going public is itself a publication step, and this
+          # workflow does not publish anything.
+          gh release create "v${VERSION}" \
+            --draft \
+            --title "${RELEASE_ID} — v${VERSION}" \
+            --notes "Frozen release candidate. Publication requires gate G6 — run publish.yml." \
+            "release/${RELEASE_ID}"/*.zip \
+            "release/${RELEASE_ID}/checksums.txt" \
+            "release/${RELEASE_ID}/manifest.json" \
+            || gh release upload "v${VERSION}" \
+                 "release/${RELEASE_ID}"/*.zip \
+                 "release/${RELEASE_ID}/checksums.txt" \
+                 "release/${RELEASE_ID}/manifest.json" --clobber

@@ -1,8 +1,68 @@
-# Web Game Factory — CI Pipeline
-# TODO: Implement CI verification pipeline.
-# Scaffold only. No implementation yet.
+# CI — the `ci_green` guard.
 #
-# Future responsibilities:
-# - Lint and type-check on every push/PR
-# - Run unit and integration tests
-# - Report coverage
+# The Factory's title machine names this file as what implements `ci_green`, and that guard
+# sits on three transitions: scaffolding -> prototype, prototype -> prototype-review, and
+# production -> releasing. A title cannot advance past any of them without this passing on
+# the named commit, so it stays fast and it stays about the source, not the artifact.
+#
+# The heavier suite — built artifacts, performance, platform assertions — is verify.yml.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: lint, typecheck, unit, integration
+    runs-on: ubuntu-latest
+    # A push and a pull_request from the same repository are the same commit twice. Skip the
+    # pull_request event unless it comes from a fork, whose pushes we never see.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: ./.github/actions/setup-workspace
+
+      # Each step is named after a suite in qa-report.schema.json's `suites[].name` enum, so
+      # a run's results map onto the QA report without anyone having to translate them.
+      - name: lint
+        run: pnpm lint
+
+      - name: typecheck
+        run: pnpm typecheck
+
+      - name: unit
+        run: pnpm test:unit
+
+      - name: integration
+        run: pnpm test:integration
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### CI — \`ci_green\`"
+            echo
+            echo "commit \`${GITHUB_SHA::7}\` on \`${GITHUB_REF_NAME}\`"
+            echo
+            echo "status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"

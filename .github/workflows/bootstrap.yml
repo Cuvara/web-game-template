@@ -1,0 +1,179 @@
+# Bootstrap — runs once, in a repository just created from this template.
+#
+# GitHub has no "created from template" event. What it does have is a push on the initial
+# commit, which is what this listens for — and which is documented to fire twice often
+# enough that every step here has to be idempotent. The concurrency group serialises the
+# pair; the guard below makes the second one a no-op.
+#
+# What it can and cannot do is set by one hard constraint: GitHub never returns a secret's
+# VALUE through the API. Secrets cannot be copied into a new repository by any automation.
+# So:
+#
+#   secrets   — stay at the organization level, and this grants the new repository access to
+#               them. To override one for a single game, add a repository secret of the same
+#               name; the lower level wins.
+#   variables — are readable, so they are copied down to repository level. That is what makes
+#               them visible and editable in this repository's Settings.
+#
+# It finishes by deleting itself. A bootstrap that can run again is a bootstrap that will,
+# on some later push, quietly reset a game's configuration.
+
+name: Bootstrap
+
+on:
+  push:
+
+concurrency:
+  group: bootstrap-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: configure this repository
+    runs-on: ubuntu-latest
+    # Never in the template itself. Without this, the template would reconfigure and then
+    # delete its own bootstrap workflow on the next push to it.
+    if: github.event.repository.is_template == false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Has this already run?
+        id: guard
+        run: |
+          # The template ships game.id: example-game. If it has changed, bootstrap has
+          # already done its work — this is the duplicate push, or a later one.
+          current=$(grep -E '^\s+id:' game.config.yaml | head -1 | awk '{print $2}')
+          if [ "$current" != "example-game" ]; then
+            echo "already bootstrapped (game.id is \"$current\") — nothing to do"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Mint a token from the organization bot
+        id: token
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.WGF_BOOTSTRAP_APP_ID }}
+          private-key: ${{ secrets.WGF_BOOTSTRAP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Grant this repository access to the WGF organization secrets
+        if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ORG: ${{ github.repository_owner }}
+          REPO_ID: ${{ github.event.repository.id }}
+        run: |
+          set -euo pipefail
+          # Only secrets scoped to selected repositories need this; one set to all
+          # repositories is already visible here.
+          gh api "orgs/${ORG}/actions/secrets" --paginate \
+            --jq '.secrets[] | select(.name | startswith("WGF_")) | select(.visibility == "selected") | .name' \
+          | while read -r name; do
+              # PUT is idempotent — re-running adds nothing and fails nothing.
+              gh api -X PUT "orgs/${ORG}/actions/secrets/${name}/repositories/${REPO_ID}"
+              echo "granted access to ${name}"
+            done
+
+      - name: Copy the WGF organization variables down to this repository
+        if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ORG: ${{ github.repository_owner }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh api "orgs/${ORG}/actions/variables" --paginate \
+            --jq '.variables[] | select(.name | startswith("WGF_")) | [.name, .value] | @tsv' \
+          | while IFS=$'\t' read -r name value; do
+              # Create, or update if it is already there. Either way the repository ends up
+              # holding an editable copy the game's owner can override.
+              gh api -X POST "repos/${REPO}/actions/variables" \
+                -f "name=${name}" -f "value=${value}" 2>/dev/null \
+              || gh api -X PATCH "repos/${REPO}/actions/variables/${name}" \
+                   -f "name=${name}" -f "value=${value}"
+              echo "copied ${name}"
+            done
+
+      - name: Set this game's identity
+        if: steps.guard.outputs.run == 'true'
+        id: identity
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ github.repository }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          game_id=$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\+/-/g; s/^-//; s/-$//')
+          game_name=$(printf '%s' "$game_id" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1')
+
+          echo "game_id=$game_id" >> "$GITHUB_OUTPUT"
+          echo "game_name=$game_name" >> "$GITHUB_OUTPUT"
+
+          # Repository variables, so they can be overridden without touching source.
+          for pair in "GAME_ID=$game_id" "GAME_NAME=$game_name"; do
+            name="${pair%%=*}"; value="${pair#*=}"
+            gh api -X POST "repos/${REPO}/actions/variables" -f "name=${name}" -f "value=${value}" 2>/dev/null \
+            || gh api -X PATCH "repos/${REPO}/actions/variables/${name}" -f "name=${name}" -f "value=${value}"
+          done
+
+          # game.config.yaml is edited in place rather than rewritten through a YAML parser,
+          # because the comments in it are the documentation for the fields around them.
+          node -e '
+            const fs = require("fs");
+            const id = process.argv[1], name = process.argv[2];
+            let text = fs.readFileSync("game.config.yaml", "utf8");
+            text = text.replace(/^(\s+id:\s+)example-game$/m, `$1${id}`);
+            text = text.replace(/^(\s+name:\s+)Example Game$/m, `$1${name}`);
+            fs.writeFileSync("game.config.yaml", text);
+          ' "$game_id" "$game_name"
+
+          echo "game.id=$game_id  game.name=$game_name"
+
+      - name: Commit and remove this workflow
+        if: steps.guard.outputs.run == 'true'
+        env:
+          # The app token rather than GITHUB_TOKEN on purpose: a push made with GITHUB_TOKEN
+          # does not trigger workflows, so CI would not run on the bootstrapped state.
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "wgf-bootstrap[bot]"
+          git config user.email "wgf-bootstrap[bot]@users.noreply.github.com"
+          git rm -q .github/workflows/bootstrap.yml
+          git add game.config.yaml
+          git commit -q -m "chore: bootstrap ${{ steps.identity.outputs.game_id }} from web-game-template
+
+          Set game identity, copied the WGF organization variables into this repository, and
+          granted it access to the organization's WGF secrets. Removing this workflow: it is
+          meant to run once, and a second run would reset the configuration.
+
+          Secrets are inherited from the organization and were not copied — GitHub does not
+          expose secret values. Override one by adding a repository secret of the same name."
+          git push
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.guard.outputs.run }}" != "true" ]; then
+            echo "Bootstrap already ran for this repository." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "### Bootstrapped \`${{ steps.identity.outputs.game_id }}\`"
+            echo
+            echo "- Access granted to the organization's \`WGF_*\` secrets"
+            echo "- \`WGF_*\` organization variables copied here and now editable in Settings"
+            echo "- \`GAME_ID\` and \`GAME_NAME\` set from the repository name"
+            echo "- \`game.config.yaml\` updated; this workflow removed"
+            echo
+            echo "**Next:** the platform list in \`game.config.yaml\` still targets"
+            echo "\`generic-web\`. The Factory writes the real list from the tech plan approved"
+            echo "at G3, and pins each profile into \`config/platforms/\`."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -15,6 +15,8 @@
 // portals, and it is checked at release validation by the `package.platform_sdk` assertion
 // every profile carries.
 
+import type { PlatformUsage } from "./usage.js";
+
 export type AdKind = "interstitial" | "rewarded" | "banner";
 export type AuthMode = "required" | "optional" | "none";
 export type AnalyticsMode = "platform-provided" | "self-hosted" | "none";
@@ -66,6 +68,8 @@ export interface Platform {
   readonly id: string;
   readonly capabilities: PlatformCapabilities;
   readonly storage: PlatformStorage;
+  /** A snapshot of what the game has asked for so far. Read by the verify suite. */
+  readonly usage: PlatformUsage;
 
   /** Load and hand-shake with the portal. Safe to call more than once. */
   initialize(): Promise<void>;

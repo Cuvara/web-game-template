@@ -54,16 +54,21 @@ Engine selection is configured in `game.config.yaml`.
 
 GitHub Actions workflows provide:
 
-| Workflow       | Purpose                                            |
-| -------------- | -------------------------------------------------- |
-| `ci.yml`       | Lint, type-check, and test on every push/PR        |
-| `build.yml`    | Production builds for target platforms             |
-| `verify.yml`   | Smoke tests, performance benchmarks, mobile checks |
-| `release.yml`  | Versioning, changelog, artifact packaging          |
-| `publish.yml`  | Platform-specific packaging and portal submission  |
-| `campaign.yml` | Campaign metadata and analytics setup              |
+| Workflow        | Purpose                                             |
+| --------------- | --------------------------------------------------- |
+| `ci.yml`        | Lint, type-check, and test on every push/PR         |
+| `build.yml`     | Production builds for target platforms              |
+| `verify.yml`    | Smoke tests, performance benchmarks, mobile checks  |
+| `release.yml`   | Versioning, changelog, artifact packaging           |
+| `publish.yml`   | Platform-specific packaging and portal submission   |
+| `campaign.yml`  | Campaign metadata and analytics setup               |
+| `bootstrap.yml` | One-time setup in a repo created from this template |
 
-All workflows are currently placeholder files.
+`ci.yml` and `verify.yml` are what the Factory names as implementing the `ci_green` and
+`verify_suite_green` guards. `publish.yml` and `campaign.yml` run in GitHub environments with
+required reviewers — that is gate G6 and gate G7 made real, and neither may auto-approve.
+
+See [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Platform Abstraction
 
@@ -130,14 +135,17 @@ web-game-template/
 **Foundation implemented.** `pnpm build`, `pnpm test` and `pnpm test:e2e` all run green on
 the untouched template.
 
-| Area                                                  | State              |
-| ----------------------------------------------------- | ------------------ |
-| `@wgf/game-core` — loop, scenes, events, pause        | done               |
-| `@wgf/platform-sdk` — abstraction, ad policy, storage | done               |
-| `@wgf/analytics-sdk`                                  | done               |
-| `@wgf/pixi-framework`, `@wgf/three-framework`         | done               |
-| `game.config.yaml` load + validation                  | done               |
-| Unit, integration, e2e smoke                          | done               |
-| Portal adapters (yandex, poki, crazygames, gamevui)   | not written        |
-| Six GitHub Actions workflows                          | still comment-only |
-| `scripts/`, `config/`, asset and audio pipelines      | empty              |
+| Area                                                                         | State       |
+| ---------------------------------------------------------------------------- | ----------- |
+| `@wgf/game-core` — loop, scenes, events, pause                               | done        |
+| `@wgf/platform-sdk` — abstraction, ad policy, storage                        | done        |
+| `@wgf/analytics-sdk`                                                         | done        |
+| `@wgf/pixi-framework`, `@wgf/three-framework`                                | done        |
+| `game.config.yaml` load + validation                                         | done        |
+| Unit, integration, e2e smoke                                                 | done        |
+| Package-fact measurement + platform assertion evaluator                      | done        |
+| Seven GitHub Actions workflows                                               | done        |
+| Release packaging, manifest, publication records                             | done        |
+| Minimal i18n (`public/locales/`)                                             | done        |
+| Portal adapters (yandex, poki, crazygames, gamevui)                          | not written |
+| `src/{audio,input,ui,assets,analytics}`, `config/{environments,performance}` | empty       |

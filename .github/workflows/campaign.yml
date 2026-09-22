@@ -1,8 +1,139 @@
-# Web Game Factory — Campaign Pipeline
-# TODO: Implement campaign pipeline.
-# Scaffold only. No implementation yet.
+# Campaign — gate G7, made real. It does not spend money.
 #
-# Future responsibilities:
-# - Campaign metadata generation
-# - A/B test configuration
-# - Analytics event setup
+# G7 is irreversible for the plainest reason of the three: the money leaves. The Factory's
+# gate data rejects a non-human decision on it, there is no standing budget, no auto-renewal,
+# and no campaign without a spend ceiling and a stop condition.
+#
+# So this workflow produces a decision-record draft with those fields filled from what a
+# human typed, behind an environment with required reviewers. Wiring an ad network in here
+# would move the decision from a person to a cron schedule, which is the failure this gate
+# exists to prevent.
+
+name: Campaign
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Release the campaign promotes, e.g. r1
+        required: true
+        type: string
+      spend_ceiling_usd:
+        description: Hard ceiling in USD. There is no campaign without one.
+        required: true
+        type: string
+      stop_condition:
+        description: What ends this campaign, in words. "Spend exhausted" is not a condition.
+        required: true
+        type: string
+      projection_basis:
+        description: What the expected return is based on. Say which parts are observed and which are projected.
+        required: true
+        type: string
+
+concurrency:
+  group: campaign
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  propose:
+    name: draft the spend decision
+    runs-on: ubuntu-latest
+    environment: campaign-spend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Validate the ceiling
+        run: |
+          ceiling="${{ inputs.spend_ceiling_usd }}"
+          if ! printf '%s' "$ceiling" | grep -Eq '^[0-9]+(\.[0-9]{1,2})?$'; then
+            echo "::error::spend_ceiling_usd must be a positive number, got \"$ceiling\"" && exit 1
+          fi
+          if [ "$(printf '%s' "$ceiling" | cut -d. -f1)" -eq 0 ]; then
+            echo "::error::a campaign with a zero ceiling is not a campaign" && exit 1
+          fi
+
+      - name: Pin the subject by content hash
+        id: subject
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          # A gate decision pins what it decided about by content hash, so a campaign cannot
+          # quietly end up attached to a different build than the one it was argued for.
+          mkdir -p "build/campaign/${RELEASE_ID}"
+          if gh run download --name "release-${RELEASE_ID}" --dir "build/campaign/${RELEASE_ID}" 2>/dev/null; then
+            hash=$(node -e "console.log(require('./build/campaign/${RELEASE_ID}/manifest.json').provenance.content_hash)")
+            id=$(node -e "console.log(require('./build/campaign/${RELEASE_ID}/manifest.json').provenance.artifact_id)")
+          else
+            echo "::error::no artifact named release-${RELEASE_ID}. A campaign promotes a frozen release; run release.yml first."
+            exit 1
+          fi
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
+          echo "artifact_id=$id" >> "$GITHUB_OUTPUT"
+          echo "subject $id $hash"
+
+      - name: Write the G7 proposal
+        # A proposal, explicitly NOT a decision-record. Decision records live in the
+        # Factory's workspace (workspace/titles/<title-id>/decisions/), are immutable, and
+        # require a human decider — a pipeline writing one would be the pipeline approving
+        # its own spend. This file is the input a person records their decision against.
+        env:
+          CEILING: ${{ inputs.spend_ceiling_usd }}
+          STOP: ${{ inputs.stop_condition }}
+          BASIS: ${{ inputs.projection_basis }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          ACTOR: ${{ github.actor }}
+          SUBJECT_ID: ${{ steps.subject.outputs.artifact_id }}
+          SUBJECT_HASH: ${{ steps.subject.outputs.hash }}
+        run: |
+          node --input-type=module - <<'NODE' > build/campaign/G7-proposal.json
+          import { readGameConfig } from "./scripts/_shared.mjs";
+          const config = readGameConfig();
+          console.log(JSON.stringify({
+            kind: "campaign-proposal",
+            note: "Not a decision-record. G7 is irreversible and never auto-approves; a human records the decision in the Factory workspace against the subject pinned here.",
+            gate_id: "G7",
+            title_id: config.game.id,
+            release_id: process.env.RELEASE_ID,
+            subject: { artifact_id: process.env.SUBJECT_ID, content_hash: process.env.SUBJECT_HASH },
+            spend_ceiling_usd: Number(process.env.CEILING),
+            stop_condition: process.env.STOP,
+            projection_basis: process.env.BASIS,
+            proposed_by: process.env.ACTOR,
+            proposed_at: new Date().toISOString(),
+          }, null, 2));
+          NODE
+          cat build/campaign/G7-proposal.json
+
+      - name: Summary
+        run: |
+          {
+            echo "### G7 spend decision — DRAFT"
+            echo
+            echo "| field | value |"
+            echo "|---|---|"
+            echo "| release | \`${{ inputs.release_id }}\` |"
+            echo "| ceiling | **\$${{ inputs.spend_ceiling_usd }}** |"
+            echo "| stop condition | ${{ inputs.stop_condition }} |"
+            echo "| proposed by | @${{ github.actor }} |"
+            echo
+            echo "| subject | \`${{ steps.subject.outputs.hash }}\` |"
+            echo
+            echo "**No money has been spent and nothing has been bought.** This is a proposal,"
+            echo "not a decision-record — those live in the Factory workspace and require a"
+            echo "human decider. G7 is irreversible, so any actual spend happens outside this"
+            echo "pipeline, after the decision is recorded."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: campaign-g7-draft-${{ inputs.release_id }}
+          path: build/campaign
+          retention-days: 90

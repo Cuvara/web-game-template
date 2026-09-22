@@ -8,3 +8,9 @@ declare module "virtual:game-config" {
   const config: unknown;
   export default config;
 }
+
+/** The locale ids found in public/locales at build time. See the same plugin. */
+declare module "virtual:locales" {
+  const locales: string[];
+  export default locales;
+}

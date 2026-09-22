@@ -27,6 +27,7 @@ export class Game {
 
   readonly #loop: GameLoop;
   #elapsedMs = 0;
+  #framesRendered = 0;
   /** Nested pause sources. An ad that ends while the tab is still hidden must not resume. */
   readonly #pauseReasons = new Set<PauseReason>();
 
@@ -37,7 +38,10 @@ export class Game {
           this.#elapsedMs += stepMs;
           this.scenes.update(stepMs);
         },
-        render: (alpha) => this.scenes.render(alpha),
+        render: (alpha) => {
+          this.#framesRendered += 1;
+          this.scenes.render(alpha);
+        },
       },
       options,
     );
@@ -46,6 +50,15 @@ export class Game {
   /** Simulation time since start, in milliseconds. Excludes time spent paused. */
   get elapsedMs(): number {
     return this.#elapsedMs;
+  }
+
+  /**
+   * Frames drawn since start. Sampling this over a wall-clock window is how the verify
+   * suite measures frame rate — several platform profiles assert on it, and an FPS counter
+   * that lives in the game's own debug UI is not something CI can read.
+   */
+  get framesRendered(): number {
+    return this.#framesRendered;
   }
 
   get running(): boolean {

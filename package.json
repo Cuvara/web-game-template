@@ -21,14 +21,22 @@
     "test:integration": "vitest run --project integration",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test --project desktop --project mobile",
+    "test:verify": "playwright test --project verify",
+    "facts": "node scripts/verify/collect-facts.mjs",
+    "assert": "node scripts/verify/evaluate-assertions.mjs",
+    "release:package": "node scripts/release/package.mjs",
+    "release:manifest": "node scripts/release/make-manifest.mjs",
+    "publish:prepare": "node scripts/publish/make-publication.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^2.1.8",
+    "adm-zip": "^0.5.16",
     "eslint": "^9.17.0",
+    "globals": "^17.12.0",
     "prettier": "^3.4.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",

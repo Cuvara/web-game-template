@@ -1,0 +1,40 @@
+# Shared setup for every workflow in this repository.
+#
+# Exists so the Node version, the pnpm version and the cache strategy are stated once. Seven
+# workflows each pinning their own is how a pipeline ends up passing on one job and failing
+# on another for reasons nobody can see in the diff.
+
+name: Set up workspace
+description: Checkout-adjacent setup — pnpm, Node, dependencies, optional Playwright browsers.
+
+inputs:
+  install-browsers:
+    description: Install Playwright's Chromium. Only the jobs that drive a browser need it.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        # Left unset on purpose: the version comes from packageManager in package.json, so
+        # CI and a developer's machine cannot drift apart.
+        run_install: false
+
+    - name: Install Node
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Install Playwright Chromium
+      if: inputs.install-browsers == 'true'
+      shell: bash
+      # --with-deps pulls the system libraries headless Chromium needs on a bare runner.
+      run: pnpm exec playwright install --with-deps chromium

@@ -12,6 +12,7 @@ export type {
   RewardedResult,
 } from "./types.js";
 export { AdPolicy } from "./ad-policy.js";
+export { UsageRecorder, type PlatformUsage } from "./usage.js";
 export { LocalStorageBackend, MemoryStorageBackend } from "./storage.js";
 export {
   GENERIC_WEB_CAPABILITIES,

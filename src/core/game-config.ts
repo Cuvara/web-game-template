@@ -15,10 +15,20 @@ export interface PlatformEntry {
   readonly role: "required" | "optional";
 }
 
+export const AD_KINDS = ["interstitial", "rewarded", "banner"] as const;
+export type AdKind = (typeof AD_KINDS)[number];
+
+export interface Monetization {
+  /** Deduplicated ad kinds the design committed to. Empty means the title shows no ads. */
+  readonly ad_kinds: readonly AdKind[];
+  readonly iap: boolean;
+}
+
 export interface GameConfig {
   readonly game: { readonly id: string; readonly name: string; readonly version: string };
   readonly engine: { readonly type: EngineType };
   readonly platforms: readonly PlatformEntry[];
+  readonly monetization: Monetization;
   readonly build: { readonly command: string; readonly output: string };
   readonly verification: Record<string, boolean>;
   readonly publishing: { readonly enabled: boolean };
@@ -78,6 +88,25 @@ export function validateGameConfig(raw: unknown): GameConfig {
     if (role !== "required" && role !== "optional") {
       fail(`${where}.role must be required or optional, got ${String(role)}`);
     }
+  }
+
+  const monetization = record(config["monetization"], "monetization");
+  const adKinds = monetization["ad_kinds"];
+  if (!Array.isArray(adKinds)) {
+    fail("monetization.ad_kinds must be a list (empty means the title shows no ads)");
+  }
+  for (const [index, kind] of (adKinds as unknown[]).entries()) {
+    if (!AD_KINDS.includes(kind as AdKind)) {
+      fail(
+        `monetization.ad_kinds[${index}] must be one of ${AD_KINDS.join(", ")}, got ${String(kind)}`,
+      );
+    }
+  }
+  if (new Set(adKinds as AdKind[]).size !== (adKinds as AdKind[]).length) {
+    fail("monetization.ad_kinds must not repeat a kind");
+  }
+  if (typeof monetization["iap"] !== "boolean") {
+    fail("monetization.iap must be a boolean");
   }
 
   return config as unknown as GameConfig;

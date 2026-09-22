@@ -1,8 +1,127 @@
-# Web Game Factory — Build Pipeline
-# TODO: Implement build pipeline.
-# Scaffold only. No implementation yet.
+# Build — two channels, one build script.
 #
-# Future responsibilities:
-# - Production build for target platforms
-# - Asset optimization
-# - Bundle analysis
+#   develop  — every push to develop. Deployed to Cloudflare Pages so the thing can be
+#              played without a release existing. Nothing here is a candidate for anything.
+#   release  — called by release.yml. Produces the artifact that gets packaged, and never
+#              deploys anywhere: publication is gated at G6 and does not happen by pushing.
+#
+# The difference is the channel, not the build. A develop build that differs from a release
+# build is a develop build that proves nothing.
+
+name: Build
+
+on:
+  push:
+    branches: [develop]
+  workflow_call:
+    inputs:
+      channel:
+        description: develop or release
+        required: true
+        type: string
+      ref:
+        description: Commit to build. Defaults to the triggering ref.
+        required: false
+        type: string
+    outputs:
+      artifact:
+        description: Name of the uploaded dist artifact.
+        value: ${{ jobs.build.outputs.artifact }}
+
+concurrency:
+  group: build-${{ github.ref }}-${{ inputs.channel || 'develop' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ inputs.channel || 'develop' }})
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.name.outputs.artifact }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: ./.github/actions/setup-workspace
+
+      - id: name
+        run: echo "artifact=dist-${{ inputs.channel || 'develop' }}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: build
+        run: pnpm build
+
+      - name: Report bundle size against the tightest platform cap
+        run: |
+          size_mb=$(du -sm dist | cut -f1)
+          # The tightest cap across the profiles this repository can target is GameVui's
+          # 50 MB. Surfacing it here makes growth visible long before release validation.
+          {
+            echo "### Build — ${{ inputs.channel || 'develop' }}"
+            echo
+            echo "\`dist\` is **${size_mb} MB** (tightest platform cap in the profile set: 50 MB)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.name.outputs.artifact }}
+          path: dist
+          retention-days: 14
+
+  deploy-develop:
+    name: deploy develop preview
+    needs: build
+    # Only the develop channel deploys. A release build must not reach the public by being
+    # built; that is what G6 exists to decide.
+    if: (inputs.channel || 'develop') == 'develop'
+    runs-on: ubuntu-latest
+    environment:
+      name: develop
+      url: ${{ steps.deploy.outputs.deployment-url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: dist
+
+      - name: Check Cloudflare credentials
+        id: creds
+        env:
+          CF_API_TOKEN: ${{ secrets.WGF_CF_API_TOKEN }}
+        run: |
+          # An unset secret is a sentinel, not an empty string, so "nobody configured this"
+          # reads differently from "the value is wrong".
+          if [ -z "$CF_API_TOKEN" ] || [ "$CF_API_TOKEN" = "__UNSET__" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Develop deploy skipped::WGF_CF_API_TOKEN is not set in the Cuvara organization. The build succeeded and is attached as an artifact; nothing was deployed."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        if: steps.creds.outputs.configured == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.WGF_CF_API_TOKEN }}
+          accountId: ${{ vars.WGF_CF_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist
+            --project-name=${{ vars.WGF_CF_PROJECT_PREFIX || 'wgf' }}-${{ github.event.repository.name }}
+            --branch=${{ github.ref_name }}
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.creds.outputs.configured }}" = "true" ]; then
+            echo "Deployed: ${{ steps.deploy.outputs.deployment-url }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Deploy skipped — \`WGF_CF_API_TOKEN\` is unset." >> "$GITHUB_STEP_SUMMARY"
+          fi

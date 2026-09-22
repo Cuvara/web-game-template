@@ -7,7 +7,10 @@
 
 import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";
+import availableLocales from "virtual:locales";
 import { config, primaryPlatform } from "./core/config.js";
+import { loadLocale } from "./core/i18n.js";
+import { installProbe } from "./core/probe.js";
 import { BootScene } from "./game/boot-scene.js";
 import { bindPlatform } from "./platform/bind.js";
 import { createRenderer } from "./rendering/create-renderer.js";
@@ -25,6 +28,11 @@ async function main(): Promise<void> {
   const platform = createPlatform(primaryPlatform().id, { namespace: config.game.id });
   await platform.initialize();
   platform.reportLoadingProgress(0.2);
+
+  const i18n = await loadLocale({ available: availableLocales, fallback: "en" });
+  hud.textContent = i18n.t("boot.title");
+  document.documentElement.lang = i18n.locale;
+  platform.reportLoadingProgress(0.4);
 
   const renderer = await createRenderer(config.engine.type);
   platform.reportLoadingProgress(0.6);
@@ -44,8 +52,21 @@ async function main(): Promise<void> {
 
   platform.reportLoadingProgress(1);
   await platform.signalReady();
+  // performance.now() is measured from navigation start, so this is time-to-interactive
+  // without needing a separate mark.
+  const timeToInteractiveMs = performance.now();
+
   game.start();
   platform.gameplayStart();
+
+  installProbe({
+    game,
+    platform,
+    gameId: config.game.id,
+    gameVersion: config.game.version,
+    engine: config.engine.type,
+    timeToInteractiveMs,
+  });
 
   hud.dataset["ready"] = "true";
 }
