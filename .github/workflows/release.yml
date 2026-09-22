@@ -1,0 +1,9 @@
+# Web Game Factory — Release Pipeline
+# TODO: Implement release pipeline.
+# Scaffold only. No implementation yet.
+#
+# Future responsibilities:
+# - Version bumping
+# - Changelog generation
+# - Release artifact packaging
+# - Checksum generation

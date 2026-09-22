@@ -1,0 +1,8 @@
+# Web Game Factory — Verification Pipeline
+# TODO: Implement verification pipeline.
+# Scaffold only. No implementation yet.
+#
+# Future responsibilities:
+# - Smoke tests against built artifacts
+# - Performance benchmarks
+# - Mobile compatibility checks

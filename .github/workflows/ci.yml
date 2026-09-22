@@ -1,0 +1,8 @@
+# Web Game Factory — CI Pipeline
+# TODO: Implement CI verification pipeline.
+# Scaffold only. No implementation yet.
+#
+# Future responsibilities:
+# - Lint and type-check on every push/PR
+# - Run unit and integration tests
+# - Report coverage

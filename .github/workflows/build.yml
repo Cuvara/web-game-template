@@ -1,0 +1,8 @@
+# Web Game Factory — Build Pipeline
+# TODO: Implement build pipeline.
+# Scaffold only. No implementation yet.
+#
+# Future responsibilities:
+# - Production build for target platforms
+# - Asset optimization
+# - Bundle analysis

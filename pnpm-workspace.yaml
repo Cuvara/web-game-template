@@ -1,0 +1,4 @@
+# Web Game Factory — pnpm workspace configuration
+# TODO: Configure workspace packages.
+packages:
+  - "packages/*"

@@ -1,0 +1,8 @@
+# Web Game Factory — Publish Pipeline
+# TODO: Implement publish pipeline.
+# Scaffold only. No implementation yet.
+#
+# Future responsibilities:
+# - Platform-specific packaging
+# - Portal submission (Yandex, CrazyGames, GameVui)
+# - Post-publish verification

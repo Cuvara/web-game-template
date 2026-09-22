@@ -1,0 +1,39 @@
+# Web Game Factory — game configuration
+#
+# Written by the Factory at scaffolding from tech_plan.repo_params.game_config.
+# Do not hand-edit: this file is the running game's link to the plan approved at gate G3,
+# and editing it here detaches one from the other.
+
+game:
+  id: example-game
+  name: Example Game
+  version: 0.1.0
+
+engine:
+  # pixijs (2D) or threejs (3D). Selected in the tech plan, with a written rationale.
+  type: pixijs
+
+platforms:
+  # Pinned entries, not bare strings.
+  #
+  #   profile — <platform-id>@<profile-version> from core/reference/platforms/.
+  #             Pinning keeps the build reproducible against the compliance rules that were
+  #             in force when it was approved, and is what release validation checks against.
+  #   role    — required | optional. A release is live only when every required platform is
+  #             live; otherwise partially-live. Marking everything required is the same as
+  #             marking nothing required.
+  - { id: yandex, profile: yandex@1.0.0, role: required }
+  - { id: crazygames, profile: crazygames@1.0.0, role: optional }
+  - { id: gamevui, profile: gamevui@1.0.0, role: optional }
+
+build:
+  command: pnpm build
+  output: dist
+
+verification:
+  smoke_test: true
+  performance_test: true
+  mobile_test: true
+
+publishing:
+  enabled: false

@@ -1,0 +1,9 @@
+{
+  "name": "web-game-template",
+  "version": "0.1.0",
+  "description": "Web Game Factory — reusable game template",
+  "private": true,
+  "scripts": {},
+  "devDependencies": {},
+  "dependencies": {}
+}

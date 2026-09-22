@@ -1,0 +1,8 @@
+# Web Game Factory — Campaign Pipeline
+# TODO: Implement campaign pipeline.
+# Scaffold only. No implementation yet.
+#
+# Future responsibilities:
+# - Campaign metadata generation
+# - A/B test configuration
+# - Analytics event setup
