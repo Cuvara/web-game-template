@@ -108,10 +108,16 @@ artifact.
 
 ## New repositories from the template
 
-`bootstrap.yml` runs on the first push, using a GitHub App installed in the organization. It
-grants the repository access to the `WGF_*` organization secrets, copies the `WGF_*`
-organization variables down to repository level, sets `GAME_ID` and `GAME_NAME` from the
-repository name, rewrites `game.config.yaml`, and deletes itself.
+`bootstrap.yml` runs on the first push, authenticating as the organization's bot app through
+the `APP_ID` and `APP_PRIVATE_KEY` organization secrets. It grants the repository access to
+the `WGF_*` organization secrets, copies the `WGF_*` organization variables down to repository
+level, creates the three environments with the pusher as a required reviewer, sets `GAME_ID`
+and `GAME_NAME` from the repository name, rewrites `game.config.yaml`, and deletes itself.
+
+Those two app secrets are the single place a game pipeline reads something outside the `WGF_*`
+namespace, and it has to be that way round: a repository created from the template is on no
+selected-repository list until bootstrap puts it on one, so the credential it starts with must
+already be visible to it.
 
 **Secrets are not copied, and cannot be** — GitHub never returns a secret's value through
 its API. They are inherited from the organization. To override one for a single game, add a

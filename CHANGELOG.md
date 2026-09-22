@@ -19,7 +19,10 @@ not publish versioned releases of its own, so changes are grouped by date.
   reviewers. Both refuse to run when their environment has no reviewers.
 - **`bootstrap.yml`**, which runs once in a repository created from the template: grants access
   to the organization's `WGF_*` secrets, copies the `WGF_*` variables down so they can be
-  overridden, creates the three environments, sets the game identity, then deletes itself.
+  overridden, creates the three environments with a required reviewer, sets the game identity,
+  then deletes itself. It authenticates as the organization's existing bot app — the one place
+  a game pipeline reads a secret outside the `WGF_*` namespace, because a brand-new repository
+  can read nothing scoped to selected repositories until bootstrap adds it to those lists.
 
 ### Added — measurement
 

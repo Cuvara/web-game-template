@@ -57,10 +57,19 @@ jobs:
       - name: Mint a token from the organization bot
         id: token
         if: steps.guard.outputs.run == 'true'
+        # The organization's existing bot app, whose credentials are already organization
+        # secrets visible to every repository. That visibility is not incidental: a
+        # repository created from this template is on no selected-repository list yet —
+        # putting it on those lists is the job below — so the credential it bootstraps with
+        # has to be one it can already read.
+        #
+        # Nothing else here reuses an existing organization secret. The game pipelines use
+        # WGF_*, scoped to selected repositories, and never touch the ones the Unity builds
+        # depend on.
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.WGF_BOOTSTRAP_APP_ID }}
-          private-key: ${{ secrets.WGF_BOOTSTRAP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
       - name: Grant this repository access to the WGF organization secrets
