@@ -43,7 +43,7 @@ jobs:
       artifact: ${{ steps.name.outputs.artifact }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref || github.sha }}
 
@@ -66,7 +66,7 @@ jobs:
             echo "\`dist\` is **${size_mb} MB** (tightest platform cap in the profile set: 50 MB)"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.name.outputs.artifact }}
           path: dist
@@ -84,9 +84,9 @@ jobs:
       url: ${{ steps.deploy.outputs.deployment-url }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: ${{ needs.build.outputs.artifact }}
           path: dist
@@ -108,7 +108,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         id: deploy
         if: steps.creds.outputs.configured == 'true'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.WGF_CF_API_TOKEN }}
           accountId: ${{ vars.WGF_CF_ACCOUNT_ID }}

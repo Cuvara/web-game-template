@@ -39,7 +39,7 @@ jobs:
     if: github.event.repository.is_template == false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Has this already run?
         id: guard
@@ -57,7 +57,7 @@ jobs:
       - name: Mint a token from the organization bot
         id: token
         if: steps.guard.outputs.run == 'true'
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.WGF_BOOTSTRAP_APP_ID }}
           private-key: ${{ secrets.WGF_BOOTSTRAP_PRIVATE_KEY }}

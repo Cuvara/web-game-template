@@ -54,7 +54,7 @@ jobs:
       contents: write # creates the GitHub Release
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Full history: the changelog is read from it.
           fetch-depth: 0
@@ -128,7 +128,7 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: release-${{ steps.meta.outputs.release_id }}
           path: release/${{ steps.meta.outputs.release_id }}
