@@ -1,4 +1,7 @@
 # Web Game Factory — pnpm workspace configuration
-# TODO: Configure workspace packages.
+#
+# packages/* is what the template provides and a game never edits. src/ is the game itself
+# and only consumes these. Keeping the split honest is what stops a game reimplementing
+# something the template already ships.
 packages:
   - "packages/*"

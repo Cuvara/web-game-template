@@ -1,0 +1,26 @@
+{
+  "name": "@wgf/pixi-framework",
+  "version": "0.1.0",
+  "description": "PixiJS renderer binding — the 2D half of engine.type",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@wgf/game-core": "workspace:*",
+    "pixi.js": "^8.6.0"
+  }
+}

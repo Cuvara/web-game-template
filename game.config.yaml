@@ -22,9 +22,11 @@ platforms:
   #   role    — required | optional. A release is live only when every required platform is
   #             live; otherwise partially-live. Marking everything required is the same as
   #             marking nothing required.
-  - { id: yandex, profile: yandex@1.0.0, role: required }
-  - { id: crazygames, profile: crazygames@1.0.0, role: optional }
-  - { id: gamevui, profile: gamevui@1.0.0, role: optional }
+  #
+  # The untouched scaffold targets generic-web because scaffolding requires CI to be green
+  # before any game code exists, and generic-web is the one profile that needs no portal
+  # SDK. The Factory overwrites this list from tech_plan.repo_params.game_config.
+  - { id: generic-web, profile: generic-web@1.0.0, role: required }
 
 build:
   command: pnpm build

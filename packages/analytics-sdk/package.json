@@ -1,0 +1,22 @@
+{
+  "name": "@wgf/analytics-sdk",
+  "version": "0.1.0",
+  "description": "Analytics abstraction — one event vocabulary across portal-provided and self-hosted backends",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  }
+}

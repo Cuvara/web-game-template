@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Web Game Factory — Template</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #101014;
+        color: #e6e6ea;
+        font:
+          13px/1.4 system-ui,
+          sans-serif;
+        overflow: hidden;
+        /* Portals frame the game; a stray selection highlight reads as a bug. */
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+      }
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+      #game canvas {
+        display: block;
+      }
+      #hud {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="hud" data-scene="none">web-game-template</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

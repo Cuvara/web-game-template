@@ -1,14 +1,17 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "src"
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["vite/client"]
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src", "tests", "*.config.ts", "vitest.workspace.ts"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "./packages/game-core" },
+    { "path": "./packages/platform-sdk" },
+    { "path": "./packages/analytics-sdk" },
+    { "path": "./packages/pixi-framework" },
+    { "path": "./packages/three-framework" }
+  ]
 }

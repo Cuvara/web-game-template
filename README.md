@@ -2,7 +2,15 @@
 
 Reusable template repository for web games produced by the **Web Game Factory**.
 
-> This repository is currently a scaffold and does not contain the Web Game Factory implementation.
+```bash
+pnpm install
+pnpm dev        # http://localhost:5173
+pnpm test       # unit + integration
+pnpm build      # packages, then dist/
+```
+
+See [docs/architecture.md](docs/architecture.md) for how the pieces fit, and
+[docs/development.md](docs/development.md) for working in it.
 
 ## Purpose
 
@@ -46,27 +54,31 @@ Engine selection is configured in `game.config.yaml`.
 
 GitHub Actions workflows provide:
 
-| Workflow | Purpose |
-|----------|---------|
-| `ci.yml` | Lint, type-check, and test on every push/PR |
-| `build.yml` | Production builds for target platforms |
-| `verify.yml` | Smoke tests, performance benchmarks, mobile checks |
-| `release.yml` | Versioning, changelog, artifact packaging |
-| `publish.yml` | Platform-specific packaging and portal submission |
-| `campaign.yml` | Campaign metadata and analytics setup |
+| Workflow       | Purpose                                            |
+| -------------- | -------------------------------------------------- |
+| `ci.yml`       | Lint, type-check, and test on every push/PR        |
+| `build.yml`    | Production builds for target platforms             |
+| `verify.yml`   | Smoke tests, performance benchmarks, mobile checks |
+| `release.yml`  | Versioning, changelog, artifact packaging          |
+| `publish.yml`  | Platform-specific packaging and portal submission  |
+| `campaign.yml` | Campaign metadata and analytics setup              |
 
 All workflows are currently placeholder files.
 
 ## Platform Abstraction
 
-The template abstracts platform-specific APIs behind a common interface:
+Game code calls `@wgf/platform-sdk` and never a portal SDK directly. Each platform has a
+profile in the Factory (`core/reference/platforms/<id>.yaml`) and an adapter here.
 
-- **Yandex Games**
-- **CrazyGames**
-- **GameVui**
-- **Generic Web**
+| Platform     | Profile | Adapter         |
+| ------------ | ------- | --------------- |
+| Generic Web  | ✅      | ✅              |
+| Yandex Games | ✅      | not written yet |
+| Poki         | ✅      | not written yet |
+| CrazyGames   | ✅      | not written yet |
+| GameVui      | ✅      | not written yet |
 
-Platform configuration lives in `config/platforms/`.
+An id with a profile but no adapter throws at startup rather than silently degrading.
 
 ## Testing Architecture
 
@@ -115,4 +127,17 @@ web-game-template/
 
 ## Status
 
-**Scaffold only.** No functionality has been implemented. This structure will be populated in future implementation phases.
+**Foundation implemented.** `pnpm build`, `pnpm test` and `pnpm test:e2e` all run green on
+the untouched template.
+
+| Area                                                  | State              |
+| ----------------------------------------------------- | ------------------ |
+| `@wgf/game-core` — loop, scenes, events, pause        | done               |
+| `@wgf/platform-sdk` — abstraction, ad policy, storage | done               |
+| `@wgf/analytics-sdk`                                  | done               |
+| `@wgf/pixi-framework`, `@wgf/three-framework`         | done               |
+| `game.config.yaml` load + validation                  | done               |
+| Unit, integration, e2e smoke                          | done               |
+| Portal adapters (yandex, poki, crazygames, gamevui)   | not written        |
+| Six GitHub Actions workflows                          | still comment-only |
+| `scripts/`, `config/`, asset and audio pipelines      | empty              |

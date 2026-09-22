@@ -8,3 +8,9 @@ dist/
 Thumbs.db
 coverage/
 .turbo/
+*.tsbuildinfo
+.vite/
+playwright-report/
+test-results/
+blob-report/
+.playwright/

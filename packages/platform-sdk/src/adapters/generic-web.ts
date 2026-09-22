@@ -1,0 +1,90 @@
+// Generic Web — self-hosted, no portal.
+//
+// Not a null object and not a special case. The profile treats "no portal" in the same
+// vocabulary as every other target so the design and validation paths need no branch for
+// it, and this adapter is the runtime half of that: the game calls the same methods and
+// simply gets a platform whose ad capabilities are empty.
+//
+// The profile asserts `package.platform_sdk == none`, which is about the built bundle: no
+// portal SDK script is loaded here, and none should ever be added to this file.
+
+import { AdPolicy } from "../ad-policy.js";
+import { LocalStorageBackend } from "../storage.js";
+import type {
+  AdResult,
+  Platform,
+  PlatformCapabilities,
+  PlatformStorage,
+  RewardedResult,
+} from "../types.js";
+
+export const GENERIC_WEB_CAPABILITIES: PlatformCapabilities = {
+  ads: [],
+  iap: false,
+  cloudSaves: false,
+  leaderboards: false,
+  achievements: false,
+  auth: "none",
+  analytics: "self-hosted",
+  loadingApi: "optional",
+  interstitialMinIntervalS: null,
+};
+
+export interface GenericWebOptions {
+  /** Storage namespace. Use the game id from game.config.yaml. */
+  readonly namespace: string;
+}
+
+export class GenericWebPlatform implements Platform {
+  readonly id = "generic-web";
+  readonly capabilities = GENERIC_WEB_CAPABILITIES;
+  readonly storage: PlatformStorage;
+
+  readonly #ads = new AdPolicy(GENERIC_WEB_CAPABILITIES);
+  #loadingFraction = 0;
+  #ready = false;
+
+  constructor(options: GenericWebOptions) {
+    this.storage = new LocalStorageBackend(options.namespace);
+  }
+
+  get loadingFraction(): number {
+    return this.#loadingFraction;
+  }
+
+  get ready(): boolean {
+    return this.#ready;
+  }
+
+  initialize(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  reportLoadingProgress(fraction: number): void {
+    this.#loadingFraction = Math.min(Math.max(fraction, 0), 1);
+  }
+
+  signalReady(): Promise<void> {
+    this.#ready = true;
+    this.#loadingFraction = 1;
+    return Promise.resolve();
+  }
+
+  gameplayStart(): void {}
+  gameplayStop(): void {}
+
+  showInterstitial(): Promise<AdResult> {
+    return Promise.resolve({
+      shown: false,
+      reason: this.#ads.check("interstitial") ?? "unsupported",
+    });
+  }
+
+  showRewarded(): Promise<RewardedResult> {
+    return Promise.resolve({
+      shown: false,
+      rewarded: false,
+      reason: this.#ads.check("rewarded") ?? "unsupported",
+    });
+  }
+}
