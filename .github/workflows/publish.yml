@@ -53,6 +53,32 @@ jobs:
           echo "::error::confirmation \"${{ inputs.confirm }}\" does not match release id \"${{ inputs.release_id }}\""
           exit 1
 
+      - name: Confirm this environment is actually a gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # An environment that does not exist is created implicitly, with no protection, the
+          # first time a job names it — so naming `production` is not by itself a gate. If
+          # nobody had to approve this run, G6 was not enforced, and G6 is irreversible.
+          #
+          # Note that required reviewers are unavailable on private repositories under a free
+          # plan. A private game repository on a free org cannot enforce this gate through
+          # environments; make the repository public, upgrade the plan, or accept that
+          # publication is guarded by convention rather than by GitHub.
+          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/production" \
+                    --jq '[.protection_rules[].type] | join(",")' 2>/dev/null || echo "unreadable")
+          echo "production protection rules: ${rules:-none}"
+
+          case "$rules" in
+            *required_reviewers*)
+              echo "::notice title=G6::Approved by @${GITHUB_ACTOR} through the production environment." ;;
+            unreadable)
+              echo "::warning title=G6::Could not read the environment's protection rules. Verify by hand that publication required an approval." ;;
+            *)
+              echo "::error title=G6 is not enforced::The production environment has no required reviewers, so this run was never held for approval. Publication is irreversible and must not proceed unapproved."
+              exit 1 ;;
+          esac
+
       - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-workspace

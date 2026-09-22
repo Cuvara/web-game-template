@@ -101,6 +101,39 @@ jobs:
               echo "copied ${name}"
             done
 
+      - name: Create the gate environments
+        if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ github.repository }}
+          IS_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          set -euo pipefail
+          # Without this the environments do not exist, and GitHub creates them implicitly —
+          # with no protection — the first time publish.yml or campaign.yml names one. The
+          # gate would look configured and hold nothing back, which is the worst of both.
+          #
+          # The person who pushed is seeded as the reviewer so the gate is never empty. Add
+          # or replace reviewers afterwards; what must not happen is zero of them.
+          actor_id=$(gh api "users/${GITHUB_ACTOR}" --jq '.id')
+
+          gh api -X PUT "repos/${REPO}/environments/develop" --silent
+          echo "created develop (no protection — it is a preview channel, not a gate)"
+
+          for env in production campaign-spend; do
+            if printf '{"reviewers":[{"type":"User","id":%s}]}' "$actor_id" \
+               | gh api -X PUT "repos/${REPO}/environments/${env}" --input - --silent 2>/dev/null; then
+              echo "created ${env} with @${GITHUB_ACTOR} as a required reviewer"
+            else
+              gh api -X PUT "repos/${REPO}/environments/${env}" --silent || true
+              if [ "$IS_PRIVATE" = "true" ]; then
+                echo "::warning title=${env} is not a gate::Required reviewers are unavailable on a private repository under a free plan. G6/G7 cannot be enforced here through environments — make this repository public, upgrade the plan, or accept that the gate is convention only. publish.yml and campaign.yml will refuse to run until one of those is true."
+              else
+                echo "::warning title=${env} has no reviewers::Could not set a required reviewer. Add one by hand before publishing."
+              fi
+            fi
+          done
+
       - name: Set this game's identity
         if: steps.guard.outputs.run == 'true'
         id: identity

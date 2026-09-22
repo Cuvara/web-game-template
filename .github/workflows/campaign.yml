@@ -45,6 +45,26 @@ jobs:
     environment: campaign-spend
 
     steps:
+      - name: Confirm this environment is actually a gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Same reasoning as publish.yml: an environment nobody configured is created
+          # implicitly with no protection, so naming it is not a gate. G7 spends real money.
+          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/campaign-spend" \
+                    --jq '[.protection_rules[].type] | join(",")' 2>/dev/null || echo "unreadable")
+          echo "campaign-spend protection rules: ${rules:-none}"
+
+          case "$rules" in
+            *required_reviewers*)
+              echo "::notice title=G7::Approved by @${GITHUB_ACTOR} through the campaign-spend environment." ;;
+            unreadable)
+              echo "::warning title=G7::Could not read the environment's protection rules. Verify by hand that this required an approval." ;;
+            *)
+              echo "::error title=G7 is not enforced::The campaign-spend environment has no required reviewers, so this run was never held for approval."
+              exit 1 ;;
+          esac
+
       - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-workspace
