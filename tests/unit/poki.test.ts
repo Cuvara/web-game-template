@@ -231,6 +231,107 @@ describe("PokiPlatform", () => {
     expect(calls.filter((c) => c === "commercialBreak")).toHaveLength(2);
   });
 
+  describe("when a break never settles", () => {
+    // A stuck SDK or a lost callback leaves the break promise pending forever. The adapter
+    // must not hang: it races the break against a deadline and, on the deadline, reports no
+    // ad so bind.ts's withAdBreak resumes and unmutes the game.
+
+    it("times out a rewarded break and reports no ad, without hanging", async () => {
+      const timers = manualTimers();
+      const { sdk, calls } = fakeSdk();
+      sdk.rewardedBreak = (onStart) => {
+        calls.push("rewardedBreak");
+        onStart?.();
+        return new Promise<boolean>(() => {}); // never settles
+      };
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+
+      const showing = platform.showRewarded();
+      timers.fireAll(); // trip the ad-break deadline
+      await expect(showing).resolves.toEqual({
+        shown: false,
+        rewarded: false,
+        reason: "not-ready",
+      });
+      expect(platform.foreground).toBe(true);
+      expect(platform.usage.adsShown.rewarded).toBe(0);
+    });
+
+    it("times out a commercial break and reports no ad, without hanging", async () => {
+      const timers = manualTimers();
+      const { sdk, calls } = fakeSdk();
+      sdk.commercialBreak = (onStart) => {
+        calls.push("commercialBreak");
+        onStart?.();
+        return new Promise<void>(() => {}); // never settles
+      };
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+
+      const showing = platform.showInterstitial();
+      timers.fireAll(); // trip the ad-break deadline
+      await expect(showing).resolves.toEqual({ shown: false, reason: "not-ready" });
+      expect(platform.foreground).toBe(true);
+      expect(platform.usage.adsShown.interstitial).toBe(0);
+    });
+
+    it("ignores a real reward that arrives after the deadline — no double grant", async () => {
+      const timers = manualTimers();
+      const { sdk, calls } = fakeSdk();
+      let grant: (rewarded: boolean) => void = () => {};
+      sdk.rewardedBreak = (onStart) => {
+        calls.push("rewardedBreak");
+        onStart?.();
+        return new Promise<boolean>((resolve) => (grant = resolve));
+      };
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+
+      const showing = platform.showRewarded();
+      timers.fireAll(); // deadline wins the race
+      await expect(showing).resolves.toEqual({
+        shown: false,
+        rewarded: false,
+        reason: "not-ready",
+      });
+
+      // Poki's genuine reward lands late. It must not re-grant or resolve a second time.
+      grant(true);
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(platform.usage.adsShown.rewarded).toBe(0);
+      expect(platform.foreground).toBe(true);
+    });
+
+    it("ignores a late rejection after the deadline — no unhandled result change", async () => {
+      const timers = manualTimers();
+      const { sdk, calls } = fakeSdk();
+      let fail: (err: Error) => void = () => {};
+      sdk.commercialBreak = (onStart) => {
+        calls.push("commercialBreak");
+        onStart?.();
+        return new Promise<void>((_resolve, reject) => (fail = reject));
+      };
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+
+      const showing = platform.showInterstitial();
+      timers.fireAll(); // deadline wins the race
+      await expect(showing).resolves.toEqual({ shown: false, reason: "not-ready" });
+
+      // A late SDK rejection must be swallowed, not surface as an unhandled rejection.
+      fail(new Error("too late"));
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(platform.foreground).toBe(true);
+    });
+  });
+
   describe("with an ad blocker", () => {
     it("stays playable when the SDK script is blocked", async () => {
       const platform = platformWith(null);

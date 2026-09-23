@@ -116,6 +116,14 @@ export interface PokiOptions {
    * queue never drains and init never settles. The game must boot anyway.
    */
   readonly initTimeoutMs?: number;
+  /**
+   * How long #adBreak waits for commercialBreak/rewardedBreak to resolve before giving up
+   * and reporting no ad. A stuck SDK or a lost callback would otherwise leave the game
+   * paused and muted forever (withAdBreak only restores state once the ad promise settles).
+   * The default is generous: a rewarded ad legitimately runs 15-30s+, so the deadline must
+   * outlast a real ad rather than abort one. See DEFAULT_AD_BREAK_TIMEOUT_MS.
+   */
+  readonly adBreakTimeoutMs?: number;
   /** Replaces setTimeout for the init deadline. Tests inject a controllable one. */
   readonly setTimeout?: (callback: () => void, ms: number) => unknown;
   /** Replaces localStorage-backed storage. */
@@ -142,6 +150,13 @@ export type PokiSdkState = "not-initialized" | "loading" | "ready" | "unavailabl
 // deadline runs alongside the game's own loading, not before it, and must leave room for it.
 const DEFAULT_INIT_TIMEOUT_MS = 5_000;
 
+// A rewarded ad can legitimately run 30 seconds, and a commercial break plus its own SDK
+// overhead can approach that too. 60s is comfortably past any real ad, so the deadline only
+// ever fires on a genuinely stuck SDK or a callback Poki never delivered — never on a break
+// that is actually playing. When it fires the game resumes as a no-ad; a real ad is left to
+// finish on its own terms.
+const DEFAULT_AD_BREAK_TIMEOUT_MS = 60_000;
+
 export class PokiPlatform implements Platform {
   readonly id = "poki";
   readonly capabilities = POKI_CAPABILITIES;
@@ -159,6 +174,7 @@ export class PokiPlatform implements Platform {
   readonly #lifecycle: GameplayLifecycle;
   readonly #loadSdk: PokiSdkLoader;
   readonly #initTimeoutMs: number;
+  readonly #adBreakTimeoutMs: number;
   readonly #setTimeout: (callback: () => void, ms: number) => unknown;
   readonly #calls: PokiSdkCall[] = [];
 
@@ -171,6 +187,7 @@ export class PokiPlatform implements Platform {
     this.storage = options.storage ?? new LocalStorageBackend(options.namespace);
     this.#loadSdk = options.loadSdk ?? (() => loadPokiSdkScript());
     this.#initTimeoutMs = options.initTimeoutMs ?? DEFAULT_INIT_TIMEOUT_MS;
+    this.#adBreakTimeoutMs = options.adBreakTimeoutMs ?? DEFAULT_AD_BREAK_TIMEOUT_MS;
     this.#setTimeout = options.setTimeout ?? ((callback, ms) => setTimeout(callback, ms));
     // Silent by default: a production build must not log (Poki asks for a clean build).
     // Refused calls stay readable through `rejectedCalls`.
@@ -330,18 +347,58 @@ export class PokiPlatform implements Platform {
       };
 
       this.#send(call);
+      // Bound the break the way #initialize bounds init: race the SDK's promise against a
+      // deadline. A Poki break promise can fail to settle — a stuck SDK, or an onStart that
+      // fired but whose settling callback was lost — and without this the game stays paused
+      // and muted forever, because the finally below (and bind.ts's withAdBreak, which owns
+      // the pause/mute) only restore state once this method returns. On the deadline the
+      // adapter reports no ad, so the game resumes and unmutes; a genuine break that is truly
+      // still playing would have to run past the very generous timeout to hit this.
+      //
+      // `settled` makes the race one-shot. The break promise below always carries its own
+      // handlers, so a genuine Poki result that arrives AFTER the deadline resolves/rejects
+      // that inner promise harmlessly and is dropped rather than re-granting or resolving a
+      // second time. Known limitation: a real rewarded reward delivered after the deadline is
+      // therefore lost. Poki's SDK exposes no late-reward channel, so the adapter does not
+      // fabricate an ad:late-reward here — the player forfeits it, by design.
+      let settled = false;
+      const deadline = new Promise<"timeout">((resolve) => {
+        this.#setTimeout(() => resolve("timeout"), this.#adBreakTimeoutMs);
+      });
       try {
         if (kind === "rewarded") {
-          const success = (await sdk.rewardedBreak(onStart)) === true;
+          const rewarded = sdk
+            .rewardedBreak(onStart)
+            .then((r) => r === true)
+            .catch(() => {
+              if (settled) return false; // Late rejection after the deadline: drop it.
+              throw new Error("rewardedBreak failed");
+            });
+          const result = await Promise.race([rewarded, deadline]);
+          if (result === "timeout") {
+            settled = true; // Close the race so a late SDK settlement is dropped, not thrown.
+            return { shown: false, rewarded: false, reason: "not-ready" };
+          }
+          settled = true;
           if (started) this.#played(kind);
           // Grant on Poki's own success flag only. Under an ad blocker it is false, and
           // Poki's guidelines say no reward is given then.
-          return { shown: started, rewarded: success, reason: "not-ready" };
+          return { shown: started, rewarded: result, reason: "not-ready" };
         }
-        await sdk.commercialBreak(onStart);
+        const commercial = sdk.commercialBreak(onStart).catch(() => {
+          if (settled) return; // Late rejection after the deadline: drop it.
+          throw new Error("commercialBreak failed");
+        });
+        const result = await Promise.race([commercial, deadline]);
+        if (result === "timeout") {
+          settled = true; // Close the race so a late SDK settlement is dropped, not thrown.
+          return { shown: false, rewarded: false, reason: "not-ready" };
+        }
+        settled = true;
         if (started) this.#played(kind);
         return { shown: started, rewarded: false, reason: "not-ready" };
       } catch {
+        settled = true;
         return { shown: started, rewarded: false, reason: "error" };
       }
     } finally {
