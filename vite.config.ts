@@ -30,7 +30,12 @@ export default defineConfig({
   build: {
     outDir: "dist",
     target: "es2020",
-    sourcemap: true,
+    // "hidden" emits the .map files for local debugging but strips the
+    // `//# sourceMappingURL=` comment from the shipped .js, so a browser on a public
+    // portal never auto-fetches a map even if one leaked into a submission. The release
+    // packager (scripts/release/package.mjs) additionally excludes *.map from the zip,
+    // so maps stay on the build machine and never enter the portal submission at all.
+    sourcemap: "hidden",
     // Portal profiles cap bundle size — 50 MB in the Factory's GameVui profile (a figure with
     // no GameVui source), 100 on Yandex. Warn well before that so growth is visible in CI
     // rather than at release validation.

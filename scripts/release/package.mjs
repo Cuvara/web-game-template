@@ -18,13 +18,35 @@
 import AdmZip from "adm-zip";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import { isEntryPoint, parseArgs, readGameConfig, repoRoot } from "../_shared.mjs";
 
 const RELEASE_ID = /^r[0-9]+$/;
 
 export function sha256(buffer) {
   return "sha256:" + createHash("sha256").update(buffer).digest("hex");
+}
+
+/**
+ * The files under `dir` that belong in a portal submission, as relative POSIX paths.
+ *
+ * Sourcemaps are deliberately excluded: the app build emits them (`sourcemap: "hidden"` in
+ * vite.config.ts) so a release can be debugged on the build machine, but shipping them inside
+ * the submission zip is dead weight (~4 MB uncompressed against caps as low as 50 MB) and
+ * hands the game's readable source to anyone who unzips a public-portal build. They stay in
+ * dist/, never in the archive.
+ */
+function submissionFiles(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const abs = resolve(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...submissionFiles(abs));
+    } else if (!entry.name.endsWith(".map")) {
+      out.push(abs);
+    }
+  }
+  return out;
 }
 
 function main() {
@@ -57,11 +79,22 @@ function main() {
   const outDir = resolve(root, "release", releaseId);
   mkdirSync(outDir, { recursive: true });
 
+  // Compute once: dist's shippable files, added at the archive root so index.html lands at
+  // the top (Yandex requires it) and assets/ keeps its subfolder. Sourcemaps are dropped —
+  // see submissionFiles.
+  const files = submissionFiles(distDir);
+
   const packages = [];
   for (const target of targets) {
     const zip = new AdmZip();
-    // addLocalFolder with an empty zipPath puts dist's CONTENTS at the archive root.
-    zip.addLocalFolder(distDir, "");
+    // addLocalFile with the CONTENTS at the archive root mirrors the old addLocalFolder(dist,
+    // "") layout, minus the *.map files. The second arg is the zip folder for the entry; the
+    // relative directory (posix-separated) preserves assets/ without a leading dist/.
+    for (const abs of files) {
+      const rel = relative(distDir, abs).split(sep);
+      const zipFolder = rel.slice(0, -1).join("/");
+      zip.addLocalFile(abs, zipFolder);
+    }
     const filename = `${target.id}.zip`;
     const zipPath = resolve(outDir, filename);
     zip.writeZip(zipPath);
