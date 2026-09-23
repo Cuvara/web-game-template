@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@wgf/game-core": ["../../packages/game-core/src/index.ts"],
+      "@wgf/platform-sdk": ["../../packages/platform-sdk/src/index.ts"],
+      "@wgf/pixi-framework": ["../../packages/pixi-framework/src/index.ts"]
+    }
+  },
+  "include": ["src", "tests", "*.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

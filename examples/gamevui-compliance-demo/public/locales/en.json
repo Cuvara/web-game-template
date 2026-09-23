@@ -1,0 +1,14 @@
+{
+  "title": "Star Catcher",
+  "loading": "Loading…",
+  "tagline": "Catch the falling stars. Drop three and the round is over.",
+  "play": "Play",
+  "again": "Play again",
+  "score": "Score",
+  "lives": "Lives",
+  "best": "Best",
+  "over": "Round over!",
+  "controls.desktop": "Computer: move the mouse or use ← → to move the basket.",
+  "controls.mobile": "Phone: touch and drag to move the basket.",
+  "paused": "Paused"
+}

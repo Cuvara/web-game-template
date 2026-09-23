@@ -46,7 +46,8 @@ Time spent paused is discarded rather than accumulated. `Game.elapsedMs` is simu
 
 `engine.type` in `game.config.yaml` picks the engine. `src/rendering/create-renderer.ts`
 imports the chosen framework dynamically, so only that engine is bundled — bundling both
-would put an unused megabyte into every build against caps as low as GameVui's 50 MB.
+would put an unused megabyte into every build against caps as low as the 50 MB in the Factory's
+GameVui profile (unverified — see [platforms/gamevui](platforms/gamevui/platform-contract.md)).
 
 Game code holds a `Renderer`. It does not import `pixi.js` or `three` outside
 `src/rendering/{pixijs,threejs}/`.

@@ -1,0 +1,33 @@
+{
+  "name": "gamevui-compliance-demo",
+  "version": "0.1.0",
+  "description": "Star Catcher — a platform-neutral PixiJS build packaged for GameVui submission",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "audit:build": "node scripts/audit.mjs",
+    "compliance": "node scripts/check-compliance.mjs",
+    "package:gamevui": "node scripts/package-submission.mjs",
+    "verify": "pnpm typecheck && pnpm test && pnpm build && pnpm test:e2e && pnpm audit:build && pnpm package:gamevui && pnpm compliance"
+  },
+  "dependencies": {
+    "@wgf/game-core": "workspace:*",
+    "@wgf/pixi-framework": "workspace:*",
+    "@wgf/platform-sdk": "workspace:*",
+    "pixi.js": "^8.6.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.0",
+    "adm-zip": "^0.5.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}

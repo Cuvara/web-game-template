@@ -6,13 +6,13 @@ this repository can publish by being pushed to.
 
 ## What is automated, and what is not
 
-| Platform     | Upload                        | Requesting review |
-| ------------ | ----------------------------- | ----------------- |
-| Poki         | automated (`@poki/cli`)       | manual            |
-| Yandex Games | manual — no public upload API | manual            |
-| CrazyGames   | manual — no public upload API | manual            |
-| GameVui      | manual — no public upload API | manual            |
-| Generic Web  | n/a — self-hosted             | n/a               |
+| Platform     | Upload                                                                                          | Requesting review |
+| ------------ | ----------------------------------------------------------------------------------------------- | ----------------- |
+| Poki         | automated (`@poki/cli`)                                                                         | manual            |
+| Yandex Games | manual — no public upload API                                                                   | manual            |
+| CrazyGames   | manual — no public upload API                                                                   | manual            |
+| GameVui      | manual — email or contact form, see [platforms/gamevui](platforms/gamevui/platform-contract.md) | manual            |
+| Generic Web  | n/a — self-hosted                                                                               | n/a               |
 
 This is not a gap waiting to be filled. The Factory's publish stage states that no portal
 APIs are integrated by design, on the grounds that building four portal integrations before

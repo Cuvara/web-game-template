@@ -8,6 +8,28 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — GameVui
+
+- **`docs/platforms/gamevui/`** — a source matrix classifying every GameVui claim as
+  `OFFICIAL`, `THIRD_PARTY`, `INFERRED` or `UNKNOWN`, and a platform contract. GameVui
+  publishes no SDK, JavaScript API or publishing API; the documented route is an email to the
+  operator or its contact form. So there is still no GameVui adapter, and
+  `createPlatform("gamevui")` still throws.
+- **`examples/gamevui-compliance-demo/`** — a PixiJS game on the generic-web adapter, with a
+  requirement registry, static audit, Playwright suite (desktop, phone portrait and
+  landscape, tablet, iframe under a GameVui-style path), a deterministic submission package
+  under `release/gamevui/`, and a report generator that never reports an `UNKNOWN`
+  requirement as passing. `examples/*` joins the pnpm workspace.
+- **`gamevui-demo.yml`** — builds, tests and packages the demo; uploads the package as an
+  artifact. Submits nothing.
+- **`compliance/gamevui-compliance-report.md`**.
+
+### Changed — GameVui claims
+
+- The README, `docs/architecture.md`, `docs/publishing.md`, `vite.config.ts`,
+  `create-renderer.ts` and `build.yml` stated the Factory profile's 50 MB as GameVui's cap.
+  GameVui publishes no size limit; they now say it is the profile's unverified figure.
+
 ### Added — Yandex Games
 
 - **Yandex adapter** (`createPlatform("yandex")`), written against the current official
