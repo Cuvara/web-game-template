@@ -184,7 +184,12 @@ describe("CrazyGamesPlatform — degraded environments", () => {
     });
     await expect(platform.initialize()).resolves.toBeUndefined();
     expect(platform.mode).toBe("unavailable");
-    await expect(platform.showInterstitial()).resolves.toMatchObject({ shown: false });
+    // The SDK never loaded, so this is "not-ready" (its SDK is unavailable), not the
+    // portal-level "disabled".
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
     warn.mockRestore();
   });
 });
@@ -305,6 +310,96 @@ describe("CrazyGamesPlatform — ads", () => {
     fake.pendingAd()?.adStarted?.();
     fake.pendingAd()?.adFinished?.();
     expect(seen).toEqual(["start", "end"]);
+  });
+
+  it("rewards normally without any late event", async () => {
+    const { platform } = await ready();
+    const late = vi.fn();
+    platform.on("ad:late-reward", late);
+    await expect(platform.showRewarded()).resolves.toEqual({ shown: true, rewarded: true });
+    expect(late).not.toHaveBeenCalled();
+    expect(platform.usage.adsShown.rewarded).toBe(1);
+  });
+
+  it("gives up on a rewarded ad that never starts, and does not reward", async () => {
+    const { platform } = await ready({ ad: { kind: "never" } });
+    const late = vi.fn();
+    platform.on("ad:late-reward", late);
+    await expect(platform.showRewarded()).resolves.toEqual({
+      shown: false,
+      rewarded: false,
+      reason: "error",
+    });
+    expect(late).not.toHaveBeenCalled();
+    expect(platform.usage.adsShown.rewarded).toBe(0);
+  });
+
+  it("owes the reward as a single ad:late-reward when a rewarded ad finishes after the watchdog", async () => {
+    const fake = await ready({ ad: { kind: "never" } });
+    const seen: string[] = [];
+    fake.platform.on("ad:start", () => seen.push("start"));
+    fake.platform.on("ad:end", () => seen.push("end"));
+    const late = vi.fn();
+    fake.platform.on("ad:late-reward", late);
+
+    // The request times out and resolves rewarded:false — the reward is not observable here.
+    await expect(fake.platform.showRewarded()).resolves.toEqual({
+      shown: false,
+      rewarded: false,
+      reason: "error",
+    });
+
+    // The ad opens late and plays to completion. The reward is now owed via the event.
+    fake.pendingAd()?.adStarted?.();
+    fake.pendingAd()?.adFinished?.();
+    expect(seen).toEqual(["start", "end"]);
+    expect(late).toHaveBeenCalledTimes(1);
+    expect(late).toHaveBeenCalledWith({ kind: "rewarded" });
+    expect(fake.platform.usage.adsShown.rewarded).toBe(1);
+  });
+
+  it("does not double-reward when the late adFinished callback fires twice", async () => {
+    const fake = await ready({ ad: { kind: "never" } });
+    const seen: string[] = [];
+    fake.platform.on("ad:end", () => seen.push("end"));
+    const late = vi.fn();
+    fake.platform.on("ad:late-reward", late);
+
+    await fake.platform.showRewarded();
+    fake.pendingAd()?.adStarted?.();
+    fake.pendingAd()?.adFinished?.();
+    // A duplicate SDK callback must not emit or record a second time.
+    fake.pendingAd()?.adFinished?.();
+    expect(late).toHaveBeenCalledTimes(1);
+    expect(seen).toEqual(["end"]);
+    expect(fake.platform.usage.adsShown.rewarded).toBe(1);
+  });
+
+  it("keeps a late interstitial to just ad:end, never a late reward", async () => {
+    const fake = await ready({ ad: { kind: "never" } });
+    const late = vi.fn();
+    fake.platform.on("ad:late-reward", late);
+
+    await fake.platform.showInterstitial();
+    fake.pendingAd()?.adStarted?.();
+    fake.pendingAd()?.adFinished?.();
+    expect(late).not.toHaveBeenCalled();
+    expect(fake.platform.usage.adsShown.interstitial).toBe(0);
+  });
+
+  it("does not reward when a late rewarded ad errors instead of finishing", async () => {
+    const fake = await ready({ ad: { kind: "never" } });
+    const seen: string[] = [];
+    fake.platform.on("ad:end", () => seen.push("end"));
+    const late = vi.fn();
+    fake.platform.on("ad:late-reward", late);
+
+    await fake.platform.showRewarded();
+    fake.pendingAd()?.adStarted?.();
+    fake.pendingAd()?.adError?.({ code: "other", message: "boom" });
+    expect(late).not.toHaveBeenCalled();
+    expect(seen).toEqual(["end"]);
+    expect(fake.platform.usage.adsShown.rewarded).toBe(0);
   });
 
   it("turns a throwing requestAd into a skipped ad", async () => {

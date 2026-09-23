@@ -287,7 +287,11 @@ export class CrazyGamesPlatform implements Platform {
 
   adAvailability(kind: AdKind): AdAvailability {
     if (!this.capabilities.ads.includes(kind)) return "unsupported";
-    if (!this.#sdk || this.#adsDisabled) return "disabled";
+    // "disabled" is reserved for the portal genuinely serving no ads for this title: the SDK
+    // loaded on a non-CrazyGames domain (`disabled` mode), or the Basic Launch ad error
+    // switched ads off (#adsDisabled). It is NOT the SDK-unavailable case (script never
+    // loaded / offline), which #requestAd reports as "not-ready" — see the `!sdk` branch.
+    if (this.#mode === "disabled" || this.#adsDisabled) return "disabled";
     if (this.#adblock) return "adblock";
     return "available";
   }
@@ -329,8 +333,14 @@ export class CrazyGamesPlatform implements Platform {
     // not a reason to queue a chained ad.
     if (this.#adInProgress) return Promise.resolve({ shown: false, reason: "busy" });
 
+    // No SDK here means the script loaded on a non-CrazyGames domain (`disabled` mode) or
+    // never loaded at all (`unavailable` mode, e.g. an ad blocker). The portal has not
+    // switched ads off for this title in either case, so this is not `disabled` — the SDK is
+    // simply unavailable, which the contract names `not-ready` (AdSkipReason, types.ts:51).
+    // The genuine portal-disabled cases keep `disabled` and are caught earlier by
+    // adAvailability (environment "disabled") or by #adErrorReason (adsDisabledBasicLaunch).
     const sdk = this.#sdk;
-    if (!sdk) return Promise.resolve({ shown: false, reason: "disabled" });
+    if (!sdk) return Promise.resolve({ shown: false, reason: "not-ready" });
 
     this.#adInProgress = true;
     return new Promise<AdResult>((resolve) => {
@@ -352,11 +362,31 @@ export class CrazyGamesPlatform implements Platform {
 
       // An ad that starts after the watchdog gave up still has sound. It gets its own
       // ad:start/ad:end pair so the game mutes for it, even though the request has resolved.
+      // A rewarded one also owes the reward: the request already resolved rewarded:false, so
+      // the reward is surfaced exactly once as `ad:late-reward` instead (types.ts:208-212).
       let lateStarted = false;
+      let lateSettled = false;
       const endLate = (): void => {
-        if (!lateStarted) return;
+        // Exactly-once guard for the late path: `lateSettled` flips on the first late
+        // adFinished/adError and blocks any duplicate SDK callback from emitting ad:end,
+        // ad:late-reward, or recording usage a second time.
+        if (!lateStarted || lateSettled) return;
+        lateSettled = true;
         lateStarted = false;
         this.#endAd(kind);
+      };
+
+      // The late reward is owed only once, and only when the ad actually finished (never on
+      // adError). The normal path already resolved rewarded:false, so this is the single
+      // other place a rewarded outcome can be observed — the two are mutually exclusive.
+      const finishLate = (rewarded: boolean): void => {
+        if (!lateStarted || lateSettled) return;
+        if (rewarded) {
+          this.#ads.record(kind);
+          this.#usage.recordAdShown(kind);
+          this.#events.emit("ad:late-reward", { kind });
+        }
+        endLate();
       };
 
       try {
@@ -370,12 +400,15 @@ export class CrazyGamesPlatform implements Platform {
             if (!settled) hooks?.onStart?.();
           },
           adFinished: () => {
-            if (settled) return endLate();
+            // A late finish: reward (rewarded only) then end. A rewarded kind owes
+            // ad:late-reward; an interstitial keeps the old behaviour of just ad:end.
+            if (settled) return finishLate(kind === "rewarded");
             this.#ads.record(kind);
             this.#usage.recordAdShown(kind);
             finish({ shown: true });
           },
           adError: (error) => {
+            // A late error never rewards — just close out the ad:start with ad:end.
             if (settled) return endLate();
             finish({ shown: false, reason: this.#adErrorReason(error) });
           },
