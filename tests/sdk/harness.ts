@@ -21,7 +21,6 @@ import {
   PokiPlatform,
   YandexPlatform,
   YandexStorage,
-  type CrazyGamesAdCallbacks,
   type CrazyGamesSdk,
   type Platform,
   type PokiSdk,

@@ -59,12 +59,11 @@ are verified. Live portal-backed behaviour is honestly BLOCKED/UNVERIFIED pendin
 
 ### Changed — one platform contract, four portals
 
-- **The Yandex/Poki and CrazyGames contracts are merged into one.** `Platform` now has
-  `on()`, `language`, `environment`, `settings`, `foreground`, `gameplayActive`,
-  `adAvailability()`, `getUser()`, `AdHooks` on both ad calls, and
-  `capabilities.gameplayStopOnHidden`; skip reasons are `unsupported`, `disabled`,
-  `adblock`, `too-soon`, `not-ready`, `busy`, `error`. A title implementing `Platform` itself
-  must add the new members; titles that only call it need not change.
+- **The CrazyGames contract additions are now required, not optional.** Every adapter —
+  Yandex, Poki, CrazyGames, GameVui, generic-web — implements `settings`, `environment`,
+  `adAvailability()`, `getUser()` and `capabilities.gameplayStopOnHidden`, so game code no
+  longer branches on their absence. A title implementing `Platform` itself must add them;
+  titles that only call it need not change.
 - **`createPlatform("gamevui")` returns `GameVuiPlatform`** instead of throwing: a no-SDK
   adapter (local saves, no requestable ads), because GameVui publishes no SDK.
 - **`bindPlatform` reports a mute state** (`onAudioMutedChange`, `audioMuted`): the portal's
