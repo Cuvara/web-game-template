@@ -88,20 +88,21 @@ and release validation checks it: every profile carries a `package.platform_sdk`
 PixiJS for 2D, Three.js for 3D, chosen in `game.config.yaml` as `engine.type` and justified in
 the title's tech plan. Only the selected engine is bundled — the frameworks are imported
 dynamically, because shipping both would put an unused megabyte into every build against caps
-as low as GameVui's 50 MB.
+as low as the 50 MB in the Factory's GameVui profile — an unverified figure GameVui itself does
+not publish ([docs/platforms/gamevui/](docs/platforms/gamevui/platform-contract.md)).
 
 ## Platforms
 
 Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory and an adapter
 here.
 
-| Platform     | Profile | Adapter     | Upload automated   |
-| ------------ | ------- | ----------- | ------------------ |
-| Generic Web  | ✅      | ✅          | n/a — self-hosted  |
-| Yandex Games | ✅      | not written | no — no public API |
-| Poki         | ✅      | not written | yes — `@poki/cli`  |
-| CrazyGames   | ✅      | not written | no — no public API |
-| GameVui      | ✅      | not written | no — no public API |
+| Platform     | Profile         | Adapter                         | Upload automated          |
+| ------------ | --------------- | ------------------------------- | ------------------------- |
+| Generic Web  | ✅              | ✅                              | n/a — self-hosted         |
+| Yandex Games | ✅              | not written                     | no — no public API        |
+| Poki         | ✅              | not written                     | yes — `@poki/cli`         |
+| CrazyGames   | ✅              | not written                     | no — no public API        |
+| GameVui      | ✅ (unverified) | none — GameVui publishes no SDK | no — email / contact form |
 
 An id with a profile but no adapter throws at startup. Degrading silently to no-ads would ship
 a title that thinks it has a portal SDK and does not, which is a blocking assertion failure at

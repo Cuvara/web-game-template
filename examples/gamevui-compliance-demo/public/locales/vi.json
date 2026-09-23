@@ -1,0 +1,14 @@
+{
+  "title": "Hứng Sao",
+  "loading": "Đang tải…",
+  "tagline": "Hứng những ngôi sao rơi. Để rơi 3 ngôi sao là thua.",
+  "play": "Chơi",
+  "again": "Chơi lại",
+  "score": "Điểm",
+  "lives": "Mạng",
+  "best": "Kỷ lục",
+  "over": "Hết lượt!",
+  "controls.desktop": "Máy tính: di chuột hoặc dùng phím ← → để di chuyển giỏ.",
+  "controls.mobile": "Điện thoại: chạm và kéo để di chuyển giỏ.",
+  "paused": "Tạm dừng"
+}

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Hứng Sao — Star Catcher</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #1b2a4a;
+        color: #f4f6fb;
+        font:
+          16px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        /* The page never scrolls or zooms under a finger: every touch steers the basket. */
+        touch-action: none;
+      }
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+      #game canvas {
+        display: block;
+      }
+      #hud {
+        position: absolute;
+        top: max(8px, env(safe-area-inset-top));
+        left: 12px;
+        right: 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-weight: 600;
+        pointer-events: none;
+        text-shadow: 0 1px 2px #0008;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 24px;
+        box-sizing: border-box;
+        text-align: center;
+        background: #0b1224cc;
+      }
+      /* Author display rules beat the hidden attribute; restate it. */
+      #hud[hidden],
+      .overlay[hidden] {
+        display: none;
+      }
+      .overlay h1 {
+        margin: 0;
+        font-size: clamp(28px, 7vmin, 56px);
+      }
+      .overlay p {
+        margin: 0;
+        max-width: 32em;
+        opacity: 0.9;
+      }
+      .overlay button {
+        margin-top: 8px;
+        min-width: 160px;
+        min-height: 48px;
+        padding: 10px 28px;
+        border: 0;
+        border-radius: 24px;
+        background: #ffd54a;
+        color: #1b2a4a;
+        font: inherit;
+        font-weight: 700;
+        font-size: 20px;
+        cursor: pointer;
+      }
+      .overlay button:focus-visible {
+        outline: 3px solid #4fc3f7;
+        outline-offset: 3px;
+      }
+      #loading-track {
+        width: min(60vw, 320px);
+        height: 8px;
+        border-radius: 4px;
+        background: #ffffff26;
+        overflow: hidden;
+      }
+      #loading-bar {
+        width: 0;
+        height: 100%;
+        background: #ffd54a;
+        transition: width 120ms linear;
+      }
+      .controls {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="hud" hidden>
+      <span id="hud-score"></span>
+      <span id="hud-lives"></span>
+      <span id="hud-best"></span>
+    </div>
+
+    <div id="loading" class="overlay" data-state="loading">
+      <p id="loading-label">Đang tải…</p>
+      <div id="loading-track"><div id="loading-bar"></div></div>
+    </div>
+
+    <div id="title-screen" class="overlay" hidden>
+      <h1 id="title-heading"></h1>
+      <p id="title-tagline"></p>
+      <p class="controls" id="controls-desktop"></p>
+      <p class="controls" id="controls-mobile"></p>
+      <button id="play" type="button"></button>
+    </div>
+
+    <div id="over-screen" class="overlay" hidden>
+      <h1 id="over-heading"></h1>
+      <p id="over-score"></p>
+      <button id="again" type="button"></button>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "_comment": [
+    "Content for the email a person sends to GameVui with the package.",
+    "GameVui publishes NO metadata schema and no list of required fields. These fields mirror what a",
+    "live GameVui game page displays (title, description, controls, age rating) — observed, not",
+    "documented. See docs/platforms/gamevui/source-matrix.md. Nothing reads this as a GameVui format."
+  ],
+  "slug": "hung-sao",
+  "version": "0.1.0",
+  "title": { "vi": "Hứng Sao", "en": "Star Catcher" },
+  "description": {
+    "vi": "Di chuyển chiếc giỏ để hứng những ngôi sao đang rơi. Càng hứng nhiều, sao rơi càng nhanh. Để rơi ba ngôi sao là hết lượt.",
+    "en": "Move the basket to catch falling stars. The more you catch, the faster they fall. Drop three and the round is over."
+  },
+  "controls": {
+    "desktop": {
+      "vi": "Di chuột hoặc dùng phím ← → để di chuyển giỏ.",
+      "en": "Move the mouse or use ← → to move the basket."
+    },
+    "mobile": {
+      "vi": "Chạm và kéo để di chuyển giỏ.",
+      "en": "Touch and drag to move the basket."
+    }
+  },
+  "orientation": ["portrait", "landscape"],
+  "entry_file": "index.html",
+  "proposed_age_rating": "00+",
+  "content_declaration": {
+    "violence": false,
+    "sexual_content": false,
+    "gambling": false,
+    "alcohol_or_drugs": false,
+    "map_of_vietnam": false,
+    "user_generated_content": false,
+    "virtual_items": false,
+    "in_app_purchases": false,
+    "ads": false,
+    "personal_data_collected": false,
+    "network_requests_outside_package": false,
+    "local_storage": ["best score (a number), key \"gamevui-compliance-demo:best\""]
+  },
+  "rights": {
+    "visual_assets": "Drawn procedurally in code (PixiJS Graphics). No image, font or audio files.",
+    "third_party_code": "PixiJS (MIT), bundled.",
+    "licence": "MIT — see LICENSE at the repository root."
+  },
+  "developer": {
+    "name": null,
+    "email": null
+  }
+}

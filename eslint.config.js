@@ -32,7 +32,16 @@ export default tseslint.config(
   {
     // Build and release tooling runs under Node, not in a browser, and its whole job is to
     // print what it measured — a CLI that cannot use console is not a CLI.
-    files: ["scripts/**/*.mjs", "*.config.{js,ts}", "eslint.config.js", "vitest.workspace.ts"],
+    files: [
+      "scripts/**/*.mjs",
+      "*.config.{js,ts}",
+      "eslint.config.js",
+      "vitest.workspace.ts",
+      "examples/*/scripts/**/*.mjs",
+      "examples/*/compliance/**/*.mjs",
+      "examples/*/tests/unit/**/*.mjs",
+      "examples/*/*.config.ts",
+    ],
     languageOptions: {
       globals: globals.node,
     },

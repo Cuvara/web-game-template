@@ -5,3 +5,6 @@
 # something the template already ships.
 packages:
   - "packages/*"
+  # Worked examples. They consume packages/* exactly as a game would, and are never
+  # published or copied into a game repository.
+  - "examples/*"
