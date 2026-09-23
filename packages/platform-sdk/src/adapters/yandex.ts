@@ -356,11 +356,15 @@ export class YandexPlatform implements Platform {
     const refused = this.#ads.check(kind);
     if (refused) return Promise.resolve({ shown: false, rewarded: false, reason: refused });
     const sdk = this.#sdk;
-    if (!sdk) return Promise.resolve({ shown: false, rewarded: false, reason: "error" });
+    // No SDK: the script never loaded (a local run, a blocked request). Per AdSkipReason,
+    // "not-ready" covers "its SDK is unavailable"; "error" is reserved for a genuine SDK
+    // failure (a throw or onError), handled below.
+    if (!sdk) return Promise.resolve({ shown: false, rewarded: false, reason: "not-ready" });
     // One ad at a time. A second request while one is on screen is a game bug, and the
-    // portal's answer to it is undocumented.
+    // portal's answer to it is undocumented. "busy" is the reason for exactly this — another
+    // ad break is already in progress.
     if (this.#adShowing) {
-      return Promise.resolve({ shown: false, rewarded: false, reason: "not-ready" });
+      return Promise.resolve({ shown: false, rewarded: false, reason: "busy" });
     }
     this.#adShowing = true;
 
@@ -369,10 +373,15 @@ export class YandexPlatform implements Platform {
       let opened = false;
       let closed = false;
       let rewarded = false;
+      // What the single resolved result reported for `rewarded`. A late reward is only news
+      // when the game was already told it did not earn one; if the resolved result already
+      // granted, re-announcing it would double the effect.
+      let resolvedRewarded = false;
 
       const finish = (result: RewardedResult): void => {
         if (settled) return;
         settled = true;
+        resolvedRewarded = result.rewarded === true;
         this.#timers.clearTimeout(timer);
         if (result.shown) {
           this.#ads.record(kind);
@@ -411,7 +420,10 @@ export class YandexPlatform implements Platform {
         },
         onClose: (wasShown: boolean) => {
           const shown = wasShown === true;
-          if (settled && rewarded && kind === "rewarded") {
+          // A reward that arrived after the game already got a not-rewarded result: tell it
+          // once, and only if the resolved result did not already grant. `!closed` keeps it
+          // to a single emit even if onClose is reached after onError already ran end().
+          if (!closed && settled && rewarded && !resolvedRewarded && kind === "rewarded") {
             this.#events.emit("ad:late-reward", { kind });
           }
           finish(

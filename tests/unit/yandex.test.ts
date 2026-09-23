@@ -168,11 +168,15 @@ describe("YandexPlatform initialisation", () => {
     await expect(platform.initialize()).resolves.toBeUndefined();
     expect(platform.sdkAvailable).toBe(false);
     expect(platform.language).toBeNull();
-    await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "error" });
+    // No SDK is "its SDK is unavailable" — reason "not-ready", not "error".
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
     await expect(platform.showRewarded()).resolves.toEqual({
       shown: false,
       rewarded: false,
-      reason: "error",
+      reason: "not-ready",
     });
     await platform.storage.set("best", "3");
     await expect(platform.storage.get("best")).resolves.toBe("3");
@@ -377,13 +381,134 @@ describe("YandexPlatform ads", () => {
     const platform = platformWith(fake);
     await platform.initialize();
     const first = platform.showRewarded();
+    // Another ad break is already in progress — reason "busy".
+    await expect(platform.showRewarded()).resolves.toEqual({
+      shown: false,
+      rewarded: false,
+      reason: "busy",
+    });
+    close?.();
+    await expect(first).resolves.toEqual({ shown: true, rewarded: true });
+  });
+
+  it("reports a missing SDK as not-ready, never error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const platform = new YandexPlatform({
+      namespace: "test",
+      loadSdk: () => Promise.reject(new Error("/sdk.js failed to load")),
+      storage: new YandexStorage({ namespace: "test", local: new MemoryStorageBackend() }),
+    });
+    await platform.initialize();
+    expect(platform.sdkAvailable).toBe(false);
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
     await expect(platform.showRewarded()).resolves.toEqual({
       shown: false,
       rewarded: false,
       reason: "not-ready",
     });
+    warn.mockRestore();
+  });
+
+  it("reports a concurrent ad request as busy", async () => {
+    const fake = fakeSdk();
+    let close: (() => void) | undefined;
+    fake.setFullscreen((callbacks) => {
+      callbacks.onOpen?.();
+      close = () => callbacks.onClose?.(true);
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    const first = platform.showInterstitial();
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "busy" });
     close?.();
-    await expect(first).resolves.toEqual({ shown: true, rewarded: true });
+    await expect(first).resolves.toEqual({ shown: true });
+  });
+
+  it("reports a genuine SDK throw as error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const fake = fakeSdk();
+    fake.setFullscreen(() => {
+      throw new Error("adv broke");
+    });
+    fake.setRewarded(() => {
+      throw new Error("adv broke");
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "error" });
+    await expect(platform.showRewarded()).resolves.toEqual({
+      shown: false,
+      rewarded: false,
+      reason: "error",
+    });
+    warn.mockRestore();
+  });
+
+  it("resolves once and grants once when onError then onClose both fire", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const fake = fakeSdk();
+    fake.setRewarded((callbacks) => {
+      callbacks.onOpen?.();
+      callbacks.onError?.(new Error("mid-roll broke"));
+      // The portal still closes the break afterwards; it must not produce a second result.
+      callbacks.onClose?.(true);
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    const lateRewards: string[] = [];
+    platform.on("ad:late-reward", ({ kind }) => lateRewards.push(kind));
+    await expect(platform.showRewarded()).resolves.toEqual({
+      shown: true,
+      rewarded: false,
+      reason: "error",
+    });
+    // No reward ever arrived, so no late-reward either.
+    expect(lateRewards).toEqual([]);
+    warn.mockRestore();
+  });
+
+  it("grants once even when onRewarded fires twice", async () => {
+    const fake = fakeSdk();
+    fake.setRewarded((callbacks) => {
+      callbacks.onOpen?.();
+      callbacks.onRewarded?.();
+      callbacks.onRewarded?.();
+      callbacks.onClose?.(true);
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    const lateRewards: string[] = [];
+    platform.on("ad:late-reward", ({ kind }) => lateRewards.push(kind));
+    // A single RewardedResult, rewarded exactly once; no late-reward on the in-time path.
+    await expect(platform.showRewarded()).resolves.toEqual({ shown: true, rewarded: true });
+    expect(lateRewards).toEqual([]);
+  });
+
+  it("emits ad:late-reward exactly once, and the resolved result stayed rewarded:false", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const timers = new ManualTimers();
+    const fake = fakeSdk();
+    let late: YandexRewardedCallbacks | undefined;
+    fake.setRewarded((callbacks) => (late = callbacks));
+    const platform = platformWith(fake, timers);
+    await platform.initialize();
+    const lateRewards: string[] = [];
+    platform.on("ad:late-reward", ({ kind }) => lateRewards.push(kind));
+
+    const result = platform.showRewarded();
+    timers.advance(20_000);
+    // The game got control back with no reward.
+    await expect(result).resolves.toEqual({ shown: false, rewarded: false, reason: "not-ready" });
+
+    // The reward arrives late and is announced once.
+    late!.onOpen?.();
+    late!.onRewarded?.();
+    late!.onClose?.(true);
+    expect(lateRewards).toEqual(["rewarded"]);
+    warn.mockRestore();
   });
 });
 
@@ -585,10 +710,10 @@ describe("round-1 review fixes", () => {
     await expect(result).resolves.toEqual({ shown: false, rewarded: false, reason: "not-ready" });
 
     late!.onOpen?.();
-    // While the late ad is on screen, nothing else may open.
+    // While the late ad is on screen, nothing else may open — that break is in progress.
     await expect(platform.showInterstitial()).resolves.toEqual({
       shown: false,
-      reason: "not-ready",
+      reason: "busy",
     });
     late!.onRewarded?.();
     late!.onClose?.(true);
