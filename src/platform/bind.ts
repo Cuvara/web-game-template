@@ -96,11 +96,13 @@ export function bindPlatform(
     }),
     platform.on("ad:start", () => {
       adPlaying = true;
+      // Judged on reported gameplay, not on game.paused: the adapter may already have taken
+      // the foreground (which pauses the game) before announcing the ad.
+      stoppedForAd = platform.gameplayActive;
+      if (stoppedForAd) platform.gameplayStop();
       if (!game.paused) {
         heldForAd = true;
         game.pause("ad");
-        stoppedForAd = platform.gameplayActive;
-        if (stoppedForAd) platform.gameplayStop();
       }
       update();
     }),
@@ -109,14 +111,24 @@ export function bindPlatform(
       if (heldForAd) {
         heldForAd = false;
         game.resume("ad");
-        if (stoppedForAd && !game.paused) platform.gameplayStart();
-        stoppedForAd = false;
       }
+      if (stoppedForAd && !game.paused) platform.gameplayStart();
+      stoppedForAd = false;
       update();
     }),
   ];
 
   document.addEventListener("visibilitychange", onVisibilityChange);
+
+  // The portal holding the foreground — Yandex's game_api_pause, including the ad it shows
+  // by itself at launch, or any ad the adapter brackets — pauses the game under its own
+  // reason, so a hidden tab or the game's own pause menu is not lifted when the portal hands
+  // the foreground back. Yandex 1.3 / 4.7: sound and gameplay stop while the portal is on top.
+  // The adapter owns what the portal is told; this owns only the game's own state.
+  const offLost = platform.on("foreground:lost", () => game.pause("platform"));
+  const offGained = platform.on("foreground:gained", () => game.resume("platform"));
+  // The portal may have taken the foreground before anything subscribed (the launch ad).
+  if (!platform.foreground) game.pause("platform");
 
   return {
     get audioMuted() {
@@ -127,6 +139,8 @@ export function bindPlatform(
     },
     dispose: () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      offLost();
+      offGained();
       removeFirstInput();
       for (const off of unsubscribe) off();
     },

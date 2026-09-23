@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Game, ManualScheduler } from "@wgf/game-core";
 import {
+  GenericWebPlatform,
   MemoryStorageBackend,
   PlatformEmitter,
   PokiPlatform,
@@ -186,6 +187,7 @@ function fakePlatform(options: { stopOnHidden?: boolean; muteAudio?: boolean }) 
       ...(options.stopOnHidden === undefined ? {} : { gameplayStopOnHidden: options.stopOnHidden }),
     },
     settings: { muteAudio: options.muteAudio ?? false },
+    foreground: true,
     on: events.on.bind(events),
     get gameplayActive() {
       return active;
@@ -240,7 +242,7 @@ describe("bindPlatform — portal audio, late ads, focus-loss reporting", () => 
     expect(changes).toEqual([true, false, true, false]);
   });
 
-  it("reports a break for an ad that lands on live play, and nothing extra inside one", () => {
+  it("reports a break for an ad that lands on live play, and nothing extra inside one", async () => {
     const game = new Game({ scheduler: new ManualScheduler() });
     const { platform, calls, emit } = fakePlatform({});
     platform.gameplayStart();
@@ -251,11 +253,72 @@ describe("bindPlatform — portal audio, late ads, focus-loss reporting", () => 
     emit("ad:end", { kind: "interstitial" });
     expect(calls).toEqual(["stop", "start"]);
 
+    // Inside a break: withAdBreak has already stopped gameplay and paused the game, so the
+    // binding reports nothing of its own; withAdBreak restarts gameplay afterwards.
     calls.length = 0;
-    game.pause("manual");
-    emit("ad:start", { kind: "interstitial" });
-    emit("ad:end", { kind: "interstitial" });
-    expect(calls).toEqual([]);
+    await withAdBreak(game, platform, async () => {
+      emit("ad:start", { kind: "interstitial" });
+      emit("ad:end", { kind: "interstitial" });
+    });
+    expect(calls).toEqual(["stop", "start"]);
+    expect(game.paused).toBe(false);
+  });
+});
+
+describe("bindPlatform — the portal holding the foreground", () => {
+  // A platform that raises foreground signals on demand, the way Yandex relays
+  // game_api_pause/resume. Everything else is the generic-web adapter's.
+  function portal(startInForeground = true) {
+    const emitter = new PlatformEmitter();
+    let foreground = startInForeground;
+    const platform = new GenericWebPlatform({ namespace: "t" });
+    Object.defineProperty(platform, "on", { value: emitter.on.bind(emitter) });
+    Object.defineProperty(platform, "foreground", { get: () => foreground });
+    const set = (next: boolean): void => {
+      foreground = next;
+      emitter.emit(next ? "foreground:gained" : "foreground:lost", undefined);
+    };
+    return { platform, lose: () => set(false), gain: () => set(true) };
+  }
+
+  it("pauses the game while the portal is on top, and resumes it after", () => {
+    const { platform, lose, gain } = portal();
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform);
+    lose();
     expect(game.paused).toBe(true);
+    gain();
+    expect(game.paused).toBe(false);
+  });
+
+  it("honours a foreground the portal took before binding (the launch ad)", () => {
+    const { platform, gain } = portal(false);
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform);
+    expect(game.paused).toBe(true);
+    gain();
+    expect(game.paused).toBe(false);
+  });
+
+  it("does not lift a pause that belongs to someone else", () => {
+    const { platform, lose, gain } = portal();
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform);
+    game.pause("manual");
+    lose();
+    gain();
+    expect(game.paused).toBe(true);
+  });
+
+  it("stops listening once disposed", () => {
+    const { platform, lose } = portal();
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform).dispose();
+    lose();
+    expect(game.paused).toBe(false);
   });
 });

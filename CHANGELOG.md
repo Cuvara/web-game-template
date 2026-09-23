@@ -8,6 +8,27 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — SDK conformance
+
+- **`tests/sdk/`** — one scenario matrix over every known platform (SDK unavailable, init
+  failure, ad unavailable, ad closed early, reward callback, pause/resume, storage, platform
+  not configured, and a real `Game` bound to each adapter), against fake portal SDKs.
+  `pnpm test` now includes it; `pnpm sdk:conformance` writes `build/sdk-conformance.json`
+  for the Factory's `sdk` step. A missing adapter is reported as skipped, never as passing.
+- **`tests/sdk-browser/`** and `pnpm test:sdk:browser` — the template game built for PixiJS
+  and Three.js × generic-web, Yandex and Poki, booted in Chromium (desktop and mobile) with
+  mocked or blocked portal scripts.
+- **`WGF_GAME_CONFIG`** — build against another config file without editing
+  `game.config.yaml`. Unset, the build is unchanged.
+- **`docs/platforms/sdk-conformance.md`** — the matrix, current results and known
+  limitations, checked against each portal's current documentation.
+
+### Fixed — portal pause
+
+- `bindPlatform` now pauses the game on `foreground:lost` and resumes it on
+  `foreground:gained`. On Yandex the template game previously kept running through
+  `game_api_pause`, including the launch ad (requirements 1.19.4, 4.7).
+
 ### Added — GameVui
 
 - **`docs/platforms/gamevui/`** — a source matrix classifying every GameVui claim as

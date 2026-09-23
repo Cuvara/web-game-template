@@ -156,10 +156,14 @@ export class CrazyGamesPlatform implements Platform {
   }
 
   /**
-   * CrazyGames raises no portal-level pause at the game: its ads are bracketed by
-   * `ad:start`/`ad:end`, and focus loss is the portal's own business. Always true.
+   * False while a CrazyGames ad is on screen. CrazyGames raises no other portal-level pause
+   * at the game (focus loss is the portal's own business), so the adapter takes the
+   * foreground itself around an ad that actually plays — the same convention as Poki's.
    */
-  readonly foreground = true;
+  get foreground(): boolean {
+    return this.#foreground;
+  }
+  #foreground = true;
 
   on<K extends keyof PlatformEvents>(
     event: K,
@@ -338,7 +342,7 @@ export class CrazyGamesPlatform implements Platform {
         settled = true;
         clearTimeout(watchdog);
         this.#adInProgress = false;
-        if (started) this.#events.emit("ad:end", { kind });
+        if (started) this.#endAd(kind);
         resolve(result);
       };
 
@@ -352,7 +356,7 @@ export class CrazyGamesPlatform implements Platform {
       const endLate = (): void => {
         if (!lateStarted) return;
         lateStarted = false;
-        this.#events.emit("ad:end", { kind });
+        this.#endAd(kind);
       };
 
       try {
@@ -362,7 +366,7 @@ export class CrazyGamesPlatform implements Platform {
             if (sdk.environment === "crazygames") this.#launchStage = "full";
             if (settled) lateStarted = true;
             else started = true;
-            this.#events.emit("ad:start", { kind });
+            this.#startAd(kind);
             if (!settled) hooks?.onStart?.();
           },
           adFinished: () => {
@@ -380,6 +384,24 @@ export class CrazyGamesPlatform implements Platform {
         finish({ shown: false, reason: this.#adErrorReason(error) });
       }
     });
+  }
+
+  // The foreground is handed back BEFORE ad:end, so a listener resuming on ad:end finds
+  // the game no longer held by the portal.
+  #startAd(kind: AdKind): void {
+    if (this.#foreground) {
+      this.#foreground = false;
+      this.#events.emit("foreground:lost", undefined);
+    }
+    this.#events.emit("ad:start", { kind });
+  }
+
+  #endAd(kind: AdKind): void {
+    if (!this.#foreground) {
+      this.#foreground = true;
+      this.#events.emit("foreground:gained", undefined);
+    }
+    this.#events.emit("ad:end", { kind });
   }
 
   #adErrorReason(error: unknown): AdSkipReason {

@@ -13,7 +13,13 @@ import { gameConfigPlugin } from "./scripts/build/game-config-plugin.js";
 export default defineConfig({
   plugins: [
     gameConfigPlugin({
-      configPath: resolve(import.meta.dirname, "game.config.yaml"),
+      // WGF_GAME_CONFIG builds against another config without editing game.config.yaml —
+      // the SDK browser smoke builds one bundle per engine × platform this way. Unset in a
+      // normal build, which is always the game.config.yaml the Factory wrote.
+      configPath: resolve(
+        import.meta.dirname,
+        process.env["WGF_GAME_CONFIG"] ?? "game.config.yaml",
+      ),
       localesDir: resolve(import.meta.dirname, "public/locales"),
     }),
   ],
