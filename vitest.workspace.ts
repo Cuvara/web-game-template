@@ -28,7 +28,7 @@ export default defineWorkspace([
       name: "unit",
       // .mjs as well as .ts: the build and release scripts under scripts/ are plain ESM,
       // and they are tested the same way everything else is.
-      include: ["tests/unit/**/*.test.{ts,mjs}"],
+      include: ["tests/unit/**/*.test.{ts,mjs}", "examples/*/tests/unit/**/*.test.ts"],
       environment: "node",
     },
   },

@@ -8,6 +8,38 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — Yandex Games
+
+- **Yandex adapter** (`createPlatform("yandex")`), written against the current official
+  docs. It covers:
+  - loading `/sdk.js`;
+  - `LoadingAPI.ready()` and `GameplayAPI` transitions;
+  - `game_api_pause`/`resume`, including the ad the portal shows at launch;
+  - interstitial and rewarded ads, which keep listening past their open-timeout;
+  - saves through `player.setData`, with a local mirror and revision reconciliation;
+  - the account-selection dialog.
+
+  A missing SDK degrades the game rather than failing boot.
+
+- **`Platform` gains `language`, `foreground` and `on()`**, plus two events, `ad:late-reward`
+  and `storage:changed`. A title that implements `Platform` itself must add them. Titles
+  that only call it need not change.
+- **`src/main.ts` follows the portal's language** when the platform reports one.
+- **`examples/yandex-compliance-demo`**: a small PixiJS game that exercises every lifecycle
+  moment Yandex moderation checks. It comes with:
+  - unit tests;
+  - Playwright e2e on desktop, phone and tablet;
+  - `scripts/verify/yandex-audit.mjs`, a static audit of the build;
+  - `scripts/release/yandex-archive.mjs`, which packages the upload ZIP;
+  - the workflow `yandex-demo.yml`.
+
+  Its assessment is `compliance/yandex-compliance-report.md`: READY_WITH_MANUAL_CHECKS, not
+  submitted, not Yandex-approved.
+
+- The Vite game-config plugin moved to `scripts/build/game-config-plugin.ts` so examples
+  can share it.
+- `PixiRenderer` caps resolution at 2×, matching the Three.js renderer.
+
 ### Added — pipelines
 
 - **Seven GitHub Actions workflows**, replacing seven comment-only stubs. `ci.yml` and

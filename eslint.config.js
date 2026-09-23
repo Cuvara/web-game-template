@@ -12,6 +12,7 @@ export default tseslint.config(
       "coverage/**",
       "build/**",
       "release/**",
+      "examples/*/dist/**",
     ],
   },
   js.configs.recommended,
@@ -30,9 +31,22 @@ export default tseslint.config(
     },
   },
   {
+    // The e2e suite's stand-in for /sdk.js. Plain browser JavaScript, served to the page.
+    files: ["examples/*/tests/e2e/*.js"],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+  {
     // Build and release tooling runs under Node, not in a browser, and its whole job is to
     // print what it measured — a CLI that cannot use console is not a CLI.
-    files: ["scripts/**/*.mjs", "*.config.{js,ts}", "eslint.config.js", "vitest.workspace.ts"],
+    files: [
+      "scripts/**/*.mjs",
+      "*.config.{js,ts}",
+      "examples/*/*.config.ts",
+      "eslint.config.js",
+      "vitest.workspace.ts",
+    ],
     languageOptions: {
       globals: globals.node,
     },

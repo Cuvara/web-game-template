@@ -27,7 +27,13 @@
     "assert": "node scripts/verify/evaluate-assertions.mjs",
     "release:package": "node scripts/release/package.mjs",
     "release:manifest": "node scripts/release/make-manifest.mjs",
-    "publish:prepare": "node scripts/publish/make-publication.mjs"
+    "publish:prepare": "node scripts/publish/make-publication.mjs",
+    "demo:yandex:dev": "vite --config examples/yandex-compliance-demo/vite.config.ts",
+    "demo:yandex:build": "vite build --config examples/yandex-compliance-demo/vite.config.ts",
+    "demo:yandex:preview": "vite preview --config examples/yandex-compliance-demo/vite.config.ts",
+    "demo:yandex:audit": "node scripts/verify/yandex-audit.mjs --dir examples/yandex-compliance-demo/dist",
+    "demo:yandex:package": "node scripts/release/yandex-archive.mjs --dir examples/yandex-compliance-demo/dist --out build/yandex/yandex-compliance-demo.zip",
+    "demo:yandex:e2e": "playwright test -c examples/yandex-compliance-demo/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
