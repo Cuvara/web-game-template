@@ -1,6 +1,6 @@
 {
-  "buildSha": "cbbe83a",
-  "at": "2026-09-23T14:31:49.841Z",
+  "buildSha": "80f388e",
+  "at": "2026-09-23T14:37:08.850Z",
   "note": "SDK-load = real SDK script reachable + global surface present, exercised in Chromium. init/ads/reward/storage/submission are BLOCKED off-portal (need portal env or publisher account).",
   "sdkLoad": {
     "yandex": "BLOCKED",

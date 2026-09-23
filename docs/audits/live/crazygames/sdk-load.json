@@ -11,8 +11,8 @@
   "methodsMissing": [],
   "initOutcome": "rejected",
   "initDetail": "Cannot read properties of undefined (reading 'initializingPromise')",
-  "at": "2026-09-23T14:31:49.395Z",
-  "buildSha": "cbbe83a",
+  "at": "2026-09-23T14:37:08.385Z",
+  "buildSha": "80f388e",
   "sdkLoadStatus": "PASS",
   "blocked": {
     "init": "requires the CrazyGames QA tool / portal iframe (no backend off-portal)",

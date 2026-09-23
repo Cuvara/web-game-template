@@ -9,8 +9,8 @@
   "methodsMissing": [],
   "initOutcome": "not-attempted",
   "initDetail": null,
-  "at": "2026-09-23T14:31:49.764Z",
-  "buildSha": "cbbe83a",
+  "at": "2026-09-23T14:37:08.764Z",
+  "buildSha": "80f388e",
   "sdkLoadStatus": "BLOCKED",
   "reason": "SDK is origin-relative /sdk.js served only inside the Yandex portal iframe; init, interstitial, rewarded, pause/resume and player storage require the portal backend.",
   "exercisedBy": "manual tester page opened in a Yandex Games draft build in the developer console"

@@ -16,8 +16,8 @@
   "methodsMissing": [],
   "initOutcome": "not-attempted",
   "initDetail": null,
-  "at": "2026-09-23T14:31:49.698Z",
-  "buildSha": "cbbe83a",
+  "at": "2026-09-23T14:37:08.705Z",
+  "buildSha": "80f388e",
   "sdkLoadStatus": "PASS",
   "blocked": {
     "init": "Poki init/gameplay reporting needs the Poki environment (Inspector/portal)",

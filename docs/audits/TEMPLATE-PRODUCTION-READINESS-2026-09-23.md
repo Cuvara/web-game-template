@@ -5,6 +5,12 @@ WebGameFactory game. Implementation + real-execution verification, not audit
 only. All platform behaviour below was exercised against mocks/fakes and local
 headless Chromium — **no live portal SDK was contacted** (see Real-portal).
 
+> **Update 2026-09-23 (live validation):** a real-SDK opt-in harness now exists
+> (`pnpm test:sdk:live`). Live SDK-script load is **PASS** for CrazyGames and Poki,
+> **BLOCKED** for Yandex (portal-served `/sdk.js`), **NOT_APPLICABLE** for GameVui.
+> Live init/ads/reward/storage/submission remain **BLOCKED** (no portal accounts).
+> See `docs/audits/LIVE-PORTAL-VALIDATION-2026-09-23.md`.
+
 ## Commits
 
 - **Baseline:** `5620b37` (post-SDK-conformance-suite merge).
