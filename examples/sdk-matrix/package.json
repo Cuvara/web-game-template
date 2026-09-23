@@ -1,0 +1,21 @@
+{
+  "name": "@wgf/example-sdk-matrix",
+  "version": "0.1.0",
+  "description": "One small game, built for every platform adapter and both engines, played against mock portal SDKs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/verify/sdk-matrix-build.mjs"
+  },
+  "dependencies": {
+    "@wgf/game-core": "workspace:*",
+    "@wgf/pixi-framework": "workspace:*",
+    "@wgf/platform-sdk": "workspace:*",
+    "@wgf/three-framework": "workspace:*",
+    "pixi.js": "^8.6.0",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.170.0"
+  }
+}

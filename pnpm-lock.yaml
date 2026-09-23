@@ -22,6 +22,12 @@ importers:
       "@wgf/three-framework":
         specifier: workspace:*
         version: link:packages/three-framework
+      pixi.js:
+        specifier: ^8.6.0
+        version: 8.21.0
+      three:
+        specifier: ^0.170.0
+        version: 0.170.0
     devDependencies:
       "@eslint/js":
         specifier: ^9.17.0
@@ -32,6 +38,9 @@ importers:
       "@types/node":
         specifier: ^22.10.0
         version: 22.20.4
+      "@types/three":
+        specifier: ^0.170.0
+        version: 0.170.0
       "@vitest/coverage-v8":
         specifier: ^2.1.8
         version: 2.1.9(vitest@2.1.9(@types/node@22.20.4))
@@ -111,6 +120,31 @@ importers:
       pixi.js:
         specifier: ^8.6.0
         version: 8.21.0
+
+  examples/sdk-matrix:
+    dependencies:
+      "@wgf/game-core":
+        specifier: workspace:*
+        version: link:../../packages/game-core
+      "@wgf/pixi-framework":
+        specifier: workspace:*
+        version: link:../../packages/pixi-framework
+      "@wgf/platform-sdk":
+        specifier: workspace:*
+        version: link:../../packages/platform-sdk
+      "@wgf/three-framework":
+        specifier: workspace:*
+        version: link:../../packages/three-framework
+      pixi.js:
+        specifier: ^8.6.0
+        version: 8.21.0
+      three:
+        specifier: ^0.170.0
+        version: 0.170.0
+    devDependencies:
+      "@types/three":
+        specifier: ^0.170.0
+        version: 0.170.0
 
   examples/yandex-compliance-demo:
     dependencies:

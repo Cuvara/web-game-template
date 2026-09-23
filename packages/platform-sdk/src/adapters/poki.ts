@@ -320,12 +320,18 @@ export class PokiPlatform implements Platform {
         return { shown: false, rewarded: false, reason: "not-ready" };
       }
 
+      // Poki's own example mutes audio and disables input *before* calling the break, and
+      // warns that the pause callback "might not always get called"
+      // (https://developers.poki.com/guide/sdk-html5). So the game is told it lost the
+      // foreground here, not in the callback: an ad that plays without calling back must
+      // still find the game silent. `onStart` only records that an ad really showed.
+      this.#foreground = false;
+      this.#events.emit("foreground:lost", undefined);
+      this.#events.emit("ad:start", { kind });
+
       let started = false;
       const onStart = (): void => {
         started = true;
-        this.#foreground = false;
-        this.#events.emit("foreground:lost", undefined);
-        this.#events.emit("ad:start", { kind });
         hooks?.onStart?.();
       };
 
@@ -333,6 +339,8 @@ export class PokiPlatform implements Platform {
       try {
         if (kind === "rewarded") {
           const success = (await sdk.rewardedBreak(onStart)) === true;
+          // A success flag proves an ad played to the end, callback or not.
+          if (success) started = true;
           if (started) this.#played(kind);
           // Grant on Poki's own success flag only. Under an ad blocker it is false, and
           // Poki's guidelines say no reward is given then.

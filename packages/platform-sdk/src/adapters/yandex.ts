@@ -134,7 +134,11 @@ export class YandexPlatform implements Platform {
   #sdk: YandexSdk | null = null;
   #initError: unknown = null;
   #language: string | null = null;
-  #foreground = true;
+  /**
+   * Why the portal or the page holds the foreground. The foreground returns only when every
+   * hold is released: an ad that ends while the tab is still hidden must not resume play.
+   */
+  readonly #holds = new Set<"portal" | "ad" | "hidden">();
   #readySent = false;
   #gameplayRunning = false;
   #adShowing = false;
@@ -162,7 +166,7 @@ export class YandexPlatform implements Platform {
   }
 
   get foreground(): boolean {
-    return this.#foreground;
+    return this.#holds.size === 0;
   }
 
   /** False when the SDK could not be loaded or initialised. */
@@ -242,8 +246,15 @@ export class YandexPlatform implements Platform {
   /** A pending save goes out now if the page is hidden or closed — 1.9, 4.2. */
   #flushOnHide(): void {
     if (typeof document === "undefined" || typeof window === "undefined") return;
+    // 1.3: sound stops within 2 s of the tab being hidden. The portal's game_api_pause
+    // usually covers it, but not when the SDK is missing, so the page is a hold of its own.
     const onVisibility = (): void => {
-      if (document.visibilityState === "hidden") this.storage.flush();
+      if (document.visibilityState === "hidden") {
+        this.storage.flush();
+        this.#hold("hidden");
+      } else {
+        this.#release("hidden");
+      }
     };
     const onPageHide = (): void => this.storage.flush();
     document.addEventListener("visibilitychange", onVisibility);
@@ -276,16 +287,27 @@ export class YandexPlatform implements Platform {
     for (const off of this.#dispose.splice(0)) off();
   }
 
+  #hold(reason: "portal" | "ad" | "hidden"): void {
+    if (this.#holds.has(reason)) return;
+    const wasForeground = this.#holds.size === 0;
+    this.#holds.add(reason);
+    if (wasForeground) this.#events.emit("foreground:lost", undefined);
+  }
+
+  /** Returns true when this release gave the foreground back. */
+  #release(reason: "portal" | "ad" | "hidden"): boolean {
+    if (!this.#holds.delete(reason) || this.#holds.size > 0) return false;
+    this.#events.emit("foreground:gained", undefined);
+    return true;
+  }
+
   readonly #onPortalPause = (): void => {
-    if (!this.#foreground) return;
-    this.#foreground = false;
-    this.#events.emit("foreground:lost", undefined);
+    this.#hold("portal");
   };
 
   readonly #onPortalResume = (): void => {
-    if (this.#foreground) return;
-    this.#foreground = true;
-    this.#events.emit("foreground:gained", undefined);
+    if (!this.#holds.has("portal")) return;
+    this.#release("portal");
     // The portal restarts GameplayAPI by itself on resume unless the game had stopped it
     // BEFORE the pause (sdk-events). A game that stops in response to the pause — or that
     // resumes to a pause screen — is still stopped, so say so again once the portal's own
@@ -295,7 +317,7 @@ export class YandexPlatform implements Platform {
     // documented, so the correction is sent twice: next tick and half a second on.
     for (const delayMs of [0, 500]) {
       this.#timers.setTimeout(() => {
-        if (!this.#gameplayRunning && this.#foreground) {
+        if (!this.#gameplayRunning && this.#holds.size === 0) {
           this.#call(() => this.#sdk?.features.GameplayAPI?.stop());
         }
       }, delayMs);
@@ -356,16 +378,25 @@ export class YandexPlatform implements Platform {
     const refused = this.#ads.check(kind);
     if (refused) return Promise.resolve({ shown: false, rewarded: false, reason: refused });
     const sdk = this.#sdk;
-    if (!sdk) return Promise.resolve({ shown: false, rewarded: false, reason: "error" });
+    // No SDK (script blocked, init failed): the contract's "not-ready", not an SDK error.
+    if (!sdk) return Promise.resolve({ shown: false, rewarded: false, reason: "not-ready" });
     // One ad at a time. A second request while one is on screen is a game bug, and the
     // portal's answer to it is undocumented.
     if (this.#adShowing) {
-      return Promise.resolve({ shown: false, rewarded: false, reason: "not-ready" });
+      return Promise.resolve({ shown: false, rewarded: false, reason: "busy" });
     }
     this.#adShowing = true;
+    // 4.7: sound and gameplay are paused for the ad. Go quiet before asking for it rather
+    // than on onOpen, which fires once the ad is already on screen; and report gameplay
+    // stopped (1.19.3 lists ads among the moments GameplayAPI.stop() is for).
+    this.gameplayStop();
+    this.#hold("ad");
 
     return new Promise<RewardedResult>((resolve) => {
       let settled = false;
+      // How the call settled. Only a timeout can leave a reward owed: a callback that
+      // settled it already carried `rewarded` in the result.
+      let timedOut = false;
       let opened = false;
       let closed = false;
       let rewarded = false;
@@ -388,6 +419,7 @@ export class YandexPlatform implements Platform {
         closed = true;
         this.#adShowing = false;
         if (opened) this.#events.emit("ad:end", { kind });
+        this.#release("ad");
       };
 
       const timeoutMs =
@@ -397,7 +429,11 @@ export class YandexPlatform implements Platform {
           : DEFAULT_INTERSTITIAL_OPEN_TIMEOUT_MS);
       const timer = this.#timers.setTimeout(() => {
         // Nothing opened in time. Free the slot; a late onOpen takes it back.
-        if (!opened) this.#adShowing = false;
+        if (!opened) {
+          this.#adShowing = false;
+          this.#release("ad");
+        }
+        timedOut = true;
         finish({ shown: false, rewarded: false, reason: "not-ready" });
       }, timeoutMs);
 
@@ -405,13 +441,17 @@ export class YandexPlatform implements Platform {
         onOpen: () => {
           opened = true;
           this.#adShowing = true;
+          this.#hold("ad");
           this.#timers.clearTimeout(timer);
           this.#events.emit("ad:start", { kind });
           hooks?.onStart?.();
         },
         onClose: (wasShown: boolean) => {
           const shown = wasShown === true;
-          if (settled && rewarded && kind === "rewarded") {
+          // Owed only when the game was already told "no reward" by the timeout. An
+          // onRewarded -> onError -> onClose sequence settled with the reward; emitting
+          // here as well would pay it twice.
+          if (timedOut && rewarded && kind === "rewarded") {
             this.#events.emit("ad:late-reward", { kind });
           }
           finish(

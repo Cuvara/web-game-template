@@ -168,11 +168,14 @@ describe("YandexPlatform initialisation", () => {
     await expect(platform.initialize()).resolves.toBeUndefined();
     expect(platform.sdkAvailable).toBe(false);
     expect(platform.language).toBeNull();
-    await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "error" });
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
     await expect(platform.showRewarded()).resolves.toEqual({
       shown: false,
       rewarded: false,
-      reason: "error",
+      reason: "not-ready",
     });
     await platform.storage.set("best", "3");
     await expect(platform.storage.get("best")).resolves.toBe("3");
@@ -380,10 +383,66 @@ describe("YandexPlatform ads", () => {
     await expect(platform.showRewarded()).resolves.toEqual({
       shown: false,
       rewarded: false,
-      reason: "not-ready",
+      reason: "busy",
     });
     close?.();
     await expect(first).resolves.toEqual({ shown: true, rewarded: true });
+  });
+
+  it("pays a reward once when onRewarded is followed by onError and onClose", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const fake = fakeSdk();
+    fake.setRewarded((callbacks) => {
+      callbacks.onOpen?.();
+      callbacks.onRewarded?.();
+      callbacks.onError?.(new Error("late failure"));
+      callbacks.onClose?.(true);
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    const late: string[] = [];
+    platform.on("ad:late-reward", ({ kind }) => late.push(kind));
+    await expect(platform.showRewarded()).resolves.toMatchObject({ rewarded: true });
+    expect(late).toEqual([]);
+    warn.mockRestore();
+  });
+
+  it("goes quiet and stops gameplay before asking the portal for an ad (4.7, 1.19.3)", async () => {
+    const fake = fakeSdk();
+    const order: string[] = [];
+    fake.setFullscreen((callbacks) => {
+      order.push(`sdk:fullscreen foreground=${String(platform.foreground)}`);
+      callbacks.onOpen?.();
+      callbacks.onClose?.(true);
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    await platform.signalReady();
+    platform.gameplayStart();
+    platform.on("foreground:lost", () => order.push("lost"));
+    platform.on("foreground:gained", () => order.push("gained"));
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
+    expect(order).toEqual(["lost", "sdk:fullscreen foreground=false", "gained"]);
+    expect(fake.calls.slice(-2)).toEqual(["stop", "fullscreen"]);
+    expect(platform.gameplayActive).toBe(false);
+  });
+
+  it("holds the foreground until both the ad and the portal pause are over", async () => {
+    const fake = fakeSdk();
+    let close: (() => void) | undefined;
+    fake.setFullscreen((callbacks) => {
+      callbacks.onOpen?.();
+      close = () => callbacks.onClose?.(true);
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    const shown = platform.showInterstitial();
+    fake.fire("game_api_pause");
+    close?.();
+    await shown;
+    expect(platform.foreground).toBe(false);
+    fake.fire("game_api_resume");
+    expect(platform.foreground).toBe(true);
   });
 });
 
@@ -588,7 +647,7 @@ describe("round-1 review fixes", () => {
     // While the late ad is on screen, nothing else may open.
     await expect(platform.showInterstitial()).resolves.toEqual({
       shown: false,
-      reason: "not-ready",
+      reason: "busy",
     });
     late!.onRewarded?.();
     late!.onClose?.(true);

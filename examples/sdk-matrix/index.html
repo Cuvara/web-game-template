@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>SDK Matrix</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #101014;
+        color: #e6e6ea;
+        font:
+          15px/1.4 system-ui,
+          sans-serif;
+        user-select: none;
+        touch-action: none;
+      }
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+      #game canvas {
+        display: block;
+      }
+      #ui {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 16px;
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      #ui button {
+        font: inherit;
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 10px;
+        border: 1px solid #555;
+        background: #1c1c24;
+        color: inherit;
+      }
+      #hud {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="hud" data-scene="none">sdk-matrix</div>
+    <div id="ui">
+      <button type="button" id="interstitial"></button>
+      <button type="button" id="rewarded"></button>
+      <button type="button" id="save"></button>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

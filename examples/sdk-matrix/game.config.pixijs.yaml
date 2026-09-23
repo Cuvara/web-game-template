@@ -1,0 +1,33 @@
+# SDK matrix — pixijs. Every platform with an adapter, so one config builds all of them:
+# scripts/verify/sdk-matrix-build.mjs sets WGF_PLATFORM per build. Roles are irrelevant to
+# a matrix build (the target is explicit); generic-web is marked required only because a
+# config needs a primary.
+game:
+  id: sdk-matrix
+  name: SDK Matrix
+  version: 0.1.0
+
+engine:
+  type: pixijs
+
+platforms:
+  - { id: generic-web, profile: generic-web@1.0.0, role: required }
+  - { id: yandex, profile: yandex@1.0.0, role: optional }
+  - { id: poki, profile: poki@1.1.0, role: optional }
+  - { id: gamevui, profile: gamevui@1.1.0, role: optional }
+
+monetization:
+  ad_kinds: [interstitial, rewarded]
+  iap: false
+
+build:
+  command: pnpm sdk:matrix:build
+  output: examples/sdk-matrix/dist
+
+verification:
+  smoke_test: true
+  performance_test: false
+  mobile_test: true
+
+publishing:
+  enabled: false

@@ -8,7 +8,7 @@ import {
   type PokiSdk,
 } from "@wgf/platform-sdk";
 
-type AdScript = "play" | "no-fill" | "throw";
+type AdScript = "play" | "no-fill" | "throw" | "reward-silent";
 
 /** A stand-in for window.PokiSDK that records calls in order. */
 function fakeSdk(
@@ -36,6 +36,9 @@ function fakeSdk(
       calls.push("rewardedBreak");
       if (ad === "throw") return Promise.reject(new Error("sdk"));
       if (ad === "play") onStart?.();
+      // "reward-silent": an ad that played to the end without calling back — Poki warns the
+      // callback "might not always get called".
+      if (ad === "reward-silent") return Promise.resolve(true);
       return Promise.resolve(ad === "play" && (options.reward ?? true));
     },
   };
@@ -354,12 +357,35 @@ describe("PokiPlatform foreground signals", () => {
     ]);
   });
 
-  it("keeps the foreground when no ad plays", async () => {
+  it("mutes before every break it sends, even one that plays nothing", async () => {
+    // Poki's example mutes before calling the break and warns the pause callback "might
+    // not always get called" (developers.poki.com/guide/sdk-html5): the game cannot wait
+    // for the callback to go quiet.
     const { platform } = await readyPlatform({ ad: "no-fill" });
     const seen: string[] = [];
     platform.on("foreground:lost", () => seen.push("lost"));
-    await platform.showRewarded();
-    expect(seen).toEqual([]);
+    platform.on("foreground:gained", () => seen.push("gained"));
+    const result = await platform.showRewarded();
+    expect(result).toEqual({ shown: false, rewarded: false, reason: "not-ready" });
+    expect(seen).toEqual(["lost", "gained"]);
     expect(platform.foreground).toBe(true);
+  });
+
+  it("keeps the foreground when no break is sent at all", async () => {
+    // No SDK (an ad blocker): nothing is sent, so there is nothing to go quiet for.
+    const platform = platformWith(null);
+    await platform.initialize();
+    await platform.signalReady();
+    const seen: string[] = [];
+    platform.on("foreground:lost", () => seen.push("lost"));
+    expect(await platform.showInterstitial()).toEqual({ shown: false, reason: "not-ready" });
+    expect(seen).toEqual([]);
+  });
+
+  it("grants and records a reward whose ad never called back", async () => {
+    const { platform } = await readyPlatform({ ad: "reward-silent" });
+    const result = await platform.showRewarded();
+    expect(result).toEqual({ shown: true, rewarded: true });
+    expect(platform.usage.adsShown).toEqual({ interstitial: 0, rewarded: 1, banner: 0 });
   });
 });

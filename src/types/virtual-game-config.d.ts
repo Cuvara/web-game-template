@@ -14,3 +14,9 @@ declare module "virtual:locales" {
   const locales: string[];
   export default locales;
 }
+
+/** The platform id this bundle was built for (WGF_PLATFORM), or null for the primary one. */
+declare module "virtual:build-target" {
+  const target: string | null;
+  export default target;
+}

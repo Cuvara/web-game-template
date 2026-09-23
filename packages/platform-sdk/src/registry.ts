@@ -5,6 +5,7 @@
 // degrading to no-ads: a title that ships thinking it had a portal SDK and did not is a
 // blocking assertion failure at release validation, and it is cheaper to find here.
 
+import { GameVuiPlatform } from "./adapters/gamevui.js";
 import { GenericWebPlatform } from "./adapters/generic-web.js";
 import { PokiPlatform } from "./adapters/poki.js";
 import { YandexPlatform } from "./adapters/yandex.js";
@@ -38,12 +39,14 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
       return new YandexPlatform({ namespace: options.namespace });
     case "poki":
       return new PokiPlatform({ namespace: options.namespace });
-    case "crazygames":
     case "gamevui":
+      // GameVui has no SDK; this adapter integrates nothing and says so. See its header.
+      return new GameVuiPlatform({ namespace: options.namespace });
+    case "crazygames":
       throw new Error(
-        `Platform adapter "${id}" is not implemented yet. Its profile exists in ` +
-          `core/reference/platforms/${id}.yaml; the adapter must be written against the ` +
-          `portal's own documentation before a title targets it.`,
+        `Platform adapter "crazygames" is not implemented yet. Its profile exists in ` +
+          `core/reference/platforms/crazygames.yaml; the adapter is written against ` +
+          `docs.crazygames.com (SDK v3) and lands with its own compliance suite.`,
       );
     default:
       throw new Error(

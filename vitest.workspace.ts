@@ -40,4 +40,13 @@ export default defineWorkspace([
       environment: "node",
     },
   },
+  {
+    resolve: { alias },
+    test: {
+      // The platform contract, asked of every adapter against scripted fake SDKs.
+      name: "sdk",
+      include: ["tests/sdk/**/*.test.ts"],
+      environment: "node",
+    },
+  },
 ]);

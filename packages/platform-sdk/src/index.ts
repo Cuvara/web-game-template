@@ -15,6 +15,7 @@ export type {
 export { AdPolicy } from "./ad-policy.js";
 export { UsageRecorder, type PlatformUsage } from "./usage.js";
 export { LocalStorageBackend, MemoryStorageBackend } from "./storage.js";
+export { GAMEVUI_CAPABILITIES, GameVuiPlatform, type GameVuiOptions } from "./adapters/gamevui.js";
 export {
   GENERIC_WEB_CAPABILITIES,
   GenericWebPlatform,

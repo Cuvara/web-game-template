@@ -5,15 +5,23 @@
 // rather than from the virtual one so there is a single place to look when tracing a value
 // back to the plan it came from.
 
+import buildTarget from "virtual:build-target";
 import rawConfig from "virtual:game-config";
 import type { GameConfig, PlatformEntry } from "./game-config.js";
 
 export const config = rawConfig as GameConfig;
 
-/** The platform this build targets: the first required entry, else the first entry. */
+/**
+ * The platform this build targets: the one it was built for (WGF_PLATFORM, validated at
+ * build time), else the first required entry, else the first entry.
+ */
 export function primaryPlatform(): PlatformEntry {
   const entry =
-    config.platforms.find((candidate) => candidate.role === "required") ?? config.platforms[0];
+    (buildTarget
+      ? config.platforms.find((candidate) => candidate.id === buildTarget)
+      : undefined) ??
+    config.platforms.find((candidate) => candidate.role === "required") ??
+    config.platforms[0];
   if (!entry) throw new Error("game.config.yaml declares no platforms");
   return entry;
 }

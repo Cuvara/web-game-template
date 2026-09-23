@@ -165,3 +165,35 @@ describe("withAdBreak", () => {
     expect(events).toEqual(["mute", "body paused=true", "unmute"]);
   });
 });
+
+describe("bindPlatform and the portal's foreground", () => {
+  it("pauses the game while the portal holds the foreground, and only then", async () => {
+    const { game, platform } = await setup();
+    const paused: boolean[] = [];
+    // Registered after the binding, so it sees the state the binding left.
+    platform.on("foreground:lost", () => void paused.push(game.paused));
+    // An ad break through the adapter takes the foreground (Poki: before the break).
+    await platform.showInterstitial();
+    expect(paused).toEqual([true]);
+    expect(game.paused).toBe(false);
+  });
+
+  it("starts paused when the portal already held the foreground at bind time", () => {
+    const listeners = new Map<string, () => void>();
+    const platform = {
+      foreground: false,
+      gameplayActive: false,
+      on: (event: string, handler: () => void) => {
+        listeners.set(event, handler);
+        return () => listeners.delete(event);
+      },
+    } as unknown as Parameters<typeof bindPlatform>[1];
+    const game = new Game({ scheduler: new ManualScheduler() });
+    const binding = bindPlatform(game, platform);
+    expect(game.paused).toBe(true);
+    listeners.get("foreground:gained")?.();
+    expect(game.paused).toBe(false);
+    binding.dispose();
+    expect(listeners.size).toBe(0);
+  });
+});

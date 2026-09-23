@@ -6,6 +6,19 @@
 
 import type { Renderer, RendererOptions } from "@wgf/game-core";
 import { Application, type Container } from "pixi.js";
+// PixiJS 8 registers a display object's render pipe when that object's module is imported,
+// and a renderer only picks up pipes registered before its own init(). A game whose scene
+// code arrives in a chunk loaded after init - the normal shape of a lazily imported engine
+// seam - would otherwise throw "Cannot read properties of undefined (reading
+// 'validateRenderable')" on every frame, in production builds only. These are PixiJS's own
+// side-effect entry points for exactly this; they cost only what the game did not already use.
+import "pixi.js/graphics";
+import "pixi.js/text";
+import "pixi.js/text-bitmap";
+import "pixi.js/mesh";
+import "pixi.js/sprite-tiling";
+import "pixi.js/sprite-nine-slice";
+import "pixi.js/particle-container";
 
 /**
  * Same cap as the Three.js renderer. A 2.75x phone screen costs nearly twice the fill of a

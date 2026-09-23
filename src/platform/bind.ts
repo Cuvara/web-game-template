@@ -56,12 +56,24 @@ export function bindPlatform(game: Game, platform: Platform): PlatformBinding {
 
   document.addEventListener("visibilitychange", onVisibilityChange);
 
+  // The portal taking the foreground - its own ad, a purchase or account dialog, the ad
+  // Yandex may show by itself at launch - pauses the game for as long as it holds it. The
+  // adapter may have lost the foreground before this ran, hence the initial read.
+  const onForegroundLost = (): void => game.pause("platform");
+  const onForegroundGained = (): void => game.resume("platform");
+  const unsubscribe = [
+    platform.on("foreground:lost", onForegroundLost),
+    platform.on("foreground:gained", onForegroundGained),
+  ];
+  if (!platform.foreground) onForegroundLost();
+
   return {
     armFirstInput: () => {
       for (const type of FIRST_INPUT_EVENTS) window.addEventListener(type, onFirstInput, true);
     },
     dispose: () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      for (const off of unsubscribe) off();
       removeFirstInput();
     },
   };
