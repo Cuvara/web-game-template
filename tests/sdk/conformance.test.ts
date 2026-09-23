@@ -129,14 +129,45 @@ describe.each(HARNESSES)("$id", (harness) => {
   feature("sdk-unavailable", () => {
     when(harness.hasSdk)("the game boots, ads are refused, storage still works", async () => {
       const { platform } = await ready(harness, "unavailable");
-      await expect(platform.showInterstitial()).resolves.toMatchObject({ shown: false });
-      await expect(platform.showRewarded()).resolves.toMatchObject({
+      // Normalized refusal: a portal adapter whose SDK never loaded reports "not-ready"
+      // for every ad kind it otherwise offers (AdSkipReason, types.ts:51). Pinning the
+      // reason here — not just the {shown:false} shape — is what makes a future adapter
+      // that drifts back to "error"/"disabled"/etc. for an unavailable SDK fail CI.
+      const expected: Record<string, "not-ready" | "unsupported"> = {
+        interstitial: offers("interstitial") ? "not-ready" : "unsupported",
+        rewarded: offers("rewarded") ? "not-ready" : "unsupported",
+      };
+      await expect(platform.showInterstitial()).resolves.toEqual({
+        shown: false,
+        reason: expected.interstitial,
+      });
+      await expect(platform.showRewarded()).resolves.toEqual({
         shown: false,
         rewarded: false,
+        reason: expected.rewarded,
       });
       await platform.storage.set("best", "3");
       await expect(platform.storage.get("best")).resolves.toBe("3");
     });
+
+    // generic-web / GameVui have no SDK to be unavailable (hasSdk === false) and offer no
+    // ads at all, so their refusal is "unsupported" regardless of any SDK state. Pinned
+    // here so the two families of adapter are held to the same normalized vocabulary.
+    when(!harness.hasSdk && harness.ads.length === 0)(
+      "no SDK and no ad capability: every ad kind is refused as unsupported",
+      async () => {
+        const { platform } = await ready(harness, "unavailable");
+        await expect(platform.showInterstitial()).resolves.toEqual({
+          shown: false,
+          reason: "unsupported",
+        });
+        await expect(platform.showRewarded()).resolves.toEqual({
+          shown: false,
+          rewarded: false,
+          reason: "unsupported",
+        });
+      },
+    );
   });
 
   feature("init-failure", () => {
@@ -254,6 +285,24 @@ describe.each(HARNESSES)("$id", (harness) => {
         reason: "unsupported",
       });
     });
+    // One ad at a time: a second request fired while the first is still on screen is
+    // refused as "busy" (AdSkipReason, types.ts:52) — never queued and never a silent
+    // {shown:false}. The "stall-open" script opens the first ad and never closes it, so
+    // the adapter's in-progress slot stays taken; the first promise is deliberately left
+    // pending. All three portal adapters (yandex, poki, crazygames) report "busy" here.
+    when(offers("interstitial") && harness.hasSdk)(
+      "a second ad while one is on screen is refused as busy",
+      async () => {
+        const instance = await ready(harness);
+        instance.setAd("stall-open");
+        const first = instance.platform.showInterstitial();
+        void first.catch(() => {}); // never settles; keep it from surfacing as unhandled
+        await expect(instance.platform.showInterstitial()).resolves.toEqual({
+          shown: false,
+          reason: "busy",
+        });
+      },
+    );
   });
 
   feature("rewarded", () => {

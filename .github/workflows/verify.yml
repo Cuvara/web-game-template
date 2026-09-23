@@ -56,6 +56,12 @@ jobs:
       - name: smoke
         run: pnpm test:e2e
 
+      # The SDK browser matrix drives a real headless Chromium, so it lives here with the other
+      # browser suites rather than in ci.yml. The script builds its own smoke bundle first
+      # (scripts/verify/sdk-smoke-build.mjs) before running playwright.sdk.config.ts.
+      - name: sdk-browser-matrix
+        run: pnpm test:sdk:browser
+
       - name: measure runtime facts
         run: pnpm test:verify
 

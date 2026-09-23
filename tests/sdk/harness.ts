@@ -35,7 +35,10 @@ export type AdScript =
   | "play" // shown to the end; a rewarded ad grants its reward
   | "no-fill" // the portal has nothing to show
   | "closed-early" // shown, then closed by the player before the reward
-  | "error"; // the portal SDK reports an error
+  | "error" // the portal SDK reports an error
+  | "stall-open"; // the ad starts (onOpen/adStarted/onStart) but never closes, so the
+// adapter's one-ad-at-a-time slot stays taken — used to drive a concurrent second
+// request into the "busy" refusal. The first request never resolves.
 
 export type SdkScript = "ok" | "unavailable" | "init-fails";
 
@@ -142,6 +145,12 @@ const yandex: Harness = {
         case "error":
           callbacks.onError?.(new Error("scripted"));
           return;
+        case "stall-open":
+          // Opens and stays open: game_api_pause + onOpen mark the ad on screen, but no
+          // onClose/onError ever arrives, so the adapter's #adShowing slot stays taken.
+          emit("game_api_pause");
+          callbacks.onOpen?.();
+          return;
       }
     };
 
@@ -244,14 +253,17 @@ const poki: Harness = {
         calls.push("PokiSDK.commercialBreak");
         if (blocked) return Promise.resolve();
         if (ad === "error") return Promise.reject(new Error("scripted"));
-        if (ad === "play" || ad === "closed-early") onStart?.();
+        if (ad === "play" || ad === "closed-early" || ad === "stall-open") onStart?.();
+        // stall-open: started but never settles, so the break stays in progress.
+        if (ad === "stall-open") return new Promise<void>(() => {});
         return Promise.resolve();
       },
       rewardedBreak: (onStart) => {
         calls.push("PokiSDK.rewardedBreak");
         if (blocked) return Promise.resolve(false);
         if (ad === "error") return Promise.reject(new Error("scripted"));
-        if (ad === "play" || ad === "closed-early") onStart?.();
+        if (ad === "play" || ad === "closed-early" || ad === "stall-open") onStart?.();
+        if (ad === "stall-open") return new Promise<boolean>(() => {});
         return Promise.resolve(ad === "play");
       },
     };
@@ -360,6 +372,10 @@ const crazygames: Harness = {
               return;
             case "error":
               callbacks?.adError?.({ code: "other", message: "scripted" });
+              return;
+            case "stall-open":
+              // Starts but neither finishes nor errors, so #adInProgress stays true.
+              callbacks?.adStarted?.();
               return;
           }
         },

@@ -56,6 +56,11 @@ jobs:
       - name: integration
         run: pnpm test:integration
 
+      # The SDK conformance project (vitest --project sdk) needs no browser, so it belongs on
+      # the source-level guard alongside unit and integration rather than in verify.yml.
+      - name: sdk-conformance
+        run: pnpm test:sdk
+
       - name: Summary
         if: always()
         run: |
