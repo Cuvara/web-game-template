@@ -33,6 +33,16 @@ export default defineWorkspace([
     },
   },
   {
+    // Every adapter against fake portal SDKs, one scenario matrix. Its JSON report is what
+    // the Factory's `sdk` step reads (pnpm sdk:conformance).
+    resolve: { alias },
+    test: {
+      name: "sdk",
+      include: ["tests/sdk/**/*.test.ts"],
+      environment: "node",
+    },
+  },
+  {
     resolve: { alias },
     test: {
       name: "integration",

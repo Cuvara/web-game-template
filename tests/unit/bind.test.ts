@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Game, ManualScheduler } from "@wgf/game-core";
-import { MemoryStorageBackend, PokiPlatform, type PokiSdk } from "@wgf/platform-sdk";
+import {
+  GenericWebPlatform,
+  MemoryStorageBackend,
+  PlatformEmitter,
+  PokiPlatform,
+  type PokiSdk,
+} from "@wgf/platform-sdk";
 import { bindPlatform, withAdBreak } from "../../src/platform/bind.js";
 
 // bind.ts runs in the browser. Under node it needs only somewhere to add listeners and a
@@ -163,5 +169,63 @@ describe("withAdBreak", () => {
       { mute: () => events.push("mute"), unmute: () => events.push("unmute") },
     );
     expect(events).toEqual(["mute", "body paused=true", "unmute"]);
+  });
+});
+
+describe("bindPlatform — the portal holding the foreground", () => {
+  // A platform that raises foreground signals on demand, the way Yandex relays
+  // game_api_pause/resume. Everything else is the generic-web adapter's.
+  function portal(startInForeground = true) {
+    const emitter = new PlatformEmitter();
+    let foreground = startInForeground;
+    const platform = new GenericWebPlatform({ namespace: "t" });
+    Object.defineProperty(platform, "on", { value: emitter.on.bind(emitter) });
+    Object.defineProperty(platform, "foreground", { get: () => foreground });
+    const set = (next: boolean): void => {
+      foreground = next;
+      emitter.emit(next ? "foreground:gained" : "foreground:lost", undefined);
+    };
+    return { platform, lose: () => set(false), gain: () => set(true) };
+  }
+
+  it("pauses the game while the portal is on top, and resumes it after", () => {
+    const { platform, lose, gain } = portal();
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform);
+    lose();
+    expect(game.paused).toBe(true);
+    gain();
+    expect(game.paused).toBe(false);
+  });
+
+  it("honours a foreground the portal took before binding (the launch ad)", () => {
+    const { platform, gain } = portal(false);
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform);
+    expect(game.paused).toBe(true);
+    gain();
+    expect(game.paused).toBe(false);
+  });
+
+  it("does not lift a pause that belongs to someone else", () => {
+    const { platform, lose, gain } = portal();
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform);
+    game.pause("manual");
+    lose();
+    gain();
+    expect(game.paused).toBe(true);
+  });
+
+  it("stops listening once disposed", () => {
+    const { platform, lose } = portal();
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform).dispose();
+    lose();
+    expect(game.paused).toBe(false);
   });
 });
