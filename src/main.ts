@@ -1,7 +1,8 @@
 // Entry point.
 //
 // The order here is the order every portal expects: initialize the platform, report loading
-// progress while the heavy work happens, signal ready, then start. Portals whose profile
+// progress while the heavy work happens, signal ready, then start — and report gameplay
+// only once the player first interacts. Portals whose profile
 // sets `loading_api: required` list "does not report loading progress" as a rejection
 // cause, so the reporting is part of the boot sequence rather than an afterthought.
 
@@ -49,7 +50,7 @@ async function main(): Promise<void> {
 
   const game = new Game();
   // src/audio/ is still an empty slot. Whatever fills it must follow this callback.
-  bindPlatform(game, platform, {
+  const binding = bindPlatform(game, platform, {
     onAudioMutedChange: (muted) => {
       document.documentElement.dataset["audioMuted"] = String(muted);
     },
@@ -67,7 +68,10 @@ async function main(): Promise<void> {
   const timeToInteractiveMs = performance.now();
 
   game.start();
-  platform.gameplayStart();
+  // gameplayStart waits for the player. Poki lists "gameplayStart() fires on first player
+  // input (not load)" among its SDK rules; reporting it at boot counts idle page views as
+  // play time. bindPlatform owns it from here, including hidden-tab stops.
+  binding.armFirstInput();
 
   installProbe({
     game,

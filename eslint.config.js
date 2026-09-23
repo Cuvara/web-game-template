@@ -44,6 +44,9 @@ export default tseslint.config(
       "scripts/**/*.mjs",
       "*.config.{js,ts}",
       "examples/*/*.config.ts",
+      "examples/*/scripts/**/*.mjs",
+      "examples/*/compliance/**/*.mjs",
+      "examples/*/tests/unit/**/*.mjs",
       "eslint.config.js",
       "vitest.workspace.ts",
     ],
@@ -52,6 +55,13 @@ export default tseslint.config(
     },
     rules: {
       "no-console": "off",
+    },
+  },
+  {
+    // Served to the browser in place of Poki's SDK script; a plain browser script.
+    files: ["tests/poki/mock-poki-sdk.js"],
+    languageOptions: {
+      globals: globals.browser,
     },
   },
 );

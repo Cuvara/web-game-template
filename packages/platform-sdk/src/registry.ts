@@ -7,6 +7,7 @@
 
 import { CrazyGamesPlatform } from "./adapters/crazygames/platform.js";
 import { GenericWebPlatform } from "./adapters/generic-web.js";
+import { PokiPlatform } from "./adapters/poki.js";
 import { YandexPlatform } from "./adapters/yandex.js";
 import type { Platform } from "./types.js";
 
@@ -39,6 +40,7 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
     case "yandex":
       return new YandexPlatform({ namespace: options.namespace });
     case "poki":
+      return new PokiPlatform({ namespace: options.namespace });
     case "gamevui":
       throw new Error(
         `Platform adapter "${id}" is not implemented yet. Its profile exists in ` +

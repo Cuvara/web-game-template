@@ -202,6 +202,25 @@ describe("CrazyGamesPlatform — ads", () => {
     expect(platform.observedLaunchStage).toBe("full");
   });
 
+  it("calls AdHooks.onStart when the ad starts, and not for an unfilled request", async () => {
+    const filled = await ready();
+    const onStart = vi.fn();
+    await filled.platform.showRewarded({ onStart });
+    expect(onStart).toHaveBeenCalledTimes(1);
+
+    const unfilled = await ready({ ad: { kind: "error-before-start", code: "unfilled" } });
+    const never = vi.fn();
+    await unfilled.platform.showInterstitial({ onStart: never });
+    expect(never).not.toHaveBeenCalled();
+  });
+
+  it("reports gameplayActive for the contract", async () => {
+    const { platform } = await ready();
+    expect(platform.gameplayActive).toBe(false);
+    platform.gameplayStart();
+    expect(platform.gameplayActive).toBe(true);
+  });
+
   it("does not emit ad:start for an unfilled request, so the game does not blip its audio", async () => {
     const { platform } = await ready({ ad: { kind: "error-before-start", code: "unfilled" } });
     const started = vi.fn();
@@ -267,7 +286,7 @@ describe("CrazyGamesPlatform — ads", () => {
     const first = platform.showRewarded();
     await expect(platform.showInterstitial()).resolves.toEqual({
       shown: false,
-      reason: "not-ready",
+      reason: "busy",
     });
     expect(calls.filter((c) => c.startsWith("requestAd"))).toHaveLength(1);
     await first;

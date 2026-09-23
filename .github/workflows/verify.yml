@@ -139,3 +139,44 @@ jobs:
           path: playwright-report
           retention-days: 7
           if-no-files-found: ignore
+
+  poki:
+    # The Poki compliance demo: its production build, the static audit of that build, and
+    # the end-to-end suite on desktop, mobile and tablet. It runs against the demo rather
+    # than the title because the untouched template targets generic-web; a title that
+    # targets Poki runs the same audit on its own dist/.
+    #
+    # Nothing here reaches Poki. The suite serves a mock in place of Poki's SDK, and the
+    # audit reads files. Poki Inspector and the Poki CLI are not run in CI — see
+    # compliance/poki-compliance-report.md for what stays manual.
+    name: poki compliance — audit and e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: ./.github/actions/setup-workspace
+        with:
+          install-browsers: "true"
+
+      - name: build demo
+        run: pnpm demo:poki:build
+
+      - name: static audit
+        run: pnpm audit:poki -- --out build/poki-audit.json
+
+      - name: e2e — desktop, mobile, tablet
+        run: pnpm test:poki
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: poki-compliance-${{ github.run_id }}
+          path: |
+            build/poki-audit.json
+            playwright-report/poki
+          retention-days: 30
+          if-no-files-found: warn

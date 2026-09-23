@@ -48,7 +48,8 @@ export type AdSkipReason =
   | "disabled" // the portal has ads switched off for this title (e.g. a soft launch)
   | "adblock" // an ad blocker prevented the ad
   | "too-soon" // the minimum interval has not elapsed, locally or at the portal
-  | "not-ready" // the portal had no fill, or another ad is already in progress
+  | "not-ready" // the portal had no fill, or its SDK is unavailable (e.g. an ad blocker)
+  | "busy" // another ad break is already in progress
   | "error"; // the portal SDK failed
 
 /**
@@ -68,11 +69,26 @@ export interface RewardedResult extends AdResult {
   readonly rewarded: boolean;
 }
 
+/** Optional hooks around an ad break. */
+export interface AdHooks {
+  /**
+   * Called when the portal actually starts showing an ad — the moment Poki's documentation
+   * says to mute audio and disable input. Not called when no ad plays.
+   */
+  onStart?(): void;
+}
+
 /**
  * Key-value storage. Backed by the portal's cloud saves where the profile reports
  * `cloud_saves: true`, and by local storage otherwise — the game does not branch on it.
  */
 export interface PlatformStorage {
+  /**
+   * False when saves last only for this session — private browsing, blocked storage. Poki
+   * asks games to "clearly inform players when progress won't persist". Undefined when the
+   * backend cannot tell.
+   */
+  readonly persistent?: boolean;
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<void>;
   remove(key: string): Promise<void>;
@@ -149,17 +165,24 @@ export interface Platform {
   /** The game is interactive. Pairs with {@link reportLoadingProgress}. */
   signalReady(): Promise<void>;
 
-  /** Gameplay started or resumed. Portals use this to bracket ad breaks. */
+  /**
+   * Gameplay started or resumed — the first player input, a level start, an unpause. Not on
+   * load: Poki lists "gameplayStart() fires on first player input (not load)" as a rule.
+   * Adapters drop duplicate and out-of-order calls rather than forwarding them.
+   */
   gameplayStart(): void;
-  /** Gameplay stopped — a menu, a pause, an incoming ad. */
+  /** Gameplay stopped — a menu, a pause, a death, an incoming ad. */
   gameplayStop(): void;
+  /** Whether gameplay is currently reported as running. */
+  readonly gameplayActive: boolean;
 
   /**
-   * Resolve only at a natural break — a level transition, a death — with gameplay already
-   * stopped. Never throws; `shown: false` carries the reason.
+   * An interstitial at a natural break, as the player heads back into gameplay. Resolves
+   * whether or not an ad played — not every call shows one — and never rejects.
    */
-  showInterstitial(): Promise<AdResult>;
-  showRewarded(): Promise<RewardedResult>;
+  showInterstitial(hooks?: AdHooks): Promise<AdResult>;
+  /** A rewarded ad the player explicitly chose. Grant only when `rewarded` is true. */
+  showRewarded(hooks?: AdHooks): Promise<RewardedResult>;
   /**
    * Whether an offer for `kind` should be visible at all. Absent on adapters that cannot
    * tell; then only `capabilities.ads` is known.

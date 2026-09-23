@@ -8,6 +8,28 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — GameVui
+
+- **`docs/platforms/gamevui/`** — a source matrix classifying every GameVui claim as
+  `OFFICIAL`, `THIRD_PARTY`, `INFERRED` or `UNKNOWN`, and a platform contract. GameVui
+  publishes no SDK, JavaScript API or publishing API; the documented route is an email to the
+  operator or its contact form. So there is still no GameVui adapter, and
+  `createPlatform("gamevui")` still throws.
+- **`examples/gamevui-compliance-demo/`** — a PixiJS game on the generic-web adapter, with a
+  requirement registry, static audit, Playwright suite (desktop, phone portrait and
+  landscape, tablet, iframe under a GameVui-style path), a deterministic submission package
+  under `release/gamevui/`, and a report generator that never reports an `UNKNOWN`
+  requirement as passing. `examples/*` joins the pnpm workspace.
+- **`gamevui-demo.yml`** — builds, tests and packages the demo; uploads the package as an
+  artifact. Submits nothing.
+- **`compliance/gamevui-compliance-report.md`**.
+
+### Changed — GameVui claims
+
+- The README, `docs/architecture.md`, `docs/publishing.md`, `vite.config.ts`,
+  `create-renderer.ts` and `build.yml` stated the Factory profile's 50 MB as GameVui's cap.
+  GameVui publishes no size limit; they now say it is the profile's unverified figure.
+
 ### Added — Yandex Games
 
 - **Yandex adapter** (`createPlatform("yandex")`), written against the current official
@@ -40,13 +62,47 @@ not publish versioned releases of its own, so changes are grouped by date.
   can share it.
 - `PixiRenderer` caps resolution at 2×, matching the Three.js renderer.
 
+### Added — Poki
+
+- **`PokiPlatform`**, a portal adapter written against Poki's current HTML5 SDK
+  documentation. It loads Poki's documented loader at runtime, and boots without it when an
+  ad blocker stops the script or `init()` never settles.
+- **`GameplayLifecycle`**, Poki's sequencing rules in one pure class: `gameLoadingFinished`
+  once and first, no consecutive `gameplayStart`/`gameplayStop`, nothing during an ad, and a
+  `gameplayStop` before any break that interrupts gameplay.
+- **`examples/poki-compliance-demo/`** — a PixiJS game exercising every documented path
+  (startup, pause/resume, death/restart, rewarded revive) through `Platform` only.
+- **`scripts/verify/poki-audit.mjs`** — static audit of a Poki build: external URLs, assets,
+  fonts, links, third-party ads and analytics, other portals' names, debug leftovers, storage
+  used outside the platform backend. Runs in `verify.yml`.
+- **`tests/poki/`** — end-to-end on desktop, mobile and tablet against a mock SDK that
+  referees the sequencing, including ad-blocked, no-fill, failing-ad, private-browsing and
+  strict-CSP runs.
+- **`compliance/poki-compliance-report.md`** — the requirements matrix and the evidence.
+
+### Changed
+
+- **`Platform.gameplayActive`**, **`AdHooks.onStart`** on both ad calls, the `busy` skip
+  reason, and the optional `PlatformStorage.persistent`.
+- **The template's boot no longer reports `gameplayStart` at load.** It waits for the first
+  pointer, touch or key input, as Poki requires; a hidden tab restarts gameplay on return only
+  if it had stopped it.
+- **Both adapters implement the merged `Platform` contract.** `YandexPlatform` reports
+  `gameplayActive` and calls `AdHooks.onStart` from the portal's `onOpen`; `PokiPlatform`
+  reports `foreground`, emits `ad:start`/`ad:end` and `foreground:lost`/`foreground:gained`
+  around an ad that actually plays, and leaves `language` null because Poki documents no
+  language call.
+- **`LocalStorageBackend` guards every operation**, not just the probe: storage that fails
+  mid-session, or a `localStorage` getter that throws inside an iframe, moves it onto memory
+  instead of throwing into the game.
+
 ### Added — CrazyGames
 
 - **CrazyGames adapter** (`@wgf/platform-sdk`, HTML5 SDK v3). `createPlatform("crazygames")`
   no longer throws. Gameplay start/stop, loading start/stop, midgame and rewarded ads,
   Data-module storage, `muteAudio`, `language` and device from system info, user. Degrades to a plain web
   game when the SDK is disabled (non-CrazyGames domain) or blocked.
-- **Platform contract additions**, all optional so existing adapters (Yandex) need no
+- **Platform contract additions**, all optional so the Yandex and Poki adapters need no
   change: `settings` with a `settings:change` event, `environment` (device, portal app),
   `adAvailability()`, `getUser()`, and `capabilities.gameplayStopOnHidden` (absent = true).
   Ad skip reasons gain `disabled` and `adblock`. Events use the `on()` from the Yandex change.
@@ -62,7 +118,9 @@ not publish versioned releases of its own, so changes are grouped by date.
 - **Builds used absolute asset paths.** The root `vite.config.ts` now sets `base: "./"`, as
   the Yandex demo already did; CrazyGames states absolute paths fail to load.
 - **Focus loss was always reported as a gameplay stop.** CrazyGames asks games not to;
-  `bindPlatform` now follows `capabilities.gameplayStopOnHidden`.
+  `bindPlatform` now follows `capabilities.gameplayStopOnHidden`. It also exposes the
+  required mute state (`onAudioMutedChange`) and holds the game for an ad that starts on
+  live play.
 
 ### Added — pipelines
 

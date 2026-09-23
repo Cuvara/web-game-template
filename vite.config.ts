@@ -25,8 +25,9 @@ export default defineConfig({
     outDir: "dist",
     target: "es2020",
     sourcemap: true,
-    // Portals cap bundle size — 50 MB on GameVui, 100 on Yandex. Warn well before that so
-    // growth is visible in CI rather than at release validation.
+    // Portal profiles cap bundle size — 50 MB in the Factory's GameVui profile (a figure with
+    // no GameVui source), 100 on Yandex. Warn well before that so growth is visible in CI
+    // rather than at release validation.
     chunkSizeWarningLimit: 2048,
   },
 });

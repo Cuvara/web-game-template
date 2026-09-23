@@ -58,6 +58,7 @@ export class GenericWebPlatform implements Platform {
   readonly #usage = new UsageRecorder();
   #loadingFraction = 0;
   #ready = false;
+  #gameplayActive = false;
 
   constructor(options: GenericWebOptions) {
     this.storage = new LocalStorageBackend(options.namespace);
@@ -99,11 +100,17 @@ export class GenericWebPlatform implements Platform {
     return Promise.resolve();
   }
 
+  get gameplayActive(): boolean {
+    return this.#gameplayActive;
+  }
+
   gameplayStart(): void {
+    this.#gameplayActive = true;
     this.#usage.recordGameplayStart();
   }
 
   gameplayStop(): void {
+    this.#gameplayActive = false;
     this.#usage.recordGameplayStop();
   }
 

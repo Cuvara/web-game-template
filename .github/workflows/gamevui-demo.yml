@@ -1,0 +1,83 @@
+# GameVui demo — build, test and package examples/gamevui-compliance-demo.
+#
+# Produces the submission package and report as a workflow artifact. It does not submit
+# anything: GameVui has no upload API, and the documented route is an email a person sends
+# (docs/platforms/gamevui/platform-contract.md).
+
+name: GameVui demo
+
+on:
+  push:
+    paths:
+      - "examples/gamevui-compliance-demo/**"
+      - "docs/platforms/gamevui/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/gamevui-demo.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: gamevui-demo-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: typecheck, unit, build, e2e, audit, package, compliance
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/gamevui-compliance-demo
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-workspace
+        with:
+          install-browsers: "true"
+
+      - name: typecheck
+        run: pnpm typecheck
+
+      - name: unit
+        run: pnpm test
+
+      - name: build
+        run: pnpm build
+
+      - name: e2e
+        run: pnpm test:e2e
+
+      - name: audit
+        run: pnpm audit:build
+
+      - name: package
+        run: pnpm package:gamevui
+
+      - name: compliance
+        run: pnpm compliance
+
+      - name: Summary
+        if: always()
+        working-directory: .
+        run: |
+          {
+            echo "### GameVui demo"
+            echo
+            if [ -f release/gamevui/submission-report.md ]; then
+              sed -n '1,20p' release/gamevui/submission-report.md
+            else
+              echo "no report — an earlier step failed"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gamevui-submission
+          path: |
+            release/gamevui/
+            build/gamevui-demo/
+          if-no-files-found: warn

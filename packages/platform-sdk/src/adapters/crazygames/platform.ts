@@ -28,6 +28,7 @@ import { LocalStorageBackend } from "../../storage.js";
 import { UsageRecorder, type PlatformUsage } from "../../usage.js";
 import type {
   AdAvailability,
+  AdHooks,
   AdKind,
   AdResult,
   AdSkipReason,
@@ -188,6 +189,11 @@ export class CrazyGamesPlatform implements Platform {
     return this.#loadingFraction;
   }
 
+  /** Whether gameplay is currently reported as running (the Platform contract's name). */
+  get gameplayActive(): boolean {
+    return this.#inGameplay;
+  }
+
   get inGameplay(): boolean {
     return this.#inGameplay;
   }
@@ -282,12 +288,12 @@ export class CrazyGamesPlatform implements Platform {
     return "available";
   }
 
-  async showInterstitial(): Promise<AdResult> {
-    return this.#requestAd("interstitial");
+  async showInterstitial(hooks?: AdHooks): Promise<AdResult> {
+    return this.#requestAd("interstitial", hooks);
   }
 
-  async showRewarded(): Promise<RewardedResult> {
-    const result = await this.#requestAd("rewarded");
+  async showRewarded(hooks?: AdHooks): Promise<RewardedResult> {
+    const result = await this.#requestAd("rewarded", hooks);
     // Rewarded only on adFinished. adError — unfilled, adblock, cooldown, Basic Launch —
     // never rewards: "When our rewarded ad returns with an adError callback, do NOT reward".
     return { ...result, rewarded: result.shown };
@@ -306,7 +312,7 @@ export class CrazyGamesPlatform implements Platform {
     }
   }
 
-  #requestAd(kind: "interstitial" | "rewarded"): Promise<AdResult> {
+  #requestAd(kind: "interstitial" | "rewarded", hooks?: AdHooks): Promise<AdResult> {
     this.#usage.recordAdRequested(kind);
 
     const availability = this.adAvailability(kind);
@@ -317,7 +323,7 @@ export class CrazyGamesPlatform implements Platform {
 
     // The SDK runs one ad at a time; a second request while one is open is the game's bug,
     // not a reason to queue a chained ad.
-    if (this.#adInProgress) return Promise.resolve({ shown: false, reason: "not-ready" });
+    if (this.#adInProgress) return Promise.resolve({ shown: false, reason: "busy" });
 
     const sdk = this.#sdk;
     if (!sdk) return Promise.resolve({ shown: false, reason: "disabled" });
@@ -357,6 +363,7 @@ export class CrazyGamesPlatform implements Platform {
             if (settled) lateStarted = true;
             else started = true;
             this.#events.emit("ad:start", { kind });
+            if (!settled) hooks?.onStart?.();
           },
           adFinished: () => {
             if (settled) return endLate();

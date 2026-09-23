@@ -17,6 +17,7 @@ import { AdPolicy } from "../ad-policy.js";
 import { PlatformEmitter } from "../emitter.js";
 import { UsageRecorder, type PlatformUsage } from "../usage.js";
 import type {
+  AdHooks,
   AdResult,
   Platform,
   PlatformCapabilities,
@@ -329,6 +330,10 @@ export class YandexPlatform implements Platform {
     this.#call(() => this.#sdk?.features.GameplayAPI?.start());
   }
 
+  get gameplayActive(): boolean {
+    return this.#gameplayRunning;
+  }
+
   /** GameplayAPI.stop() — level end, menu, pause, before an ad, leaving the tab. */
   gameplayStop(): void {
     if (!this.#gameplayRunning) return;
@@ -336,17 +341,17 @@ export class YandexPlatform implements Platform {
     this.#call(() => this.#sdk?.features.GameplayAPI?.stop());
   }
 
-  showInterstitial(): Promise<AdResult> {
-    return this.#show("interstitial").then(({ shown, reason }) =>
+  showInterstitial(hooks?: AdHooks): Promise<AdResult> {
+    return this.#show("interstitial", hooks).then(({ shown, reason }) =>
       reason ? { shown, reason } : { shown },
     );
   }
 
-  showRewarded(): Promise<RewardedResult> {
-    return this.#show("rewarded");
+  showRewarded(hooks?: AdHooks): Promise<RewardedResult> {
+    return this.#show("rewarded", hooks);
   }
 
-  #show(kind: "interstitial" | "rewarded"): Promise<RewardedResult> {
+  #show(kind: "interstitial" | "rewarded", hooks?: AdHooks): Promise<RewardedResult> {
     this.#usage.recordAdRequested(kind);
     const refused = this.#ads.check(kind);
     if (refused) return Promise.resolve({ shown: false, rewarded: false, reason: refused });
@@ -402,6 +407,7 @@ export class YandexPlatform implements Platform {
           this.#adShowing = true;
           this.#timers.clearTimeout(timer);
           this.#events.emit("ad:start", { kind });
+          hooks?.onStart?.();
         },
         onClose: (wasShown: boolean) => {
           const shown = wasShown === true;

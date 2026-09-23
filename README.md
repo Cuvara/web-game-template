@@ -20,6 +20,10 @@ elevated shell on Windows.
 - [docs/ci-cd.md](docs/ci-cd.md) — the seven pipelines and the two gates
 - [docs/release.md](docs/release.md) — freezing a candidate
 - [docs/publishing.md](docs/publishing.md) — what is automated and what cannot be
+- [examples/poki-compliance-demo](examples/poki-compliance-demo/README.md) — every Poki SDK
+  path, audited and tested
+- [compliance/poki-compliance-report.md](compliance/poki-compliance-report.md) — what is
+  verified for Poki, and what is still manual
 - [docs/platforms/crazygames/requirements.md](docs/platforms/crazygames/requirements.md) —
   CrazyGames requirements, and what answers each one
 - [CHANGELOG.md](CHANGELOG.md)
@@ -90,20 +94,21 @@ and release validation checks it: every profile carries a `package.platform_sdk`
 PixiJS for 2D, Three.js for 3D, chosen in `game.config.yaml` as `engine.type` and justified in
 the title's tech plan. Only the selected engine is bundled — the frameworks are imported
 dynamically, because shipping both would put an unused megabyte into every build against caps
-as low as GameVui's 50 MB.
+as low as the 50 MB in the Factory's GameVui profile — an unverified figure GameVui itself does
+not publish ([docs/platforms/gamevui/](docs/platforms/gamevui/platform-contract.md)).
 
 ## Platforms
 
 Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory and an adapter
 here.
 
-| Platform     | Profile | Adapter         | Upload automated   |
-| ------------ | ------- | --------------- | ------------------ |
-| Generic Web  | ✅      | ✅              | n/a — self-hosted  |
-| Yandex Games | ✅      | ✅              | no — no public API |
-| Poki         | ✅      | not written     | yes — `@poki/cli`  |
-| CrazyGames   | ✅      | ✅ HTML5 SDK v3 | no — no public API |
-| GameVui      | ✅      | not written     | no — no public API |
+| Platform     | Profile         | Adapter                         | Upload automated          |
+| ------------ | --------------- | ------------------------------- | ------------------------- |
+| Generic Web  | ✅              | ✅                              | n/a — self-hosted         |
+| Yandex Games | ✅              | ✅                              | no — no public API        |
+| Poki         | ✅              | ✅                              | yes — `@poki/cli`         |
+| CrazyGames   | ✅              | ✅ HTML5 SDK v3                 | no — no public API        |
+| GameVui      | ✅ (unverified) | none — GameVui publishes no SDK | no — email / contact form |
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)
@@ -164,7 +169,8 @@ Foundation and pipelines implemented and exercised on real runners.
 | Release packaging, manifest, publication records                             | done        |
 | Seven workflows, both gates                                                  | done        |
 | Portal adapter — yandex, with `examples/yandex-compliance-demo`              | done        |
+| Portal adapter — poki, with `examples/poki-compliance-demo`                  | done        |
 | CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done        |
-| Portal adapters — poki, gamevui                                              | not written |
+| Portal adapters — gamevui                                                    | not written |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty       |
 | `scripts/build`, `scripts/campaign`                                          | empty       |
