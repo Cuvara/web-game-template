@@ -1,0 +1,33 @@
+# Tower Merge Rush — game configuration
+#
+# Same shape and validator as the template's own game.config.yaml. This example targets the
+# generic web (self-hosted) so it needs no portal SDK to run, yet exercises the same platform
+# abstraction — ads simply report {shown:false} where a portal would show one.
+
+game:
+  id: tower-merge-rush
+  name: Tower Merge Rush
+  version: 0.1.0
+
+engine:
+  type: pixijs
+
+platforms:
+  - { id: generic-web, profile: generic-web@1.0.0, role: required }
+
+monetization:
+  # Interstitial between runs (on restart), rewarded to continue / double at game over.
+  ad_kinds: [interstitial, rewarded]
+  iap: false
+
+build:
+  command: pnpm --filter @wgf/example-tower-merge-rush build
+  output: dist
+
+verification:
+  smoke_test: true
+  performance_test: false
+  mobile_test: true
+
+publishing:
+  enabled: false

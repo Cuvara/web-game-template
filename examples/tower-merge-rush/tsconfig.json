@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts"],
+  "references": [
+    { "path": "../../packages/game-core" },
+    { "path": "../../packages/platform-sdk" },
+    { "path": "../../packages/pixi-framework" }
+  ]
+}
