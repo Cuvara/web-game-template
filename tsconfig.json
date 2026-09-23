@@ -8,10 +8,12 @@
   "include": [
     "src",
     "tests",
-    "*.config.ts",
-    "vitest.workspace.ts",
+    "scripts/build",
     "examples/*/src",
-    "examples/*/vite.config.ts"
+    "examples/*/tests",
+    "examples/*/*.config.ts",
+    "*.config.ts",
+    "vitest.workspace.ts"
   ],
   "exclude": ["node_modules", "dist", "examples/*/dist"],
   "references": [

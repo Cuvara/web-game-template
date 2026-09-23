@@ -7,6 +7,12 @@
 import type { Renderer, RendererOptions } from "@wgf/game-core";
 import { Application, type Container } from "pixi.js";
 
+/**
+ * Same cap as the Three.js renderer. A 2.75x phone screen costs nearly twice the fill of a
+ * 2x one for no visible gain in a game, and fill rate is what low-end Android runs out of.
+ */
+const MAX_RESOLUTION = 2;
+
 export class PixiRenderer implements Renderer {
   readonly kind = "pixijs" as const;
 
@@ -29,7 +35,7 @@ export class PixiRenderer implements Renderer {
       background: options.background ?? 0x101014,
       antialias: true,
       autoDensity: true,
-      resolution: globalThis.devicePixelRatio ?? 1,
+      resolution: Math.min(globalThis.devicePixelRatio ?? 1, MAX_RESOLUTION),
     });
     // The loop drives rendering; Pixi must not also drive it.
     app.ticker.stop();

@@ -23,6 +23,7 @@
 // makes, and it is loaded only by this adapter, only when a build targets Poki.
 
 import { AdPolicy } from "../ad-policy.js";
+import { PlatformEmitter } from "../emitter.js";
 import { GameplayLifecycle, type RejectedCall } from "../lifecycle.js";
 import { LocalStorageBackend } from "../storage.js";
 import { UsageRecorder, type PlatformUsage } from "../usage.js";
@@ -33,6 +34,7 @@ import type {
   AdSkipReason,
   Platform,
   PlatformCapabilities,
+  PlatformEvents,
   PlatformStorage,
   RewardedResult,
 } from "../types.js";
@@ -144,8 +146,15 @@ export class PokiPlatform implements Platform {
   readonly id = "poki";
   readonly capabilities = POKI_CAPABILITIES;
   readonly storage: PlatformStorage;
+  /**
+   * Poki's HTML5 documentation defines no language call, so the adapter does not guess one;
+   * the game follows the browser.
+   */
+  readonly language = null;
 
   readonly #ads = new AdPolicy(POKI_CAPABILITIES);
+  readonly #events = new PlatformEmitter();
+  #foreground = true;
   readonly #usage = new UsageRecorder();
   readonly #lifecycle: GameplayLifecycle;
   readonly #loadSdk: PokiSdkLoader;
@@ -192,6 +201,18 @@ export class PokiPlatform implements Platform {
 
   get gameplayActive(): boolean {
     return this.#lifecycle.playing;
+  }
+
+  /** False while a Poki ad is on screen. */
+  get foreground(): boolean {
+    return this.#foreground;
+  }
+
+  on<K extends keyof PlatformEvents>(
+    event: K,
+    handler: (payload: PlatformEvents[K]) => void,
+  ): () => void {
+    return this.#events.on(event, handler);
   }
 
   initialize(): Promise<void> {
@@ -302,6 +323,9 @@ export class PokiPlatform implements Platform {
       let started = false;
       const onStart = (): void => {
         started = true;
+        this.#foreground = false;
+        this.#events.emit("foreground:lost", undefined);
+        this.#events.emit("ad:start", { kind });
         hooks?.onStart?.();
       };
 
@@ -322,6 +346,11 @@ export class PokiPlatform implements Platform {
       }
     } finally {
       this.#lifecycle.endAd();
+      if (!this.#foreground) {
+        this.#foreground = true;
+        this.#events.emit("ad:end", { kind });
+        this.#events.emit("foreground:gained", undefined);
+      }
     }
   }
 

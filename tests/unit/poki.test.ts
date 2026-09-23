@@ -333,3 +333,33 @@ describe("loadPokiSdkScript with a tag already in the page", () => {
     await expect(loading).resolves.toBeNull();
   });
 });
+
+describe("PokiPlatform foreground signals", () => {
+  it("gives up the foreground only while an ad is actually on screen", async () => {
+    const { platform } = await readyPlatform();
+    const seen: string[] = [];
+    platform.on("foreground:lost", () => seen.push(`lost fg=${platform.foreground}`));
+    platform.on("ad:start", ({ kind }) => seen.push(`start ${kind}`));
+    platform.on("ad:end", ({ kind }) => seen.push(`end ${kind}`));
+    platform.on("foreground:gained", () => seen.push(`gained fg=${platform.foreground}`));
+
+    expect(platform.foreground).toBe(true);
+    expect(platform.language).toBeNull();
+    await platform.showInterstitial();
+    expect(seen).toEqual([
+      "lost fg=false",
+      "start interstitial",
+      "end interstitial",
+      "gained fg=true",
+    ]);
+  });
+
+  it("keeps the foreground when no ad plays", async () => {
+    const { platform } = await readyPlatform({ ad: "no-fill" });
+    const seen: string[] = [];
+    platform.on("foreground:lost", () => seen.push("lost"));
+    await platform.showRewarded();
+    expect(seen).toEqual([]);
+    expect(platform.foreground).toBe(true);
+  });
+});

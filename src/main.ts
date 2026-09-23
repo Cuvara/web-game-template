@@ -30,7 +30,12 @@ async function main(): Promise<void> {
   await platform.initialize();
   platform.reportLoadingProgress(0.2);
 
-  const i18n = await loadLocale({ available: availableLocales, fallback: "en" });
+  // The portal's language outranks the browser's: Yandex requires it (requirement 2.14).
+  const i18n = await loadLocale({
+    available: availableLocales,
+    fallback: "en",
+    ...(platform.language ? { preferred: [platform.language] } : {}),
+  });
   hud.textContent = i18n.t("boot.title");
   document.documentElement.lang = i18n.locale;
   platform.reportLoadingProgress(0.4);

@@ -8,9 +8,41 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — Yandex Games
+
+- **Yandex adapter** (`createPlatform("yandex")`), written against the current official
+  docs. It covers:
+  - loading `/sdk.js`;
+  - `LoadingAPI.ready()` and `GameplayAPI` transitions;
+  - `game_api_pause`/`resume`, including the ad the portal shows at launch;
+  - interstitial and rewarded ads, which keep listening past their open-timeout;
+  - saves through `player.setData`, with a local mirror and revision reconciliation;
+  - the account-selection dialog.
+
+  A missing SDK degrades the game rather than failing boot.
+
+- **`Platform` gains `language`, `foreground` and `on()`**, plus two events, `ad:late-reward`
+  and `storage:changed`. A title that implements `Platform` itself must add them. Titles
+  that only call it need not change.
+- **`src/main.ts` follows the portal's language** when the platform reports one.
+- **`examples/yandex-compliance-demo`**: a small PixiJS game that exercises every lifecycle
+  moment Yandex moderation checks. It comes with:
+  - unit tests;
+  - Playwright e2e on desktop, phone and tablet;
+  - `scripts/verify/yandex-audit.mjs`, a static audit of the build;
+  - `scripts/release/yandex-archive.mjs`, which packages the upload ZIP;
+  - the workflow `yandex-demo.yml`.
+
+  Its assessment is `compliance/yandex-compliance-report.md`: READY_WITH_MANUAL_CHECKS, not
+  submitted, not Yandex-approved.
+
+- The Vite game-config plugin moved to `scripts/build/game-config-plugin.ts` so examples
+  can share it.
+- `PixiRenderer` caps resolution at 2×, matching the Three.js renderer.
+
 ### Added — Poki
 
-- **`PokiPlatform`**, the first portal adapter, written against Poki's current HTML5 SDK
+- **`PokiPlatform`**, a portal adapter written against Poki's current HTML5 SDK
   documentation. It loads Poki's documented loader at runtime, and boots without it when an
   ad blocker stops the script or `init()` never settles.
 - **`GameplayLifecycle`**, Poki's sequencing rules in one pure class: `gameLoadingFinished`
@@ -33,6 +65,11 @@ not publish versioned releases of its own, so changes are grouped by date.
 - **The template's boot no longer reports `gameplayStart` at load.** It waits for the first
   pointer, touch or key input, as Poki requires; a hidden tab restarts gameplay on return only
   if it had stopped it.
+- **Both adapters implement the merged `Platform` contract.** `YandexPlatform` reports
+  `gameplayActive` and calls `AdHooks.onStart` from the portal's `onOpen`; `PokiPlatform`
+  reports `foreground`, emits `ad:start`/`ad:end` and `foreground:lost`/`foreground:gained`
+  around an ad that actually plays, and leaves `language` null because Poki documents no
+  language call.
 - **`LocalStorageBackend` guards every operation**, not just the probe: storage that fails
   mid-session, or a `localStorage` getter that throws inside an iframe, moves it onto memory
   instead of throwing into the game.

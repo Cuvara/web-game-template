@@ -15,6 +15,7 @@ import type {
   AdResult,
   Platform,
   PlatformCapabilities,
+  PlatformEvents,
   PlatformStorage,
   RewardedResult,
 } from "../types.js";
@@ -40,6 +41,10 @@ export class GenericWebPlatform implements Platform {
   readonly id = "generic-web";
   readonly capabilities = GENERIC_WEB_CAPABILITIES;
   readonly storage: PlatformStorage;
+  /** No portal to choose a language; the game falls back to the browser's. */
+  readonly language = null;
+  /** No portal to take the foreground away. */
+  readonly foreground = true;
 
   readonly #ads = new AdPolicy(GENERIC_WEB_CAPABILITIES);
   readonly #usage = new UsageRecorder();
@@ -61,6 +66,14 @@ export class GenericWebPlatform implements Platform {
 
   get ready(): boolean {
     return this.#ready;
+  }
+
+  /** Nothing to subscribe to: without a portal, no signal is ever raised. */
+  on<K extends keyof PlatformEvents>(
+    _event: K,
+    _handler: (payload: PlatformEvents[K]) => void,
+  ): () => void {
+    return () => undefined;
   }
 
   initialize(): Promise<void> {

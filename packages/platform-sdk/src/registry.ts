@@ -7,6 +7,7 @@
 
 import { GenericWebPlatform } from "./adapters/generic-web.js";
 import { PokiPlatform } from "./adapters/poki.js";
+import { YandexPlatform } from "./adapters/yandex.js";
 import type { Platform } from "./types.js";
 
 /** Every platform id that has a profile in the Factory's reference data. */
@@ -33,9 +34,10 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
   switch (id) {
     case "generic-web":
       return new GenericWebPlatform({ namespace: options.namespace });
+    case "yandex":
+      return new YandexPlatform({ namespace: options.namespace });
     case "poki":
       return new PokiPlatform({ namespace: options.namespace });
-    case "yandex":
     case "crazygames":
     case "gamevui":
       throw new Error(

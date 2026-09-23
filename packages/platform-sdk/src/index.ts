@@ -39,6 +39,28 @@ export {
   type RejectedCall,
 } from "./lifecycle.js";
 export {
+  YANDEX_CAPABILITIES,
+  YANDEX_SDK_URL,
+  YandexPlatform,
+  loadSdkScript,
+  type YandexOptions,
+} from "./adapters/yandex.js";
+export {
+  YANDEX_DATA_LIMIT_BYTES,
+  YANDEX_MIN_WRITE_INTERVAL_MS,
+  YandexStorage,
+  type Timers,
+  type YandexStorageOptions,
+} from "./adapters/yandex-storage.js";
+export type {
+  YaGamesGlobal,
+  YandexAdCallbacks,
+  YandexPlayer,
+  YandexRewardedCallbacks,
+  YandexSdk,
+} from "./adapters/yandex-sdk.js";
+export { PlatformEmitter } from "./emitter.js";
+export {
   KNOWN_PLATFORM_IDS,
   createPlatform,
   isPlatformId,
