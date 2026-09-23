@@ -326,6 +326,40 @@ describe("bindPlatform — the portal holding the foreground", () => {
     expect(game.paused).toBe(false);
   });
 
+  it("arms the watchdog on the boot path, and recovers a dropped launch-ad gained", () => {
+    // The launch ad: the portal held the foreground before bindPlatform subscribed, so there
+    // is no foreground:lost event — only the constructor's own pause. This path must arm the
+    // same watchdog, or a dropped foreground:gained here strands the game paused forever.
+    const { platform, timers, setForeground } = portal(false);
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform, timers);
+    expect(game.paused).toBe(true);
+    // Still on top: the watchdog declines and the game stays paused.
+    timers.fireAll();
+    expect(game.paused).toBe(true);
+    // The portal came back but the gained event was dropped; the re-armed watchdog recovers.
+    setForeground(true);
+    timers.fireAll();
+    expect(game.paused).toBe(false);
+  });
+
+  it("does not recover the boot path while a launch ad still holds the foreground", () => {
+    // The launch ad is playing: even if the portal reports the foreground back early, the
+    // "ad" hold must keep the game paused, and the watchdog must re-arm rather than resume.
+    const { platform, timers, emit, setForeground } = portal(false);
+    const game = new Game({ scheduler: new ManualScheduler() });
+    game.start();
+    bindPlatform(game, platform, timers);
+    emit("ad:start", { kind: "interstitial" });
+    setForeground(true); // flag handed back early, still mid-ad
+    timers.fireAll();
+    expect(game.paused).toBe(true); // ad still holds it; watchdog re-arms
+    emit("ad:end", { kind: "interstitial" });
+    timers.fireAll();
+    expect(game.paused).toBe(false);
+  });
+
   it("does not lift a pause that belongs to someone else", () => {
     const { platform, lose, gain } = portal();
     const game = new Game({ scheduler: new ManualScheduler() });

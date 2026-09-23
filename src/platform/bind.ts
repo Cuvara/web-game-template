@@ -182,33 +182,52 @@ export function bindPlatform(
   };
   const recover = (): void => {
     watchdog = undefined;
-    // Never resume while an ad legitimately holds the foreground: a real portal ad — the
-    // adapter's own (heldForAd / adPlaying) or a withAdBreak body (adBreakActive) — keeps the
-    // screen and will send its own foreground:gained when it ends. Recovering here would
-    // restart gameplay under a playing ad, the exact leak the reason split exists to prevent.
-    // But a "platform" pause is still held under that ad (foreground:gained was dropped), so
-    // re-arm rather than give up: once the ad clears, a later tick can safely recover it.
-    if (heldForAd || adPlaying || adBreakActive.has(game)) {
+    // Two reasons to decline a recovery, and both must keep watching rather than give up —
+    // the "platform" pause is still held (its foreground:gained was dropped) and only this
+    // watchdog can lift it:
+    //   1. An ad legitimately holds the foreground — the adapter's own (heldForAd / adPlaying)
+    //      or a withAdBreak body (adBreakActive). Resuming here would restart gameplay under a
+    //      playing ad, the exact leak the reason split exists to prevent.
+    //   2. The portal still reports itself on top (platform.foreground is false): the
+    //      foreground genuinely has not come back yet.
+    // In either case re-arm, so once the ad clears or the foreground truly returns a later
+    // tick recovers it. A genuine foreground:gained (or dispose) clears the watchdog first, so
+    // this loop only runs while the game is actually stranded.
+    if (heldForAd || adPlaying || adBreakActive.has(game) || !platform.foreground) {
       watchdog = scheduleTimeout(recover, recoveryMs);
       return;
     }
-    // Only trust the portal's own current answer. If it still reports itself on top, the
-    // foreground really is gone and the game stays paused; we only recover a genuine return.
-    if (platform.foreground) game.resume("platform");
+    // The foreground has genuinely come back and no ad holds it: lift "platform" as a real
+    // foreground:gained would have.
+    game.resume("platform");
   };
-  const offLost = platform.on("foreground:lost", () => {
-    game.pause("platform");
+  // Arm (or re-arm) the recovery watchdog for the current "platform" pause. Shared by both
+  // paths that pause under the portal: the mid-session foreground:lost handler and the
+  // constructor's launch-ad path below. Both need the same bounded escape — a dropped
+  // foreground:gained strands the game identically whether the loss arrived as an event or
+  // was already in force before anything subscribed.
+  const armRecovery = (): void => {
     // Replace any stale watchdog: the newest loss is the one that must be recovered from.
     clearWatchdog();
     watchdog = scheduleTimeout(recover, recoveryMs);
+  };
+  const offLost = platform.on("foreground:lost", () => {
+    game.pause("platform");
+    armRecovery();
   });
   const offGained = platform.on("foreground:gained", () => {
     // A genuine return arrived; the watchdog is no longer needed.
     clearWatchdog();
     game.resume("platform");
   });
-  // The portal may have taken the foreground before anything subscribed (the launch ad).
-  if (!platform.foreground) game.pause("platform");
+  // The portal may have taken the foreground before anything subscribed (the launch ad). Arm
+  // the same watchdog the loss handler uses: without it a dropped foreground:gained on this
+  // boot path would strand the game paused forever — the one lost-foreground path that
+  // previously had no bounded escape.
+  if (!platform.foreground) {
+    game.pause("platform");
+    armRecovery();
+  }
 
   return {
     get audioMuted() {
