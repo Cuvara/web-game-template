@@ -8,6 +8,29 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — CrazyGames
+
+- **CrazyGames adapter** (`@wgf/platform-sdk`, HTML5 SDK v3). `createPlatform("crazygames")`
+  no longer throws. Gameplay start/stop, loading start/stop, midgame and rewarded ads,
+  Data-module storage, `muteAudio`, system-info locale/device, user. Degrades to a plain web
+  game when the SDK is disabled (non-CrazyGames domain) or blocked.
+- **Platform contract additions**: `events` (`ad:start`, `ad:end`, `settings:change`),
+  `settings`, `environment`, `adAvailability()`, `getUser()`, and
+  `capabilities.gameplayStopOnHidden`. Ad skip reasons gain `disabled` and `adblock`.
+- **`examples/crazygames-compliance-demo/`** — a PixiJS game that exercises the integration
+  end to end, and `tests/crazygames/` driving it on desktop, mobile and tablet.
+- **`scripts/crazygames-audit.mjs`** with limits tied to their official source in
+  `config/platforms/crazygames-limits.json`; **`crazygames.yml`** runs all of it.
+- **`docs/platforms/crazygames/requirements.md`** and
+  **`compliance/crazygames-compliance-report.md`**.
+
+### Fixed
+
+- **Builds used absolute asset paths.** `vite.config.ts` now sets `base: "./"`; CrazyGames
+  states absolute paths fail to load, and other portals serve from sub-paths too.
+- **Focus loss was always reported as a gameplay stop.** CrazyGames asks games not to;
+  `bindPlatform` now follows `capabilities.gameplayStopOnHidden`.
+
 ### Added — pipelines
 
 - **Seven GitHub Actions workflows**, replacing seven comment-only stubs. `ci.yml` and

@@ -32,6 +32,11 @@ function shippedLocales(): string[] {
     .sort();
 }
 
+// Kept as a literal rather than imported from @wgf/platform-sdk: this file runs under Node
+// before the packages are built. tests/integration/crazygames-build.test.ts asserts the two
+// agree.
+const CRAZYGAMES_SDK_URL = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
+
 function gameConfigPlugin(): Plugin {
   return {
     name: "wgf:game-config",
@@ -61,11 +66,25 @@ function gameConfigPlugin(): Plugin {
       server.watcher.add(CONFIG_PATH);
       server.watcher.add(LOCALES_DIR);
     },
+    // CrazyGames documents one way to load its SDK: a classic <script> in <head>, before the
+    // game code. Only a build whose primary platform is crazygames gets it — every other
+    // profile asserts a bundle free of foreign portal SDKs.
+    transformIndexHtml() {
+      const config = validateGameConfig(parse(readFileSync(CONFIG_PATH, "utf8")));
+      const primary =
+        config.platforms.find((entry) => entry.role === "required") ?? config.platforms[0];
+      if (primary?.id !== "crazygames") return [];
+      return [{ tag: "script", attrs: { src: CRAZYGAMES_SDK_URL }, injectTo: "head-prepend" }];
+    },
   };
 }
 
 export default defineConfig({
   plugins: [gameConfigPlugin()],
+  // Relative asset URLs. Portals serve a build from a path they choose — CrazyGames states
+  // "Use only relative paths ... Never use absolute paths, as they will fail to load" — and
+  // Vite's default base of "/" writes absolute ones into index.html.
+  base: "./",
   build: {
     outDir: "dist",
     target: "es2020",

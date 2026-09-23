@@ -1,0 +1,19 @@
+{
+  "loading": "Loading…",
+  "hud.level": "Level {level}",
+  "hud.caught": "{caught} / {goal}",
+  "hud.coins": "{coins} coins",
+  "hint.controls.pointer": "Move the paddle with your mouse or finger",
+  "hint.controls.keys": "or with {keys}",
+  "hint.goal": "Catch the orbs!",
+  "complete.title": "Level {level} complete!",
+  "complete.earned": "+{coins} coins",
+  "complete.next": "Next level",
+  "complete.double.ad": "Watch ad: double coins",
+  "complete.double.coins": "Double for {price} coins",
+  "complete.ad.unavailable": "No ad available right now. Try again later.",
+  "complete.ad.adblock": "Ad-based bonuses are unavailable while an ad blocker is active.",
+  "complete.doubled": "Coins doubled!",
+  "ad.wait": "Please wait…",
+  "complete.save.failed": "Progress could not be saved this time."
+}

@@ -20,6 +20,8 @@ elevated shell on Windows.
 - [docs/ci-cd.md](docs/ci-cd.md) — the seven pipelines and the two gates
 - [docs/release.md](docs/release.md) — freezing a candidate
 - [docs/publishing.md](docs/publishing.md) — what is automated and what cannot be
+- [docs/platforms/crazygames/requirements.md](docs/platforms/crazygames/requirements.md) —
+  CrazyGames requirements, and what answers each one
 - [CHANGELOG.md](CHANGELOG.md)
 
 ## Where it sits
@@ -95,13 +97,13 @@ as low as GameVui's 50 MB.
 Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory and an adapter
 here.
 
-| Platform     | Profile | Adapter     | Upload automated   |
-| ------------ | ------- | ----------- | ------------------ |
-| Generic Web  | ✅      | ✅          | n/a — self-hosted  |
-| Yandex Games | ✅      | not written | no — no public API |
-| Poki         | ✅      | not written | yes — `@poki/cli`  |
-| CrazyGames   | ✅      | not written | no — no public API |
-| GameVui      | ✅      | not written | no — no public API |
+| Platform     | Profile | Adapter         | Upload automated   |
+| ------------ | ------- | --------------- | ------------------ |
+| Generic Web  | ✅      | ✅              | n/a — self-hosted  |
+| Yandex Games | ✅      | not written     | no — no public API |
+| Poki         | ✅      | not written     | yes — `@poki/cli`  |
+| CrazyGames   | ✅      | ✅ HTML5 SDK v3 | no — no public API |
+| GameVui      | ✅      | not written     | no — no public API |
 
 An id with a profile but no adapter throws at startup. Degrading silently to no-ads would ship
 a title that thinks it has a portal SDK and does not, which is a blocking assertion failure at
@@ -152,6 +154,7 @@ Foundation and pipelines implemented and exercised on real runners.
 | Package-fact measurement and the assertion evaluator                         | done        |
 | Release packaging, manifest, publication records                             | done        |
 | Seven workflows, both gates                                                  | done        |
-| Portal adapters — yandex, poki, crazygames, gamevui                          | not written |
+| CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done        |
+| Portal adapters — yandex, poki, gamevui                                      | not written |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty       |
 | `scripts/build`, `scripts/campaign`                                          | empty       |

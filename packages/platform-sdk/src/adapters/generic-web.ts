@@ -9,13 +9,19 @@
 // portal SDK script is loaded here, and none should ever be added to this file.
 
 import { AdPolicy } from "../ad-policy.js";
+import { PlatformEmitter } from "../emitter.js";
 import { LocalStorageBackend } from "../storage.js";
 import { UsageRecorder, type PlatformUsage } from "../usage.js";
 import type {
+  AdAvailability,
+  AdKind,
   AdResult,
   Platform,
   PlatformCapabilities,
+  PlatformEnvironment,
+  PlatformSettings,
   PlatformStorage,
+  PlatformUser,
   RewardedResult,
 } from "../types.js";
 
@@ -29,6 +35,7 @@ export const GENERIC_WEB_CAPABILITIES: PlatformCapabilities = {
   analytics: "self-hosted",
   loadingApi: "optional",
   interstitialMinIntervalS: null,
+  gameplayStopOnHidden: true,
 };
 
 export interface GenericWebOptions {
@@ -40,6 +47,9 @@ export class GenericWebPlatform implements Platform {
   readonly id = "generic-web";
   readonly capabilities = GENERIC_WEB_CAPABILITIES;
   readonly storage: PlatformStorage;
+  readonly events = new PlatformEmitter();
+  readonly settings: PlatformSettings = { muteAudio: false };
+  readonly environment: PlatformEnvironment = { locale: null, device: null, inPortalApp: false };
 
   readonly #ads = new AdPolicy(GENERIC_WEB_CAPABILITIES);
   readonly #usage = new UsageRecorder();
@@ -78,8 +88,21 @@ export class GenericWebPlatform implements Platform {
     return Promise.resolve();
   }
 
-  gameplayStart(): void {}
-  gameplayStop(): void {}
+  gameplayStart(): void {
+    this.#usage.recordGameplayStart();
+  }
+
+  gameplayStop(): void {
+    this.#usage.recordGameplayStop();
+  }
+
+  adAvailability(kind: AdKind): AdAvailability {
+    return this.capabilities.ads.includes(kind) ? "available" : "unsupported";
+  }
+
+  getUser(): Promise<PlatformUser | null> {
+    return Promise.resolve(null);
+  }
 
   showInterstitial(): Promise<AdResult> {
     this.#usage.recordAdRequested("interstitial");

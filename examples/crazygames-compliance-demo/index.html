@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Orb Catcher — CrazyGames compliance demo</title>
+    <!-- Load the SDK before your game code — https://docs.crazygames.com/sdk/intro/ -->
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+    <style>
+      :root {
+        --ui-font: clamp(15px, 1.6vmin + 9px, 28px);
+        --pad: 12px;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #14121f;
+        color: #f2f0ff;
+        font:
+          var(--ui-font) / 1.35 system-ui,
+          sans-serif;
+        overflow: hidden;
+        /* https://docs.crazygames.com/requirements/technical/#mobile-game-requirements */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        touch-action: none;
+      }
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+      #game canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      /* Important UI inside the safe area for the CrazyGames app's fullscreen mode. */
+      #hud {
+        position: absolute;
+        top: calc(env(safe-area-inset-top, 0px) + var(--pad));
+        left: calc(env(safe-area-inset-left, 0px) + var(--pad));
+        right: calc(env(safe-area-inset-right, 0px) + var(--pad));
+        display: flex;
+        justify-content: space-between;
+        gap: 1em;
+        pointer-events: none;
+        font-weight: 600;
+        text-shadow: 0 1px 2px #000;
+      }
+      #hint {
+        position: absolute;
+        left: 50%;
+        top: 38%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+        text-shadow: 0 1px 3px #000;
+        transition: opacity 0.6s;
+        max-width: 90vw;
+      }
+      #hint strong {
+        display: block;
+        font-size: 1.3em;
+      }
+      #hint[hidden] {
+        display: block;
+        opacity: 0;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgb(10 8 20 / 0.72);
+        padding: calc(env(safe-area-inset-top, 0px) + var(--pad))
+          calc(env(safe-area-inset-right, 0px) + var(--pad))
+          calc(env(safe-area-inset-bottom, 0px) + var(--pad))
+          calc(env(safe-area-inset-left, 0px) + var(--pad));
+        box-sizing: border-box;
+      }
+      .overlay[hidden] {
+        display: none;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5em;
+        text-align: center;
+        width: min(22em, 100%);
+      }
+      .panel h1 {
+        margin: 0;
+        font-size: 1.4em;
+      }
+      .panel p {
+        margin: 0;
+      }
+      /* Every choice on the panel looks the same: CrazyGames rejects offers where declining
+         is smaller or less visible than watching. */
+      .panel button {
+        font: inherit;
+        font-weight: 600;
+        color: #fff;
+        background: #4b3fb8;
+        border: 2px solid #8b80ff;
+        border-radius: 10px;
+        padding: 0.45em 0.8em;
+        min-height: 44px;
+        cursor: pointer;
+      }
+      .panel button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .note {
+        font-size: max(14px, 0.8em);
+        opacity: 0.85;
+        min-height: 1.35em;
+      }
+      #loading .bar {
+        width: 100%;
+        height: 10px;
+        background: #2a2640;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      #loading .fill {
+        height: 100%;
+        width: 0;
+        background: #8b80ff;
+        transition: width 0.2s;
+      }
+      #ad-shield {
+        position: absolute;
+        inset: 0;
+        background: rgb(0 0 0 / 0.35);
+      }
+      #ad-shield[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="hud" data-phase="loading">
+      <span id="hud-level"></span><span id="hud-caught"></span><span id="hud-coins"></span>
+    </div>
+    <div id="hint" hidden>
+      <strong id="hint-goal"></strong>
+      <span id="hint-pointer"></span><br /><span id="hint-keys"></span>
+    </div>
+    <div id="loading" class="overlay">
+      <div class="panel">
+        <p id="loading-text">Loading…</p>
+        <div class="bar"><div class="fill" id="loading-fill"></div></div>
+      </div>
+    </div>
+    <div id="complete" class="overlay" hidden>
+      <div class="panel">
+        <h1 id="complete-title"></h1>
+        <p id="complete-earned"></p>
+        <button id="btn-next" type="button"></button>
+        <button id="btn-double-ad" type="button"></button>
+        <button id="btn-double-coins" type="button"></button>
+        <p class="note" id="complete-note" role="status"></p>
+      </div>
+    </div>
+    <!-- Blocks every input while an ad is requested or playing. -->
+    <div id="ad-shield" hidden aria-busy="true"></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

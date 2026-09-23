@@ -12,6 +12,7 @@ function capabilities(overrides: Partial<PlatformCapabilities> = {}): PlatformCa
     analytics: "none",
     loadingApi: "required",
     interstitialMinIntervalS: 60,
+    gameplayStopOnHidden: true,
     ...overrides,
   };
 }

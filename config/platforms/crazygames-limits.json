@@ -1,0 +1,112 @@
+{
+  "_comment": [
+    "CrazyGames technical limits, each tied to the official page it was read from.",
+    "",
+    "Read by scripts/crazygames-audit.mjs. Not a Factory profile and not vendored from one: the",
+    "pinned profile (core/reference/platforms/crazygames.yaml@1.0.0) carries only the 250 MB total",
+    "and none of the initial-download, file-count or relative-path rules, so the audit cannot rely",
+    "on it alone. Discrepancies with the profile are listed in",
+    "docs/platforms/crazygames/requirements.md so they can be fed back to the Factory.",
+    "",
+    "CrazyGames does not version its documentation. `retrieved` is the date the page was read; a",
+    "limit is re-checked by re-reading `source`, and `retrieved` is updated only when that happens.",
+    "",
+    "MB is not defined on the source pages. Byte values use 1 MB = 1,000,000 bytes, the smaller",
+    "of the two readings, so an ambiguous build fails here rather than at the portal."
+  ],
+  "platform": "crazygames",
+  "retrieved": "2026-09-23",
+  "docs_version": "unversioned — content as served on 2026-09-23",
+  "sdk": {
+    "name": "CrazyGames HTML5 SDK",
+    "major": 3,
+    "url": "https://sdk.crazygames.com/crazygames-sdk-v3.js",
+    "observed_version": "3.8.0",
+    "observed_last_modified": "2026-09-14",
+    "source": "https://docs.crazygames.com/sdk/intro/",
+    "retrieved": "2026-09-23",
+    "outdated_urls": [
+      "https://sdk.crazygames.com/crazygames-sdk-v2.js",
+      "https://sdk.crazygames.com/crazygames-sdk-v1.js"
+    ]
+  },
+  "limits": {
+    "total_size_bytes": {
+      "value": 250000000,
+      "text": "A maximum total file size of 250MB is allowed.",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/technical/#file-size-count-limits",
+      "retrieved": "2026-09-23"
+    },
+    "total_size_without_sdk_bytes": {
+      "value": 50000000,
+      "text": "In case the SDK is not integrated, total file size is used and thus should be ≤ 50MB.",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/technical/#file-size-count-limits",
+      "retrieved": "2026-09-23"
+    },
+    "file_count": {
+      "value": 1500,
+      "text": "There's a file count limit on 1500 files as high file counts will make loading slower.",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/technical/#file-size-count-limits",
+      "retrieved": "2026-09-23"
+    },
+    "initial_download_bytes": {
+      "value": 50000000,
+      "text": "The game must have an initial download size ≤ 50MB. ... measured between the start of loading and the occurence of the first Gameplay start event.",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/technical/#file-size-count-limits",
+      "retrieved": "2026-09-23"
+    },
+    "initial_download_mobile_homepage_bytes": {
+      "value": 20000000,
+      "text": "In order to be eligible for the mobile homepage, the initial download size needs to be ≤ 20MB.",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/technical/#mobile-game-requirements",
+      "retrieved": "2026-09-23"
+    },
+    "time_to_gameplay_external_s": {
+      "value": 20,
+      "text": "For externally hosted/loaded files our QA team will evaluate based on the time it takes to reach gameplay (≤ 20 seconds).",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/technical/#file-size-count-limits",
+      "retrieved": "2026-09-23"
+    },
+    "relative_paths_only": {
+      "value": true,
+      "text": "Use only relative paths when referring to other files in the game bundle. Never use absolute paths, as they will fail to load.",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/technical/#file-size-count-limits",
+      "retrieved": "2026-09-23"
+    },
+    "data_module_bytes": {
+      "value": 1048576,
+      "text": "Game data when converted to a JSON string cannot exceed 1048576 bytes.",
+      "stage": "FULL_LAUNCH",
+      "source": "https://docs.crazygames.com/sdk/data/#errors",
+      "retrieved": "2026-09-23"
+    },
+    "midgame_interval_s": {
+      "value": 180,
+      "text": "the midroll frequency (max 1 every 3 minutes)",
+      "stage": "FULL_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/ads/#video-ads",
+      "retrieved": "2026-09-23"
+    },
+    "banners_per_screen": {
+      "value": 2,
+      "text": "A maximum of 2 in-game banners may be displayed on the same screen/view.",
+      "stage": "FULL_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/ads/#in-game-banner-ads",
+      "retrieved": "2026-09-23"
+    },
+    "preview_video_bytes": {
+      "value": 50000000,
+      "text": "Video Size: 50MB maximum",
+      "stage": "BASIC_LAUNCH",
+      "source": "https://docs.crazygames.com/requirements/game-covers/#video-requirements",
+      "retrieved": "2026-09-23"
+    }
+  }
+}

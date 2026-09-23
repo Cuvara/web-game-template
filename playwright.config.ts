@@ -16,6 +16,8 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 4173;
 
 export default defineConfig({
+  // Separate from the CrazyGames suite's, so concurrent runs cannot clear each other's files.
+  outputDir: process.env["PW_OUTPUT_DIR"] ?? "test-results/template",
   fullyParallel: true,
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 2 : 0,
@@ -42,7 +44,9 @@ export default defineConfig({
   webServer: {
     command: `pnpm preview --port ${PORT} --strictPort`,
     port: PORT,
-    reuseExistingServer: !process.env["CI"],
+    // Never reuse whatever is already on the port: with several checkouts on one machine it
+    // can be another repository's build, and the suite would judge the wrong artifact.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

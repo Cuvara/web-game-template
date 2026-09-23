@@ -34,14 +34,29 @@ export interface PlatformCapabilities {
   readonly loadingApi: LoadingApiMode;
   /** Shortest gap between interstitials, in seconds. `null` where the portal sets none. */
   readonly interstitialMinIntervalS: number | null;
+  /**
+   * Whether the game itself must report a gameplay stop when the tab is hidden. False where
+   * the portal detects focus loss on its own and asks games not to report it — CrazyGames
+   * says so explicitly for `gameplayStop`.
+   */
+  readonly gameplayStopOnHidden: boolean;
 }
 
 /** Why an ad did not play. Never a thrown error: a missing ad must not break gameplay. */
 export type AdSkipReason =
   | "unsupported" // the portal has no such ad kind
-  | "too-soon" // the profile's minimum interval has not elapsed
-  | "not-ready" // the portal had no fill
+  | "disabled" // the portal has ads switched off for this title (e.g. a soft launch)
+  | "adblock" // an ad blocker prevented the ad
+  | "too-soon" // the minimum interval has not elapsed, locally or at the portal
+  | "not-ready" // the portal had no fill, or another ad is already in progress
   | "error"; // the portal SDK failed
+
+/**
+ * Whether asking for an ad kind can currently have any effect. A game uses this to hide an
+ * offer rather than show a button that does nothing — "rewarded ad buttons without effect"
+ * is a listed CrazyGames rejection cause.
+ */
+export type AdAvailability = "available" | "unsupported" | "disabled" | "adblock";
 
 export interface AdResult {
   readonly shown: boolean;
@@ -63,11 +78,46 @@ export interface PlatformStorage {
   remove(key: string): Promise<void>;
 }
 
+/** Settings the portal imposes on the game. The portal's value wins over any in-game toggle. */
+export interface PlatformSettings {
+  /** The game must be silent while this is true. */
+  readonly muteAudio: boolean;
+}
+
+export type DeviceType = "desktop" | "tablet" | "mobile";
+
+/** What the portal knows about where the game is running. Valid after `initialize()`. */
+export interface PlatformEnvironment {
+  /** BCP 47 locale the portal selected for the player, e.g. `en-US`; null when unknown. */
+  readonly locale: string | null;
+  readonly device: DeviceType | null;
+  /** Running inside the portal's own native app, where the UI must respect safe areas. */
+  readonly inPortalApp: boolean;
+}
+
+/** A logged-in portal account, or null for a guest. Never an authentication credential. */
+export interface PlatformUser {
+  readonly username: string;
+  readonly avatarUrl: string | null;
+}
+
+export type Unsubscribe = () => void;
+
+export interface PlatformEventSource {
+  on<K extends keyof PlatformEvents>(
+    type: K,
+    handler: (payload: PlatformEvents[K]) => void,
+  ): Unsubscribe;
+}
+
 /** What the game tells the platform about its own lifecycle. */
 export interface Platform {
   readonly id: string;
   readonly capabilities: PlatformCapabilities;
   readonly storage: PlatformStorage;
+  readonly events: PlatformEventSource;
+  readonly settings: PlatformSettings;
+  readonly environment: PlatformEnvironment;
   /** A snapshot of what the game has asked for so far. Read by the verify suite. */
   readonly usage: PlatformUsage;
 
@@ -89,14 +139,29 @@ export interface Platform {
   /** Gameplay stopped — a menu, a pause, an incoming ad. */
   gameplayStop(): void;
 
+  /**
+   * Resolve only at a natural break — a level transition, a death — with gameplay already
+   * stopped. Never throws; `shown: false` carries the reason.
+   */
   showInterstitial(): Promise<AdResult>;
   showRewarded(): Promise<RewardedResult>;
+  /** Whether an offer for `kind` should be visible at all. */
+  adAvailability(kind: AdKind): AdAvailability;
+
+  /** The logged-in portal user, or null for a guest or a portal without accounts. */
+  getUser(): Promise<PlatformUser | null>;
 }
 
 /** Signals the platform raises at the game, which map onto Game.pause/resume reasons. */
 export interface PlatformEvents extends Record<string, unknown> {
+  /**
+   * The ad is actually playing. Mute here, not on request: a request may go unfilled, and
+   * muting and unmuting with no visible change reads as a bug.
+   */
   "ad:start": { readonly kind: AdKind };
+  /** Emitted only after an `ad:start`. */
   "ad:end": { readonly kind: AdKind };
+  "settings:change": PlatformSettings;
   "foreground:lost": void;
   "foreground:gained": void;
 }

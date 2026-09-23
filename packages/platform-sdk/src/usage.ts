@@ -18,6 +18,9 @@ import type { AdKind } from "./types.js";
 export interface PlatformUsage {
   readonly loadingProgressCalls: number;
   readonly signalReadyCalls: number;
+  /** Transitions reported to the portal, after deduplication. */
+  readonly gameplayStartCalls: number;
+  readonly gameplayStopCalls: number;
   /** Ads the game asked for, whether or not the portal played one. */
   readonly adsRequested: Readonly<Record<AdKind, number>>;
   /** Ads the portal actually played. */
@@ -29,6 +32,8 @@ const zeroed = (): Record<AdKind, number> => ({ interstitial: 0, rewarded: 0, ba
 export class UsageRecorder {
   #loadingProgressCalls = 0;
   #signalReadyCalls = 0;
+  #gameplayStartCalls = 0;
+  #gameplayStopCalls = 0;
   readonly #adsRequested = zeroed();
   readonly #adsShown = zeroed();
 
@@ -38,6 +43,14 @@ export class UsageRecorder {
 
   recordSignalReady(): void {
     this.#signalReadyCalls += 1;
+  }
+
+  recordGameplayStart(): void {
+    this.#gameplayStartCalls += 1;
+  }
+
+  recordGameplayStop(): void {
+    this.#gameplayStopCalls += 1;
   }
 
   recordAdRequested(kind: AdKind): void {
@@ -52,6 +65,8 @@ export class UsageRecorder {
     return {
       loadingProgressCalls: this.#loadingProgressCalls,
       signalReadyCalls: this.#signalReadyCalls,
+      gameplayStartCalls: this.#gameplayStartCalls,
+      gameplayStopCalls: this.#gameplayStopCalls,
       adsRequested: { ...this.#adsRequested },
       adsShown: { ...this.#adsShown },
     };

@@ -5,6 +5,7 @@
 // degrading to no-ads: a title that ships thinking it had a portal SDK and did not is a
 // blocking assertion failure at release validation, and it is cheaper to find here.
 
+import { CrazyGamesPlatform } from "./adapters/crazygames/platform.js";
 import { GenericWebPlatform } from "./adapters/generic-web.js";
 import type { Platform } from "./types.js";
 
@@ -32,9 +33,10 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
   switch (id) {
     case "generic-web":
       return new GenericWebPlatform({ namespace: options.namespace });
+    case "crazygames":
+      return new CrazyGamesPlatform({ namespace: options.namespace });
     case "yandex":
     case "poki":
-    case "crazygames":
     case "gamevui":
       throw new Error(
         `Platform adapter "${id}" is not implemented yet. Its profile exists in ` +

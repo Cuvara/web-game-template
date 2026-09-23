@@ -47,6 +47,20 @@ export class LocalStorageBackend implements PlatformStorage {
     else this.#fallback.delete(key);
     return Promise.resolve();
   }
+
+  /** Every key in this namespace with its value, without the prefix. */
+  entries(): [string, string][] {
+    if (!this.#available) return [...this.#fallback.entries()];
+    const storage = globalThis.localStorage;
+    const found: [string, string][] = [];
+    for (let index = 0; index < storage.length; index += 1) {
+      const raw = storage.key(index);
+      if (raw === null || !raw.startsWith(this.#prefix)) continue;
+      const value = storage.getItem(raw);
+      if (value !== null) found.push([raw.slice(this.#prefix.length), value]);
+    }
+    return found;
+  }
 }
 
 /** Storage that forgets everything. Used by tests and by headless verification. */

@@ -29,7 +29,14 @@ async function main(): Promise<void> {
   await platform.initialize();
   platform.reportLoadingProgress(0.2);
 
-  const i18n = await loadLocale({ available: availableLocales, fallback: "en" });
+  // The portal's locale first (CrazyGames: use systemInfo.locale, fall back to English),
+  // then the browser's.
+  const portalLocale = platform.environment.locale;
+  const i18n = await loadLocale({
+    available: availableLocales,
+    fallback: "en",
+    ...(portalLocale ? { preferred: [portalLocale, ...navigator.languages] } : {}),
+  });
   hud.textContent = i18n.t("boot.title");
   document.documentElement.lang = i18n.locale;
   platform.reportLoadingProgress(0.4);
@@ -43,7 +50,12 @@ async function main(): Promise<void> {
   });
 
   const game = new Game();
-  bindPlatform(game, platform);
+  // src/audio/ is still an empty slot. Whatever fills it must follow this callback.
+  bindPlatform(game, platform, {
+    onAudioMutedChange: (muted) => {
+      document.documentElement.dataset["audioMuted"] = String(muted);
+    },
+  });
   await game.changeScene(new BootScene({ renderer, hud }));
 
   window.addEventListener("resize", () => {

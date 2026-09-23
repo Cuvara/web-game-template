@@ -1,7 +1,7 @@
 {
   "name": "web-game-template",
   "version": "0.1.0",
-  "description": "Web Game Factory — reusable game template",
+  "description": "Web Game Factory \u2014 reusable game template",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -11,8 +11,9 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm -r --filter \"./packages/*\" build && vite build",
+    "build:crazygames-demo": "pnpm -r --filter \"./packages/*\" build && pnpm --filter @wgf/example-crazygames-compliance-demo build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --force",
+    "typecheck": "tsc -b --force && tsc -b examples/crazygames-compliance-demo --force",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
@@ -23,8 +24,10 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test --project desktop --project mobile",
     "test:verify": "playwright test --project verify",
+    "test:crazygames": "playwright test -c playwright.crazygames.config.ts",
     "facts": "node scripts/verify/collect-facts.mjs",
     "assert": "node scripts/verify/evaluate-assertions.mjs",
+    "audit:crazygames": "node scripts/crazygames-audit.mjs",
     "release:package": "node scripts/release/package.mjs",
     "release:manifest": "node scripts/release/make-manifest.mjs",
     "publish:prepare": "node scripts/publish/make-publication.mjs"
