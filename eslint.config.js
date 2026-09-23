@@ -40,4 +40,11 @@ export default tseslint.config(
       "no-console": "off",
     },
   },
+  {
+    // Served to the browser in place of Poki's SDK script; a plain browser script.
+    files: ["tests/poki/mock-poki-sdk.js"],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
 );

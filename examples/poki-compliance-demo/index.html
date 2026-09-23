@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Poki Compliance Demo</title>
+    <!--
+      Everything is inline or bundled. Poki blocks external requests by default, so there is
+      no web font, no CDN library and no remote image. The one external request the build
+      makes is Poki's own SDK, placed in <head> as Poki's HTML5 guide says. The adapter uses
+      it when it has loaded, and injects it itself when it has not.
+    -->
+    <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+    <style>
+      :root {
+        --bg: #14161f;
+        --panel: rgba(20, 22, 31, 0.92);
+        --text: #f2f3f7;
+        --muted: #a3a8bd;
+        --primary: #3d7eff;
+        --rewarded: #8a4dff;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        overflow: hidden;
+        /* The game sits in Poki's iframe: nothing here may scroll or bounce the page. */
+        overscroll-behavior: none;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+      #game canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #hud {
+        position: absolute;
+        top: 12px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        pointer-events: none;
+        font-weight: 600;
+        text-shadow: 0 1px 2px #000;
+      }
+      #hud button {
+        pointer-events: auto;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 11, 16, 0.55);
+      }
+      .overlay[data-open="true"] {
+        display: flex;
+      }
+      .panel {
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 24px 28px;
+        min-width: 240px;
+        max-width: calc(100vw - 32px);
+        box-sizing: border-box;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .panel h1,
+      .panel h2 {
+        margin: 0;
+      }
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+      }
+      button {
+        font: inherit;
+        font-weight: 700;
+        color: var(--text);
+        border: 0;
+        border-radius: 12px;
+        cursor: pointer;
+      }
+      .primary {
+        background: var(--primary);
+        font-size: 22px;
+        padding: 14px 28px;
+      }
+      /* Poki: a rewarded button is never green, carries the 🎬 icon, and is no larger than
+         the standard option shown with it. */
+      .rewarded {
+        background: var(--rewarded);
+        font-size: 16px;
+        padding: 10px 20px;
+      }
+      .icon {
+        background: rgba(255, 255, 255, 0.14);
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+      }
+      #loading-bar {
+        width: 220px;
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.15);
+        overflow: hidden;
+      }
+      #loading-bar > div {
+        height: 100%;
+        width: 0;
+        background: var(--primary);
+        transition: width 120ms linear;
+      }
+      #touch-controls {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        display: none;
+        justify-content: space-between;
+        padding: 0 16px;
+        pointer-events: none;
+      }
+      #touch-controls[data-visible="true"] {
+        display: flex;
+      }
+      #touch-controls button {
+        pointer-events: auto;
+        width: 88px;
+        height: 88px;
+        font-size: 32px;
+        background: rgba(255, 255, 255, 0.16);
+        border-radius: 50%;
+      }
+      #toast {
+        position: absolute;
+        top: 64px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 16px;
+        border-radius: 10px;
+        background: var(--panel);
+        opacity: 0;
+        transition: opacity 200ms;
+        pointer-events: none;
+      }
+      #toast[data-visible="true"] {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <div id="hud" data-state="loading">
+      <span>Score <span id="score">0</span> · Best <span id="best">0</span></span>
+      <button id="pause-button" class="icon" type="button" aria-label="Pause" hidden>II</button>
+    </div>
+
+    <div id="touch-controls" data-visible="false">
+      <button id="touch-left" type="button" aria-label="Move left">◀</button>
+      <button id="touch-right" type="button" aria-label="Move right">▶</button>
+    </div>
+
+    <div id="toast" data-visible="false"></div>
+
+    <div id="loading" class="overlay" data-open="true">
+      <div class="panel">
+        <h1>Dodge</h1>
+        <div id="loading-bar"><div></div></div>
+      </div>
+    </div>
+
+    <div id="title" class="overlay">
+      <div class="panel">
+        <h1>Dodge</h1>
+        <p id="controls-hint">Move with ← → or A D. Esc to pause.</p>
+        <button id="play" class="primary" type="button">Play</button>
+        <p id="save-notice" hidden>Progress will not be saved in this browser mode.</p>
+      </div>
+    </div>
+
+    <div id="paused" class="overlay">
+      <div class="panel">
+        <h2>Paused</h2>
+        <button id="resume" class="primary" type="button">Resume</button>
+      </div>
+    </div>
+
+    <div id="gameover" class="overlay">
+      <div class="panel">
+        <h2>Game over</h2>
+        <p>Score <span id="final-score">0</span></p>
+        <button id="restart" class="primary" type="button">Play again</button>
+        <button id="revive" class="rewarded" type="button">🎬 Watch ad to revive</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

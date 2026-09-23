@@ -8,6 +8,35 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — Poki
+
+- **`PokiPlatform`**, the first portal adapter, written against Poki's current HTML5 SDK
+  documentation. It loads Poki's documented loader at runtime, and boots without it when an
+  ad blocker stops the script or `init()` never settles.
+- **`GameplayLifecycle`**, Poki's sequencing rules in one pure class: `gameLoadingFinished`
+  once and first, no consecutive `gameplayStart`/`gameplayStop`, nothing during an ad, and a
+  `gameplayStop` before any break that interrupts gameplay.
+- **`examples/poki-compliance-demo/`** — a PixiJS game exercising every documented path
+  (startup, pause/resume, death/restart, rewarded revive) through `Platform` only.
+- **`scripts/verify/poki-audit.mjs`** — static audit of a Poki build: external URLs, assets,
+  fonts, links, third-party ads and analytics, other portals' names, debug leftovers, storage
+  used outside the platform backend. Runs in `verify.yml`.
+- **`tests/poki/`** — end-to-end on desktop, mobile and tablet against a mock SDK that
+  referees the sequencing, including ad-blocked, no-fill, failing-ad, private-browsing and
+  strict-CSP runs.
+- **`compliance/poki-compliance-report.md`** — the requirements matrix and the evidence.
+
+### Changed
+
+- **`Platform.gameplayActive`**, **`AdHooks.onStart`** on both ad calls, the `busy` skip
+  reason, and the optional `PlatformStorage.persistent`.
+- **The template's boot no longer reports `gameplayStart` at load.** It waits for the first
+  pointer, touch or key input, as Poki requires; a hidden tab restarts gameplay on return only
+  if it had stopped it.
+- **`LocalStorageBackend` guards every operation**, not just the probe: storage that fails
+  mid-session, or a `localStorage` getter that throws inside an iframe, moves it onto memory
+  instead of throwing into the game.
+
 ### Added — pipelines
 
 - **Seven GitHub Actions workflows**, replacing seven comment-only stubs. `ci.yml` and

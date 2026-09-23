@@ -40,7 +40,8 @@ export interface PlatformCapabilities {
 export type AdSkipReason =
   | "unsupported" // the portal has no such ad kind
   | "too-soon" // the profile's minimum interval has not elapsed
-  | "not-ready" // the portal had no fill
+  | "not-ready" // the portal had no fill, or its SDK is unavailable (e.g. an ad blocker)
+  | "busy" // another ad break is already in progress
   | "error"; // the portal SDK failed
 
 export interface AdResult {
@@ -53,11 +54,26 @@ export interface RewardedResult extends AdResult {
   readonly rewarded: boolean;
 }
 
+/** Optional hooks around an ad break. */
+export interface AdHooks {
+  /**
+   * Called when the portal actually starts showing an ad — the moment Poki's documentation
+   * says to mute audio and disable input. Not called when no ad plays.
+   */
+  onStart?(): void;
+}
+
 /**
  * Key-value storage. Backed by the portal's cloud saves where the profile reports
  * `cloud_saves: true`, and by local storage otherwise — the game does not branch on it.
  */
 export interface PlatformStorage {
+  /**
+   * False when saves last only for this session — private browsing, blocked storage. Poki
+   * asks games to "clearly inform players when progress won't persist". Undefined when the
+   * backend cannot tell.
+   */
+  readonly persistent?: boolean;
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<void>;
   remove(key: string): Promise<void>;
@@ -84,13 +100,24 @@ export interface Platform {
   /** The game is interactive. Pairs with {@link reportLoadingProgress}. */
   signalReady(): Promise<void>;
 
-  /** Gameplay started or resumed. Portals use this to bracket ad breaks. */
+  /**
+   * Gameplay started or resumed — the first player input, a level start, an unpause. Not on
+   * load: Poki lists "gameplayStart() fires on first player input (not load)" as a rule.
+   * Adapters drop duplicate and out-of-order calls rather than forwarding them.
+   */
   gameplayStart(): void;
-  /** Gameplay stopped — a menu, a pause, an incoming ad. */
+  /** Gameplay stopped — a menu, a pause, a death, an incoming ad. */
   gameplayStop(): void;
+  /** Whether gameplay is currently reported as running. */
+  readonly gameplayActive: boolean;
 
-  showInterstitial(): Promise<AdResult>;
-  showRewarded(): Promise<RewardedResult>;
+  /**
+   * An interstitial at a natural break, as the player heads back into gameplay. Resolves
+   * whether or not an ad played — not every call shows one — and never rejects.
+   */
+  showInterstitial(hooks?: AdHooks): Promise<AdResult>;
+  /** A rewarded ad the player explicitly chose. Grant only when `rewarded` is true. */
+  showRewarded(hooks?: AdHooks): Promise<RewardedResult>;
 }
 
 /** Signals the platform raises at the game, which map onto Game.pause/resume reasons. */

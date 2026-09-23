@@ -20,6 +20,10 @@ elevated shell on Windows.
 - [docs/ci-cd.md](docs/ci-cd.md) — the seven pipelines and the two gates
 - [docs/release.md](docs/release.md) — freezing a candidate
 - [docs/publishing.md](docs/publishing.md) — what is automated and what cannot be
+- [examples/poki-compliance-demo](examples/poki-compliance-demo/README.md) — every Poki SDK
+  path, audited and tested
+- [compliance/poki-compliance-report.md](compliance/poki-compliance-report.md) — what is
+  verified for Poki, and what is still manual
 - [CHANGELOG.md](CHANGELOG.md)
 
 ## Where it sits
@@ -99,7 +103,7 @@ here.
 | ------------ | ------- | ----------- | ------------------ |
 | Generic Web  | ✅      | ✅          | n/a — self-hosted  |
 | Yandex Games | ✅      | not written | no — no public API |
-| Poki         | ✅      | not written | yes — `@poki/cli`  |
+| Poki         | ✅      | ✅          | yes — `@poki/cli`  |
 | CrazyGames   | ✅      | not written | no — no public API |
 | GameVui      | ✅      | not written | no — no public API |
 
@@ -152,6 +156,7 @@ Foundation and pipelines implemented and exercised on real runners.
 | Package-fact measurement and the assertion evaluator                         | done        |
 | Release packaging, manifest, publication records                             | done        |
 | Seven workflows, both gates                                                  | done        |
-| Portal adapters — yandex, poki, crazygames, gamevui                          | not written |
+| Poki adapter, lifecycle sequencing, compliance demo, audit and e2e suite     | done        |
+| Portal adapters — yandex, crazygames, gamevui                                | not written |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty       |
 | `scripts/build`, `scripts/campaign`                                          | empty       |

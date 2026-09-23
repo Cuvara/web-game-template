@@ -1,4 +1,5 @@
 export type {
+  AdHooks,
   AdKind,
   AdResult,
   AdSkipReason,
@@ -19,6 +20,24 @@ export {
   GenericWebPlatform,
   type GenericWebOptions,
 } from "./adapters/generic-web.js";
+export {
+  POKI_CAPABILITIES,
+  POKI_SDK_URL,
+  PokiPlatform,
+  loadPokiSdkScript,
+  type PokiOptions,
+  type PokiSdk,
+  type PokiSdkCall,
+  type PokiSdkLoader,
+  type PokiSdkState,
+} from "./adapters/poki.js";
+export {
+  GameplayLifecycle,
+  type AdBreakDecision,
+  type LifecycleCall,
+  type LifecycleRejection,
+  type RejectedCall,
+} from "./lifecycle.js";
 export {
   KNOWN_PLATFORM_IDS,
   createPlatform,

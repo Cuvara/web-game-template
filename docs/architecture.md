@@ -84,4 +84,6 @@ as a rejection cause, so the order in `src/main.ts` is part of the contract:
 1. `createPlatform` → `initialize()`
 2. `reportLoadingProgress()` while the renderer and assets load
 3. `signalReady()`
-4. `game.start()` → `gameplayStart()`
+4. `game.start()`
+5. `gameplayStart()` on the player's first input, not at load — Poki's rule, and the right
+   one everywhere: idle page views are not play time

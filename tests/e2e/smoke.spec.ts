@@ -29,6 +29,9 @@ test("boots and steps the simulation", async ({ page }) => {
 
 test("renders a canvas", async ({ page }) => {
   await page.goto("/");
+  // Boot first, with the same allowance as the boot test: the canvas appears only once the
+  // renderer has initialised, which a loaded runner can take longer than 5 s to reach.
+  await expect(page.locator("#hud")).toHaveAttribute("data-ready", "true", { timeout: 15_000 });
   await expect(page.locator("#game canvas")).toBeVisible();
 });
 
