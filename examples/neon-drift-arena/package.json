@@ -1,0 +1,21 @@
+{
+  "name": "@wgf/example-neon-drift-arena",
+  "version": "0.1.0",
+  "description": "A real Three.js endless neon-arena dodger, wired through the platform abstraction",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@wgf/game-core": "workspace:*",
+    "@wgf/platform-sdk": "workspace:*",
+    "@wgf/three-framework": "workspace:*",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.170.0"
+  }
+}
