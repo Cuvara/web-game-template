@@ -3,10 +3,59 @@
 Notable changes to the template. Games created from it inherit whatever was here at the ref
 their tech plan pinned, so entries say what a title would gain by re-pinning.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this repository does
-not publish versioned releases of its own, so changes are grouped by date.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[Semantic Versioning](https://semver.org/). `v1.0.0` is the first stable production baseline
+intended for Web Game Factory to consume by tag; a game created from the template inherits
+whatever was here at the ref its tech plan pinned.
 
-## [Unreleased]
+## [1.0.0] — 2026-09-23
+
+First stable production baseline for Web Game Factory. Both renderers, the SDK contract and
+conformance, the browser matrix, build and release packaging, and the WGF integration contract
+are verified. Live portal-backed behaviour is honestly BLOCKED/UNVERIFIED pending portal access
+(see "External portal limitations" below and `docs/audits/LIVE-PORTAL-VALIDATION-2026-09-23.md`).
+
+### Added — production hardening (this cycle)
+
+- **CrazyGames late reward** — a rewarded ad that starts after the client watchdog and plays to
+  completion now emits `ad:late-reward` exactly once (guarded against duplicate callbacks); the
+  reward is observable via `rewarded:true` or one late event, never both.
+- **Poki break timeouts** — `rewardedBreak`/`commercialBreak` are raced against a 60s deadline
+  that resolves a failure result, so a stuck SDK can no longer leave the game paused and muted;
+  a late genuine callback cannot double-resolve. Poki exposes no late-reward channel, so a
+  post-deadline reward is forfeited by design.
+- **Foreground-recovery watchdog** — `foreground:lost` is cleared not only by
+  `foreground:gained` but by a bounded watchdog that resumes only when the portal genuinely
+  reports the foreground back, never while an ad holds the screen. Both the mid-session and the
+  launch-ad boot paths funnel through it, so a dropped `foreground:gained` cannot deadlock.
+- **Normalized `AdResult.reason`** — `not-ready` (SDK unavailable), `busy` (concurrent),
+  `unsupported` (no ad kind), `disabled` (portal off); asserted in conformance so divergence
+  fails CI.
+- **`examples/tower-merge-rush/`** — a real PixiJS game (merge, score, progression, game over,
+  restart, rewarded continue) on the platform abstraction only; 15 unit + 14 Chromium e2e.
+- **`examples/neon-drift-arena/`** — the first real Three.js game (seeded-deterministic dodger,
+  collision, restart, rewarded revive) on `@wgf/three-framework`; 13 unit + 14 Chromium e2e.
+- **CI gating** — `ci.yml` runs the SDK conformance project; `verify.yml` runs the SDK browser
+  matrix.
+- **Production sourcemap policy** — `sourcemap: "hidden"` and the release zip excludes `*.map`,
+  so a submission ships no sourcemaps (release zip ~0.27 MB) or source; JS output unchanged.
+- **`tests/live/` + `pnpm test:sdk:live`** — an opt-in real-SDK portal validation harness that
+  BLOCKS without `WGF_LIVE=1` and never falls back to mocks, plus a manual tester page and the
+  `workflow_dispatch` `live-portal-validation.yml` (BLOCKED without the opt-in secret; never
+  publishes). Sanitized evidence under `docs/audits/live/`.
+- **Docs** — `docs/wgf-integration.md`, `docs/production-build.md`, and the audits under
+  `docs/audits/` (production-readiness and live-portal validation).
+
+### External portal limitations (honest status, not implementation failures)
+
+- **Yandex live** — BLOCKED. The SDK is portal-served (`/sdk.js`); real init/ads/rewarded/
+  pause/storage require a Yandex Games draft/portal environment.
+- **CrazyGames live ads/reward** — BLOCKED. The SDK script loads off-portal (SDK-load PASS), but
+  real ad fill/reward require the Developer Portal QA tool.
+- **Poki live ads/reward** — BLOCKED; the 60s-timeout condition is UNVERIFIED. Real breaks
+  require the Poki Inspector/portal environment.
+- **GameVui portal** — UNVERIFIED. No public GameVui JS SDK exists (NOT_APPLICABLE at the SDK
+  layer); submission is a manual/email process. A GameVui build uses the `generic-web` adapter.
 
 ### Added — SDK conformance
 
