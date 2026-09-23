@@ -57,6 +57,32 @@ are verified. Live portal-backed behaviour is honestly BLOCKED/UNVERIFIED pendin
 - **GameVui portal** — UNVERIFIED. No public GameVui JS SDK exists (NOT_APPLICABLE at the SDK
   layer); submission is a manual/email process. A GameVui build uses the `generic-web` adapter.
 
+### Changed — one platform contract, four portals
+
+- **The Yandex/Poki and CrazyGames contracts are merged into one.** `Platform` now has
+  `on()`, `language`, `environment`, `settings`, `foreground`, `gameplayActive`,
+  `adAvailability()`, `getUser()`, `AdHooks` on both ad calls, and
+  `capabilities.gameplayStopOnHidden`; skip reasons are `unsupported`, `disabled`,
+  `adblock`, `too-soon`, `not-ready`, `busy`, `error`. A title implementing `Platform` itself
+  must add the new members; titles that only call it need not change.
+- **`createPlatform("gamevui")` returns `GameVuiPlatform`** instead of throwing: a no-SDK
+  adapter (local saves, no requestable ads), because GameVui publishes no SDK.
+- **`bindPlatform` reports a mute state** (`onAudioMutedChange`, `audioMuted`): the portal's
+  mute setting, a playing ad, the portal holding the screen, and window blur (Yandex 1.3).
+- Adapter fixes from an audit against each portal's current docs — see `docs/sdk.md`.
+
+### Added — SDK verification
+
+- **`tests/sdk-matrix/`** — PixiJS and Three.js games × all four portal adapters (mocked SDKs
+  from `tests/sdk/portals.ts`) in Chromium, desktop and mobile; `pnpm test:sdk:matrix`.
+- **`tests/unit/sdk-contract.test.ts`**, **`sdk-audit-fixes.test.ts`** — the same scenarios
+  from the game's side (`withAdBreak`, portal mute, `adAvailability`), and one regression
+  test per audit finding.
+- **`scripts/sdk/prepare-integration.mjs`** (`pnpm sdk:prepare`) — writes
+  `build/sdk/integration.json` and a Factory `sdk-report.json`. Prepares, never publishes.
+- **`docs/sdk.md`** — architecture, the audit, known limitations, and Factory profile values
+  the portals' docs contradict.
+
 ### Added — SDK conformance
 
 - **`tests/sdk/`** — one scenario matrix over every known platform (SDK unavailable, init
@@ -165,6 +191,7 @@ are verified. Live portal-backed behaviour is honestly BLOCKED/UNVERIFIED pendin
 - **`LocalStorageBackend` guards every operation**, not just the probe: storage that fails
   mid-session, or a `localStorage` getter that throws inside an iframe, moves it onto memory
   instead of throwing into the game.
+
 ### Added — CrazyGames
 
 - **CrazyGames adapter** (`@wgf/platform-sdk`, HTML5 SDK v3). `createPlatform("crazygames")`

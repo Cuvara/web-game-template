@@ -160,19 +160,19 @@ Nothing sleeps waiting for real time to pass: the loop takes an injected schedul
 
 Foundation and pipelines implemented and exercised on real runners.
 
-| Area                                                                         | State       |
-| ---------------------------------------------------------------------------- | ----------- |
-| `@wgf/game-core` — loop, scenes, events, pause, renderer seam                | done        |
-| `@wgf/platform-sdk` — abstraction, ad policy, storage, usage recorder        | done        |
-| `@wgf/analytics-sdk`, `@wgf/pixi-framework`, `@wgf/three-framework`          | done        |
-| `game.config.yaml` load, validation, virtual module                          | done        |
-| Minimal i18n from `public/locales/`                                          | done        |
-| Package-fact measurement and the assertion evaluator                         | done        |
-| Release packaging, manifest, publication records                             | done        |
-| Seven workflows, both gates                                                  | done        |
-| Portal adapter — yandex, with `examples/yandex-compliance-demo`              | done        |
-| Portal adapter — poki, with `examples/poki-compliance-demo`                  | done        |
-| CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done        |
-| GameVui no-SDK adapter (no portal SDK exists; see `docs/sdk.md`)             | done        |
-| `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty       |
-| `scripts/build`, `scripts/campaign`                                          | empty       |
+| Area                                                                         | State |
+| ---------------------------------------------------------------------------- | ----- |
+| `@wgf/game-core` — loop, scenes, events, pause, renderer seam                | done  |
+| `@wgf/platform-sdk` — abstraction, ad policy, storage, usage recorder        | done  |
+| `@wgf/analytics-sdk`, `@wgf/pixi-framework`, `@wgf/three-framework`          | done  |
+| `game.config.yaml` load, validation, virtual module                          | done  |
+| Minimal i18n from `public/locales/`                                          | done  |
+| Package-fact measurement and the assertion evaluator                         | done  |
+| Release packaging, manifest, publication records                             | done  |
+| Seven workflows, both gates                                                  | done  |
+| Portal adapter — yandex, with `examples/yandex-compliance-demo`              | done  |
+| Portal adapter — poki, with `examples/poki-compliance-demo`                  | done  |
+| CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done  |
+| GameVui no-SDK adapter (no portal SDK exists; see `docs/sdk.md`)             | done  |
+| `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty |
+| `scripts/build`, `scripts/campaign`                                          | empty |

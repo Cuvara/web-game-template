@@ -331,12 +331,14 @@ test.describe("level-complete panel input guard", () => {
 });
 
 test.describe("settings, data, degraded SDK", () => {
-  test("tells the player when the data module refuses a save", async ({ page }, info) => {
+  // Progress Save not selected at submission: the Data module answers dataModuleDisabled.
+  // The adapter falls back to local storage rather than losing every save.
+  test("keeps progress locally when the data module is disabled", async ({ page }, info) => {
     await boot(page, "cgData=disabled");
     await playLevel(page, { touch: touchOf(info) });
     await expectCompletePanel(page);
-    expect((await snapshot(page)).lastSaveOk).toBe(false);
-    await expect(page.locator("#complete-note")).toHaveText(/could not be saved/i);
+    expect((await snapshot(page)).lastSaveOk).toBe(true);
+    await expect(page.locator("#complete-note")).not.toHaveText(/could not be saved/i);
   });
 
   test("muteAudio from the portal wins, and an ad ending does not unmute it", async ({

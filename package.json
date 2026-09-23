@@ -34,6 +34,8 @@
     "test:poki": "playwright test --config playwright.poki.config.ts",
     "audit:poki": "node scripts/verify/poki-audit.mjs --dist examples/poki-compliance-demo/dist",
     "test:crazygames": "playwright test -c playwright.crazygames.config.ts",
+    "test:sdk:matrix": "playwright test -c playwright.sdk-matrix.config.ts",
+    "sdk:prepare": "node scripts/sdk/prepare-integration.mjs",
     "facts": "node scripts/verify/collect-facts.mjs",
     "assert": "node scripts/verify/evaluate-assertions.mjs",
     "audit:crazygames": "node scripts/crazygames-audit.mjs",
