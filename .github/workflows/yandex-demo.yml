@@ -1,0 +1,79 @@
+# Yandex compliance demo — build, static audit, browser tests, archive.
+#
+# Not one of the seven title pipelines and not a gate: it guards the Yandex adapter and the
+# example that exercises it. A change to either should not merge if the example no longer
+# boots, no longer sends Game Ready, or leaks sound through an ad.
+#
+# What this cannot do is the part only Yandex can: moderation. The archive it uploads as an
+# artifact is what a person submits through the Console by hand.
+
+name: Yandex demo
+
+on:
+  push:
+    paths:
+      - "packages/**"
+      - "examples/yandex-compliance-demo/**"
+      - "scripts/build/**"
+      - "scripts/verify/yandex-audit.mjs"
+      - "scripts/release/yandex-archive.mjs"
+      - "src/core/**"
+      - ".github/workflows/yandex-demo.yml"
+  pull_request:
+    paths:
+      - "packages/**"
+      - "examples/yandex-compliance-demo/**"
+      - "scripts/build/**"
+      - "scripts/verify/yandex-audit.mjs"
+      - "scripts/release/yandex-archive.mjs"
+      - "src/core/**"
+      - ".github/workflows/yandex-demo.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: yandex-demo-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    name: build, audit, e2e (desktop, mobile, tablet), archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Same fork rule as ci.yml: a same-repo PR is the push event again.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-workspace
+        with:
+          install-browsers: "true"
+
+      - name: unit (adapter and demo)
+        run: pnpm exec vitest run --project unit tests/unit/yandex.test.ts examples/yandex-compliance-demo
+
+      - name: build
+        run: pnpm demo:yandex:build
+
+      - name: static audit
+        run: pnpm demo:yandex:audit
+
+      - name: e2e
+        run: pnpm demo:yandex:e2e
+
+      - name: archive
+        run: pnpm demo:yandex:package
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: yandex-compliance-demo
+          path: |
+            build/yandex/
+            test-results/yandex-demo/
+          if-no-files-found: warn

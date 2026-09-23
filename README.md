@@ -99,10 +99,14 @@ here.
 | Platform     | Profile         | Adapter                         | Upload automated          |
 | ------------ | --------------- | ------------------------------- | ------------------------- |
 | Generic Web  | ✅              | ✅                              | n/a — self-hosted         |
-| Yandex Games | ✅              | not written                     | no — no public API        |
+| Yandex Games | ✅              | ✅                              | no — no public API        |
 | Poki         | ✅              | not written                     | yes — `@poki/cli`         |
 | CrazyGames   | ✅              | not written                     | no — no public API        |
 | GameVui      | ✅ (unverified) | none — GameVui publishes no SDK | no — email / contact form |
+
+The Yandex adapter, and a small game that exercises it through every moment moderation
+checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)
+and assessed in [compliance/yandex-compliance-report.md](compliance/yandex-compliance-report.md).
 
 An id with a profile but no adapter throws at startup. Degrading silently to no-ads would ship
 a title that thinks it has a portal SDK and does not, which is a blocking assertion failure at
@@ -119,6 +123,9 @@ release validation.
 | `publish.yml`   | dispatch only                | gate **G6**                          |
 | `campaign.yml`  | dispatch only                | gate **G7**                          |
 | `bootstrap.yml` | first push in a new repo     | one-time setup, then deletes itself  |
+
+Outside the seven, `yandex-demo.yml` builds, audits and browser-tests the Yandex example
+whenever the packages or the example change. It guards the adapter; it is not a gate.
 
 `publish.yml` and `campaign.yml` run in GitHub environments with required reviewers. That is
 the gate — and both workflows refuse to run if their environment has none, because an
@@ -153,6 +160,7 @@ Foundation and pipelines implemented and exercised on real runners.
 | Package-fact measurement and the assertion evaluator                         | done        |
 | Release packaging, manifest, publication records                             | done        |
 | Seven workflows, both gates                                                  | done        |
-| Portal adapters — yandex, poki, crazygames, gamevui                          | not written |
+| Portal adapter — yandex, with `examples/yandex-compliance-demo`              | done        |
+| Portal adapters — poki, crazygames, gamevui                                  | not written |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty       |
 | `scripts/build`, `scripts/campaign`                                          | empty       |

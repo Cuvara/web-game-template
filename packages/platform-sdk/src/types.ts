@@ -70,14 +70,33 @@ export interface Platform {
   readonly storage: PlatformStorage;
   /** A snapshot of what the game has asked for so far. Read by the verify suite. */
   readonly usage: PlatformUsage;
+  /**
+   * The ISO 639-1 language the portal chose for this player, or `null` where the portal
+   * does not say. Valid after {@link initialize}. Yandex requires the game to follow it
+   * (requirement 2.14), so it outranks the browser's own preference.
+   */
+  readonly language: string | null;
+  /**
+   * False while the portal holds the foreground — its own ad, a purchase dialog, the ad it
+   * shows by itself at launch. Read it when binding: the portal may have taken the
+   * foreground before anything subscribed to {@link on}.
+   */
+  readonly foreground: boolean;
+
+  /** Subscribe to a signal the portal raises at the game. Returns the unsubscribe. */
+  on<K extends keyof PlatformEvents>(
+    event: K,
+    handler: (payload: PlatformEvents[K]) => void,
+  ): () => void;
 
   /** Load and hand-shake with the portal. Safe to call more than once. */
   initialize(): Promise<void>;
 
   /**
-   * Report load progress in [0, 1]. Required by every portal whose profile sets
-   * `loading_api: required` — "does not report loading progress" is a listed rejection
-   * cause on Yandex, Poki and CrazyGames.
+   * Report load progress in [0, 1]. Some portals take it; Yandex has no progress API and
+   * only counts the call for release validation. The Factory profiles list "does not
+   * report loading progress" among past rejections — on Yandex the check that matters is
+   * Game Ready ({@link signalReady}), requirement 1.19.2.
    */
   reportLoadingProgress(fraction: number): void;
 
@@ -99,4 +118,14 @@ export interface PlatformEvents extends Record<string, unknown> {
   "ad:end": { readonly kind: AdKind };
   "foreground:lost": void;
   "foreground:gained": void;
+  /**
+   * A rewarded ad the game had already given up on (it opened after the call timed out)
+   * was watched to the end. The reward is owed; the game decides whether it still applies.
+   */
+  "ad:late-reward": { readonly kind: AdKind };
+  /**
+   * Saved data was replaced from outside the game — on Yandex, the player chose a different
+   * progress track in the portal's account-selection dialog. Re-read anything cached.
+   */
+  "storage:changed": void;
 }

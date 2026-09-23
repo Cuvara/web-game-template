@@ -1,0 +1,19 @@
+{
+  "_comment": [
+    "The Yandex Games profile, vendored from the Factory at the version game.config.yaml pins.",
+    "Byte-identical copy of core/reference/platforms/yandex.yaml, so a drift is a plain diff.",
+    "Its status is 'unverified': figures such as interstitial_min_interval_s are the Factory's",
+    "starting values, not numbers the Yandex documentation states. See",
+    "compliance/yandex-compliance-report.md for which parts were checked against the docs."
+  ],
+  "source_repo": "web-game-factory",
+  "source_path": "core/reference/platforms",
+  "profiles": [
+    {
+      "id": "yandex",
+      "version": "1.0.0",
+      "file": "yandex.yaml",
+      "content_hash": "sha256:46a3040b1416c5edb2523686706f5e705e76e0278b45b62e49929dcecc700aeb"
+    }
+  ]
+}

@@ -5,8 +5,17 @@
     "rootDir": ".",
     "types": ["vite/client"]
   },
-  "include": ["src", "tests", "*.config.ts", "vitest.workspace.ts"],
-  "exclude": ["node_modules", "dist"],
+  "include": [
+    "src",
+    "tests",
+    "scripts/build",
+    "examples/*/src",
+    "examples/*/tests",
+    "examples/*/*.config.ts",
+    "*.config.ts",
+    "vitest.workspace.ts"
+  ],
+  "exclude": ["node_modules", "dist", "examples/*/dist"],
   "references": [
     { "path": "./packages/game-core" },
     { "path": "./packages/platform-sdk" },

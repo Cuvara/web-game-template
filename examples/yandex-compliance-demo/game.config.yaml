@@ -1,0 +1,33 @@
+# Yandex compliance demo — game configuration
+#
+# Same shape and validator as the template's own game.config.yaml. This one targets Yandex
+# Games only, which is what the demo exists to exercise.
+
+game:
+  id: yandex-compliance-demo
+  name: Starfall Basket
+  version: 0.1.0
+
+engine:
+  type: pixijs
+
+platforms:
+  - { id: yandex, profile: yandex@1.0.0, role: required }
+
+monetization:
+  # Interstitial between runs, when the player asks for a new one. Rewarded to continue a
+  # finished run once. No banner: the sticky banner is a Console switch, not game code.
+  ad_kinds: [interstitial, rewarded]
+  iap: false
+
+build:
+  command: pnpm demo:yandex:build
+  output: dist
+
+verification:
+  smoke_test: true
+  performance_test: false
+  mobile_test: true
+
+publishing:
+  enabled: false
