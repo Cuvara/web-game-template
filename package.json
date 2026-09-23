@@ -20,6 +20,7 @@
     "test": "vitest run --project unit --project integration --project sdk",
     "test:sdk": "vitest run --project sdk",
     "test:sdk:browser": "node scripts/verify/sdk-smoke-build.mjs && playwright test --config playwright.sdk.config.ts",
+    "test:sdk:live": "node scripts/verify/live-portal.mjs",
     "sdk:conformance": "vitest run --project sdk --reporter=default --reporter=json --outputFile.json=build/sdk-conformance.json",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",

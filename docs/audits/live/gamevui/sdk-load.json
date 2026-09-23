@@ -1,0 +1,19 @@
+{
+  "platform": "gamevui",
+  "sdk": "UNAVAILABLE — no public GameVui JS SDK",
+  "adapter": "generic-web",
+  "ads": "UNSUPPORTED",
+  "storage": "local",
+  "sdkLoadStatus": "NOT_APPLICABLE",
+  "hostingBasics": {
+    "localStorage": true,
+    "resizeEvent": true,
+    "canvas": true
+  },
+  "gameBootCoveredBy": [
+    "pnpm test:e2e",
+    "pnpm test:sdk:browser (generic-web)"
+  ],
+  "at": "2026-09-23T14:31:49.485Z",
+  "buildSha": "cbbe83a"
+}

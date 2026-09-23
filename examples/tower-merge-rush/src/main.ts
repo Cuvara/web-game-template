@@ -139,6 +139,9 @@ async function main(): Promise<void> {
   const game = new Game();
   const present = (): void => renderer.render();
 
+  // Forward declaration: the DomUi callbacks close over `app`, which is built after `ui`
+  // (ui -> app -> ui is a construction cycle), so this cannot be a const.
+  // eslint-disable-next-line prefer-const
   let app: App;
   const ui = new DomUi(uiRoot, {
     begin: () => app.dropAnywhere(),

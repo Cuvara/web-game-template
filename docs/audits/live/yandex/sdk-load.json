@@ -1,0 +1,17 @@
+{
+  "platform": "yandex",
+  "url": "/sdk.js",
+  "globalName": "YaGames",
+  "scriptLoaded": false,
+  "error": "script failed to load (unreachable, blocked, or portal-served)",
+  "globalPresent": false,
+  "methodsFound": [],
+  "methodsMissing": [],
+  "initOutcome": "not-attempted",
+  "initDetail": null,
+  "at": "2026-09-23T14:31:49.764Z",
+  "buildSha": "cbbe83a",
+  "sdkLoadStatus": "BLOCKED",
+  "reason": "SDK is origin-relative /sdk.js served only inside the Yandex portal iframe; init, interstitial, rewarded, pause/resume and player storage require the portal backend.",
+  "exercisedBy": "manual tester page opened in a Yandex Games draft build in the developer console"
+}

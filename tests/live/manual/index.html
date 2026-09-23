@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WGF live portal tester</title>
+    <style>
+      body { font: 14px/1.5 system-ui, sans-serif; margin: 1.5rem; max-width: 720px; }
+      h1 { font-size: 1.1rem; }
+      button { margin: 0.2rem 0.3rem 0.2rem 0; padding: 0.4rem 0.7rem; }
+      #log { white-space: pre-wrap; background: #0b0d17; color: #cdd6f4; padding: 0.8rem;
+        border-radius: 6px; height: 300px; overflow: auto; font-family: ui-monospace, monospace; }
+      .banner { background: #fde68a; padding: 0.6rem 0.8rem; border-radius: 6px; }
+      code { background: #eef; padding: 0 0.2rem; }
+    </style>
+  </head>
+  <body>
+    <h1>WGF live portal tester</h1>
+    <p class="banner">
+      This page loads the <strong>real</strong> portal SDK and calls it directly. Real ad fill,
+      reward delivery and cloud storage only work when this page runs inside the portal's own
+      environment: <strong>CrazyGames Developer Portal QA tool</strong>, <strong>Poki Inspector
+      (inspector.poki.dev)</strong>, or a <strong>Yandex Games draft build</strong> opened from
+      the developer console. Off-portal you will see the SDK degrade — that is expected and
+      recorded as BLOCKED, not FAIL. Screenshot the log as evidence (no tokens are shown).
+    </p>
+    <p>
+      Platform: <select id="platform">
+        <option value="crazygames">CrazyGames</option>
+        <option value="poki">Poki</option>
+        <option value="yandex">Yandex</option>
+      </select>
+      (or append <code>?platform=poki</code>)
+    </p>
+    <div>
+      <button id="load">1. Load SDK</button>
+      <button id="init">2. Init</button>
+      <button id="interstitial">3. Interstitial</button>
+      <button id="rewarded">4. Rewarded</button>
+      <button id="clear">Clear log</button>
+    </div>
+    <p>Reward counter (must never exceed 1 per rewarded click): <strong id="rewards">0</strong></p>
+    <div id="log"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const url = new URL(location.href);
+      const platformSel = $("platform");
+      platformSel.value = url.searchParams.get("platform") || "crazygames";
+      let rewards = 0;
+      const log = (m) => {
+        const t = new Date().toISOString().slice(11, 23);
+        $("log").textContent += `[${t}] ${m}\n`;
+        $("log").scrollTop = $("log").scrollHeight;
+      };
+      $("clear").onclick = () => ($("log").textContent = "");
+      const bumpReward = (why) => {
+        rewards += 1;
+        $("rewards").textContent = String(rewards);
+        log(`REWARD GRANTED (${why}) — total ${rewards}` + (rewards > 1 ? "  <-- BUG: double reward!" : ""));
+      };
+
+      const SRC = {
+        crazygames: "https://sdk.crazygames.com/crazygames-sdk-v3.js",
+        poki: "https://game-cdn.poki.com/scripts/v2/poki-sdk.js",
+        yandex: "/sdk.js",
+      };
+
+      $("load").onclick = () => {
+        const p = platformSel.value;
+        log(`loading ${p} SDK from ${SRC[p]} ...`);
+        const s = document.createElement("script");
+        s.src = SRC[p];
+        s.async = true;
+        s.onload = () => log(`script loaded. globals: CrazyGames=${!!window.CrazyGames} PokiSDK=${!!window.PokiSDK} YaGames=${!!window.YaGames}`);
+        s.onerror = () => log("script FAILED to load (expected off-portal for Yandex; CDN blocked otherwise).");
+        document.head.appendChild(s);
+      };
+
+      $("init").onclick = async () => {
+        const p = platformSel.value;
+        try {
+          if (p === "crazygames") { await window.CrazyGames.SDK.init(); log("CrazyGames init resolved. env=" + window.CrazyGames.SDK.environment); }
+          else if (p === "poki") { await window.PokiSDK.init(); window.PokiSDK.gameLoadingFinished(); log("Poki init resolved."); }
+          else if (p === "yandex") { window.__ysdk = await window.YaGames.init(); log("Yandex init resolved."); }
+        } catch (e) { log("init rejected: " + (e && e.message ? e.message : e)); }
+      };
+
+      $("interstitial").onclick = async () => {
+        const p = platformSel.value;
+        try {
+          if (p === "crazygames") window.CrazyGames.SDK.ad.requestAd("midgame", {
+            adStarted: () => log("cg midgame adStarted"), adFinished: () => log("cg midgame adFinished"),
+            adError: (e) => log("cg midgame adError: " + (e && e.code ? e.code : e)),
+          });
+          else if (p === "poki") { await window.PokiSDK.commercialBreak(() => log("poki commercialBreak onStart")); log("poki commercialBreak resolved"); }
+          else if (p === "yandex") window.__ysdk.adv.showFullscreenAdv({ callbacks: {
+            onOpen: () => log("ya interstitial onOpen"), onClose: (w) => log("ya interstitial onClose wasShown=" + w),
+            onError: (e) => log("ya interstitial onError: " + e) } });
+        } catch (e) { log("interstitial error: " + e); }
+      };
+
+      $("rewarded").onclick = async () => {
+        const p = platformSel.value;
+        try {
+          if (p === "crazygames") window.CrazyGames.SDK.ad.requestAd("rewarded", {
+            adStarted: () => log("cg rewarded adStarted"),
+            adFinished: () => bumpReward("cg adFinished"),
+            adError: (e) => log("cg rewarded adError (NO reward): " + (e && e.code ? e.code : e)) });
+          else if (p === "poki") { const ok = await window.PokiSDK.rewardedBreak(() => log("poki rewardedBreak onStart")); log("poki rewardedBreak -> " + ok); if (ok === true) bumpReward("poki success"); }
+          else if (p === "yandex") window.__ysdk.adv.showRewardedVideo({ callbacks: {
+            onOpen: () => log("ya rewarded onOpen"), onRewarded: () => bumpReward("ya onRewarded"),
+            onClose: () => log("ya rewarded onClose"), onError: (e) => log("ya rewarded onError (NO reward): " + e) } });
+        } catch (e) { log("rewarded error: " + e); }
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "buildSha": "cbbe83a",
+  "at": "2026-09-23T14:31:49.841Z",
+  "note": "SDK-load = real SDK script reachable + global surface present, exercised in Chromium. init/ads/reward/storage/submission are BLOCKED off-portal (need portal env or publisher account).",
+  "sdkLoad": {
+    "yandex": "BLOCKED",
+    "crazygames": "PASS",
+    "poki": "PASS",
+    "gamevui": "NOT_APPLICABLE"
+  }
+}

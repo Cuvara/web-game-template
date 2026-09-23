@@ -1,0 +1,28 @@
+{
+  "platform": "poki",
+  "url": "https://game-cdn.poki.com/scripts/v2/poki-sdk.js",
+  "globalName": "PokiSDK",
+  "scriptLoaded": true,
+  "error": null,
+  "globalPresent": true,
+  "methodsFound": [
+    "init",
+    "gameLoadingFinished",
+    "commercialBreak",
+    "rewardedBreak",
+    "gameplayStart",
+    "gameplayStop"
+  ],
+  "methodsMissing": [],
+  "initOutcome": "not-attempted",
+  "initDetail": null,
+  "at": "2026-09-23T14:31:49.698Z",
+  "buildSha": "cbbe83a",
+  "sdkLoadStatus": "PASS",
+  "blocked": {
+    "init": "Poki init/gameplay reporting needs the Poki environment (Inspector/portal)",
+    "ads": "commercialBreak/rewardedBreak need Poki's ad server",
+    "reward": "rewardedBreak resolution needs Poki's ad server",
+    "timeout": "the 60s break timeout can only be exercised against a real (stuck) break"
+  }
+}

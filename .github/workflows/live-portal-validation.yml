@@ -1,0 +1,55 @@
+# Live portal validation — MANUAL ONLY (workflow_dispatch).
+#
+# This never runs on push/PR. Live portal flows (init, ads, reward, storage, submission) need
+# a portal environment or a publisher account that CI does not have, so this workflow:
+#   - builds and packages the exact release artifact,
+#   - runs the opt-in live SDK-reachability suite (real SDKs, no mocks),
+#   - and BLOCKS (not PASS) when the opt-in secret is absent.
+#
+# It deliberately does NOT publish. Publishing orchestration belongs to web-game-factory.
+# Provide WGF_LIVE=1 via the repository secret WGF_LIVE_OPT_IN to actually run the suite; a
+# missing secret leaves WGF_LIVE unset and scripts/verify/live-portal.mjs exits BLOCKED (code 3).
+
+name: live-portal-validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: "Why this live run is being triggered (recorded in the summary)"
+        required: false
+        default: "manual live validation"
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-workspace
+        with:
+          install-browsers: "true"
+
+      - name: build
+        run: pnpm build
+
+      - name: package release artifact
+        run: pnpm release:package --release r1
+
+      # BLOCKED unless the opt-in secret is present. The runner refuses to run (and never falls
+      # back to mocks) when WGF_LIVE is not exactly "1".
+      - name: live SDK validation (opt-in)
+        env:
+          WGF_LIVE: ${{ secrets.WGF_LIVE_OPT_IN }}
+        run: pnpm test:sdk:live
+
+      - name: upload live evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-portal-evidence
+          path: docs/audits/live/**/*.json
+          if-no-files-found: warn

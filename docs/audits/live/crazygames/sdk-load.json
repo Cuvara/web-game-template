@@ -1,0 +1,23 @@
+{
+  "platform": "crazygames",
+  "url": "https://sdk.crazygames.com/crazygames-sdk-v3.js",
+  "globalName": "CrazyGames.SDK",
+  "scriptLoaded": true,
+  "error": null,
+  "globalPresent": true,
+  "methodsFound": [
+    "init"
+  ],
+  "methodsMissing": [],
+  "initOutcome": "rejected",
+  "initDetail": "Cannot read properties of undefined (reading 'initializingPromise')",
+  "at": "2026-09-23T14:31:49.395Z",
+  "buildSha": "cbbe83a",
+  "sdkLoadStatus": "PASS",
+  "blocked": {
+    "init": "requires the CrazyGames QA tool / portal iframe (no backend off-portal)",
+    "ads": "requires portal ad server",
+    "reward": "requires portal ad server",
+    "storage": "requires portal user context"
+  }
+}
