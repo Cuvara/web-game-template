@@ -37,9 +37,9 @@ export interface PlatformCapabilities {
   /**
    * Whether the game itself must report a gameplay stop when the tab is hidden. False where
    * the portal detects focus loss on its own and asks games not to report it — CrazyGames
-   * says so explicitly for `gameplayStop`. Absent means true.
+   * says so explicitly for `gameplayStop`.
    */
-  readonly gameplayStopOnHidden?: boolean;
+  readonly gameplayStopOnHidden: boolean;
 }
 
 /** Why an ad did not play. Never a thrown error: a missing ad must not break gameplay. */
@@ -118,18 +118,20 @@ export interface PlatformUser {
   readonly avatarUrl: string | null;
 }
 
+export type Unsubscribe = () => void;
+
 /** What the game tells the platform about its own lifecycle. */
 export interface Platform {
   readonly id: string;
   readonly capabilities: PlatformCapabilities;
   readonly storage: PlatformStorage;
   /**
-   * Settings the portal imposes, where it has any (CrazyGames: `muteAudio`). Absent means
-   * none — treat as `{ muteAudio: false }`. Changes arrive as `settings:change`.
+   * Settings the portal imposes (CrazyGames: `muteAudio`); `{ muteAudio: false }` on a
+   * portal with none. Changes arrive as `settings:change`.
    */
-  readonly settings?: PlatformSettings;
-  /** Device and host details, where the portal reports them. Absent means unknown. */
-  readonly environment?: PlatformEnvironment;
+  readonly settings: PlatformSettings;
+  /** Device and host details, as far as the portal reports them. */
+  readonly environment: PlatformEnvironment;
   /** A snapshot of what the game has asked for so far. Read by the verify suite. */
   readonly usage: PlatformUsage;
   /**
@@ -149,9 +151,13 @@ export interface Platform {
   on<K extends keyof PlatformEvents>(
     event: K,
     handler: (payload: PlatformEvents[K]) => void,
-  ): () => void;
+  ): Unsubscribe;
 
-  /** Load and hand-shake with the portal. Safe to call more than once. */
+  /**
+   * Load and hand-shake with the portal. Safe to call more than once. Never rejects: a
+   * portal SDK that is missing or fails to initialize leaves a platform that behaves like a
+   * plain web game — ads unavailable, storage on local storage.
+   */
   initialize(): Promise<void>;
 
   /**
@@ -183,14 +189,11 @@ export interface Platform {
   showInterstitial(hooks?: AdHooks): Promise<AdResult>;
   /** A rewarded ad the player explicitly chose. Grant only when `rewarded` is true. */
   showRewarded(hooks?: AdHooks): Promise<RewardedResult>;
-  /**
-   * Whether an offer for `kind` should be visible at all. Absent on adapters that cannot
-   * tell; then only `capabilities.ads` is known.
-   */
-  adAvailability?(kind: AdKind): AdAvailability;
+  /** Whether an offer for `kind` should be visible at all. */
+  adAvailability(kind: AdKind): AdAvailability;
 
-  /** The logged-in portal user, or null for a guest. Absent on adapters without accounts. */
-  getUser?(): Promise<PlatformUser | null>;
+  /** The logged-in portal user, or null for a guest or a portal without accounts. */
+  getUser(): Promise<PlatformUser | null>;
 }
 
 /** Signals the platform raises at the game, which map onto Game.pause/resume reasons. */
@@ -215,4 +218,19 @@ export interface PlatformEvents extends Record<string, unknown> {
    * progress track in the portal's account-selection dialog. Re-read anything cached.
    */
   "storage:changed": void;
+}
+
+/** The settings a portal that imposes none reports. */
+export const DEFAULT_SETTINGS: PlatformSettings = Object.freeze({ muteAudio: false });
+
+/** The environment a portal that reports nothing exposes. */
+export const UNKNOWN_ENVIRONMENT: PlatformEnvironment = Object.freeze({
+  device: null,
+  inPortalApp: false,
+});
+
+/** ISO 639-1 language of a BCP 47 locale: `en-US` -> `en`. */
+export function languageOf(locale: string | null | undefined): string | null {
+  const primary = locale?.split(/[-_]/)[0]?.toLowerCase();
+  return primary && /^[a-z]{2}$/.test(primary) ? primary : null;
 }

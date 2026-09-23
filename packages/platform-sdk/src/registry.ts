@@ -6,6 +6,7 @@
 // blocking assertion failure at release validation, and it is cheaper to find here.
 
 import { CrazyGamesPlatform } from "./adapters/crazygames/platform.js";
+import { GameVuiPlatform } from "./adapters/gamevui.js";
 import { GenericWebPlatform } from "./adapters/generic-web.js";
 import { PokiPlatform } from "./adapters/poki.js";
 import { YandexPlatform } from "./adapters/yandex.js";
@@ -42,11 +43,7 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
     case "poki":
       return new PokiPlatform({ namespace: options.namespace });
     case "gamevui":
-      throw new Error(
-        `Platform adapter "${id}" is not implemented yet. Its profile exists in ` +
-          `core/reference/platforms/${id}.yaml; the adapter must be written against the ` +
-          `portal's own documentation before a title targets it.`,
-      );
+      return new GameVuiPlatform({ namespace: options.namespace });
     default:
       throw new Error(
         `Unknown platform "${id}". Known ids: ${KNOWN_PLATFORM_IDS.join(", ")}. ` +

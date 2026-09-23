@@ -64,7 +64,9 @@ export const CRAZYGAMES_CAPABILITIES: PlatformCapabilities = {
   achievements: false,
   auth: "optional",
   analytics: "platform-provided",
-  loadingApi: "required",
+  // "Loading start/stop" is optional (a Full Launch item), not required:
+  // https://docs.crazygames.com/sdk/game/#loading-startstop
+  loadingApi: "optional",
   // "max 1 every 3 minutes" — the SDK enforces this itself and answers `adCooldown`, so this
   // local check only saves a pointless request.
   interstitialMinIntervalS: 180,
@@ -129,12 +131,14 @@ export class CrazyGamesPlatform implements Platform {
   #adblock = false;
   #adInProgress = false;
   #inGameplay = false;
+  #readySignalled = false;
   #loadingStopped = false;
   #loadingFraction = 0;
 
   constructor(options: CrazyGamesOptions) {
     this.#options = options;
-    this.#ads = new AdPolicy(CRAZYGAMES_CAPABILITIES, options.now);
+    // "Rewarded and preroll ads also count towards the midgame interval."
+    this.#ads = new AdPolicy(CRAZYGAMES_CAPABILITIES, options.now, ["interstitial", "rewarded"]);
     this.#fallbackStorage = new LocalStorageBackend(options.namespace);
   }
 
@@ -229,7 +233,7 @@ export class CrazyGamesPlatform implements Platform {
 
     this.#sdk = sdk;
     this.#mode = "sdk";
-    this.#storage = new CrazyGamesDataStorage(sdk);
+    this.#storage = new CrazyGamesDataStorage(sdk, this.#fallbackStorage);
     this.#migrateFallbackSaves(sdk);
     this.#environment = readEnvironment(sdk);
     this.#language = readLanguage(sdk);
@@ -238,6 +242,8 @@ export class CrazyGamesPlatform implements Platform {
       sdk.game.addSettingsChangeListener((settings) => this.#applySettings(settings)),
     );
     this.#safely(() => sdk.game.loadingStart());
+    // The game may have finished loading while init was still in flight.
+    if (this.#readySignalled) this.#stopLoading();
 
     // Detection takes a moment and is not needed to boot; the first rewarded offer is
     // seconds of gameplay away. Not awaited.
@@ -259,12 +265,18 @@ export class CrazyGamesPlatform implements Platform {
   signalReady(): Promise<void> {
     this.#loadingFraction = 1;
     this.#usage.recordSignalReady();
-    if (!this.#loadingStopped) {
-      this.#loadingStopped = true;
-      const sdk = this.#sdk;
-      if (sdk) this.#safely(() => sdk.game.loadingStop());
-    }
+    this.#readySignalled = true;
+    this.#stopLoading();
     return Promise.resolve();
+  }
+
+  // Sent once, and only once there is an SDK to hear it — so a loadingStart sent after a
+  // slow init is still paired with its stop.
+  #stopLoading(): void {
+    const sdk = this.#sdk;
+    if (!sdk || this.#loadingStopped) return;
+    this.#loadingStopped = true;
+    this.#safely(() => sdk.game.loadingStop());
   }
 
   // Deduplicated: the portal wants transitions, and a game that reports `start` from two

@@ -15,13 +15,15 @@
 
 import {
   CrazyGamesPlatform,
+  GameVuiPlatform,
   GenericWebPlatform,
   MemoryStorageBackend,
   PokiPlatform,
   YandexPlatform,
   YandexStorage,
-  type Platform,
+  type CrazyGamesAdCallbacks,
   type CrazyGamesSdk,
+  type Platform,
   type PokiSdk,
   type Timers,
   type YaGamesGlobal,
@@ -315,17 +317,21 @@ function genericWeb(id: string, extra: Partial<Harness> = {}): Harness {
 }
 
 // -- GameVui ------------------------------------------------------------------------------
-// GameVui publishes no SDK, JavaScript API or publishing API (docs/platforms/gamevui/). A
-// GameVui build is a platform-neutral web build on the generic-web adapter, so that is what
-// is exercised; createPlatform("gamevui") throws on purpose.
+// GameVui publishes no SDK, JavaScript API or publishing API (docs/platforms/gamevui/), so its
+// adapter is a no-SDK one: local saves, no ad the game can request. Portal-injected ads are
+// outside the game's control. See docs/sdk.md.
 
-const gamevui = genericWeb("gamevui", {
-  adapter: "none",
-  limitation:
-    'GameVui documents no SDK; builds run on the generic-web adapter and createPlatform("gamevui") ' +
-    "throws by design (docs/platforms/gamevui/platform-contract.md). Portal-injected ads are " +
-    "outside the game's control.",
-});
+const gamevui: Harness = {
+  ...genericWeb("gamevui"),
+  async create() {
+    return {
+      platform: new GameVuiPlatform({ namespace: "conformance-gamevui" }),
+      calls: [],
+      setAd: () => {},
+      advance: () => {},
+    };
+  },
+};
 
 // -- CrazyGames ---------------------------------------------------------------------------
 // Fake of the documented HTML5 SDK v3 surface: SDK.init(), environment, game.gameplayStart/

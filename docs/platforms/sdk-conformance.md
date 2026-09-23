@@ -43,13 +43,13 @@ sdk-report status:
 
 ## Current results (this ref)
 
-| Platform     | Adapter                 | Result                                                                                                                                                                                                |
-| ------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| generic-web  | implemented             | all applicable scenarios pass                                                                                                                                                                         |
-| Yandex Games | implemented             | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                                                                                       |
-| Poki         | implemented             | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                                                                                       |
-| CrazyGames   | **missing on this ref** | every scenario skipped → `not-started`. The adapter is in progress on its own branch; add its harness in `tests/sdk/harness.ts` and its bundle in `scripts/verify/sdk-smoke-build.mjs` when it merges |
-| GameVui      | **none by design**      | runs the generic-web build; SDK scenarios not applicable. See [gamevui/platform-contract.md](gamevui/platform-contract.md)                                                                            |
+| Platform     | Adapter             | Result                                                                                                                                        |
+| ------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| generic-web  | implemented         | all applicable scenarios pass                                                                                                                 |
+| Yandex Games | implemented         | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                               |
+| Poki         | implemented         | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                               |
+| CrazyGames   | implemented         | all scenarios pass; browser: PixiJS and Three.js in the SDK matrix (`tests/sdk-matrix`, `pnpm test:sdk:matrix`) and the compliance demo suite |
+| GameVui      | implemented, no SDK | `GameVuiPlatform`: local saves, no requestable ad; all applicable scenarios pass; browser: SDK matrix. See [../sdk.md](../sdk.md)             |
 
 ### Fixed while building this
 
@@ -91,14 +91,13 @@ adapters or of what can be tested, not failures of the matrix.
 
 **CrazyGames**
 
-- No adapter on this ref (see above). Its branch does not yet implement banners, auth or
-  `happytime`.
+- Banners, auth, `happytime` and the invite-only purchases and leaderboards are not
+  implemented. What a player closing a rewarded ad early reports is undocumented; the
+  adapter rewards only on `adFinished`. See [../sdk.md](../sdk.md).
 
 **GameVui**
 
-- No SDK, JS API or publishing API is published, and gamevui.vn could not be fetched
-  automatically (Cloudflare). A GameVui build is the generic-web build; `createPlatform("gamevui")`
-  throws by design, so **a title whose required platform is `gamevui` fails at boot** — list
-  it as optional and ship the generic-web build to GameVui, until the Factory decides how a
-  GameVui-only title declares its runtime.
+- No SDK, JS API or publishing API is published. `createPlatform("gamevui")` returns
+  `GameVuiPlatform`, a no-SDK adapter (local saves, no ad the game can request), so a title
+  whose required platform is `gamevui` boots. See [../sdk.md](../sdk.md).
 - Ads injected by GameVui's own scripts are outside the game's control and untested here.

@@ -165,6 +165,29 @@ are verified. Live portal-backed behaviour is honestly BLOCKED/UNVERIFIED pendin
 - **`LocalStorageBackend` guards every operation**, not just the probe: storage that fails
   mid-session, or a `localStorage` getter that throws inside an iframe, moves it onto memory
   instead of throwing into the game.
+### Added — CrazyGames
+
+- **CrazyGames adapter** (`@wgf/platform-sdk`, HTML5 SDK v3). `createPlatform("crazygames")`
+  no longer throws. Gameplay start/stop, loading start/stop, midgame and rewarded ads,
+  Data-module storage, `muteAudio`, system-info locale/device, user. Degrades to a plain web
+  game when the SDK is disabled (non-CrazyGames domain) or blocked.
+- **Platform contract additions**: the `settings:change` event, `settings`, `environment`,
+  `adAvailability()`, `getUser()`, and `capabilities.gameplayStopOnHidden`. Ad skip reasons
+  gain `disabled` and `adblock`. (Merged into the unified contract: events arrive through
+  `on()`, not a separate `events` object.)
+- **`examples/crazygames-compliance-demo/`** — a PixiJS game that exercises the integration
+  end to end, and `tests/crazygames/` driving it on desktop, mobile and tablet.
+- **`scripts/crazygames-audit.mjs`** with limits tied to their official source in
+  `config/platforms/crazygames-limits.json`; **`crazygames.yml`** runs all of it.
+- **`docs/platforms/crazygames/requirements.md`** and
+  **`compliance/crazygames-compliance-report.md`**.
+
+### Fixed
+
+- **Builds used absolute asset paths.** `vite.config.ts` now sets `base: "./"`; CrazyGames
+  states absolute paths fail to load, and other portals serve from sub-paths too.
+- **Focus loss was always reported as a gameplay stop.** CrazyGames asks games not to;
+  `bindPlatform` now follows `capabilities.gameplayStopOnHidden`.
 
 ### Added — CrazyGames
 

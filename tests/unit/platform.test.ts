@@ -14,8 +14,10 @@ describe("platform registry", () => {
     expect(platform.capabilities.ads).toEqual([]);
   });
 
-  it("fails loudly for a profile whose adapter is not written yet", () => {
-    expect(() => createPlatform("gamevui", { namespace: "test" })).toThrow(/not implemented/i);
+  it("has an adapter for every id that has a profile", () => {
+    for (const id of KNOWN_PLATFORM_IDS) {
+      expect(createPlatform(id, { namespace: "test" }).id).toBe(id);
+    }
   });
 
   it("fails loudly for an id with no profile at all", () => {

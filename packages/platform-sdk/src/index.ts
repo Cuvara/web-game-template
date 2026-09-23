@@ -16,15 +16,19 @@ export type {
   PlatformStorage,
   PlatformUser,
   RewardedResult,
+  Unsubscribe,
 } from "./types.js";
+export { DEFAULT_SETTINGS, UNKNOWN_ENVIRONMENT, languageOf } from "./types.js";
 export { AdPolicy } from "./ad-policy.js";
 export { UsageRecorder, type PlatformUsage } from "./usage.js";
 export { LocalStorageBackend, MemoryStorageBackend } from "./storage.js";
 export {
   GENERIC_WEB_CAPABILITIES,
   GenericWebPlatform,
+  NoSdkPlatform,
   type GenericWebOptions,
 } from "./adapters/generic-web.js";
+export { GAMEVUI_CAPABILITIES, GameVuiPlatform } from "./adapters/gamevui.js";
 export {
   CRAZYGAMES_CAPABILITIES,
   CrazyGamesPlatform,

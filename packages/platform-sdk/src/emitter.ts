@@ -4,14 +4,14 @@
 // EventBus. A handler that throws is isolated: one broken listener must not stop the game
 // hearing that the portal took the foreground.
 
-import type { PlatformEvents } from "./types.js";
+import type { PlatformEvents, Unsubscribe } from "./types.js";
 
 type Handler<T> = (payload: T) => void;
 
 export class PlatformEmitter {
   readonly #handlers = new Map<keyof PlatformEvents, Set<Handler<never>>>();
 
-  on<K extends keyof PlatformEvents>(event: K, handler: Handler<PlatformEvents[K]>): () => void {
+  on<K extends keyof PlatformEvents>(event: K, handler: Handler<PlatformEvents[K]>): Unsubscribe {
     let set = this.#handlers.get(event);
     if (!set) {
       set = new Set();

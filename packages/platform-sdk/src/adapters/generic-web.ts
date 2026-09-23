@@ -7,22 +7,28 @@
 //
 // The profile asserts `package.platform_sdk == none`, which is about the built bundle: no
 // portal SDK script is loaded here, and none should ever be added to this file.
+//
+// `NoSdkPlatform` is the shared body for every target that has no portal SDK to talk to.
+// GameVui uses it too; see ./gamevui.ts for why.
 
 import { AdPolicy } from "../ad-policy.js";
 import { LocalStorageBackend } from "../storage.js";
 import { UsageRecorder, type PlatformUsage } from "../usage.js";
-import type {
-  AdAvailability,
-  AdKind,
-  AdResult,
-  Platform,
-  PlatformCapabilities,
-  PlatformEnvironment,
-  PlatformEvents,
-  PlatformSettings,
-  PlatformStorage,
-  PlatformUser,
-  RewardedResult,
+import {
+  DEFAULT_SETTINGS,
+  UNKNOWN_ENVIRONMENT,
+  type AdAvailability,
+  type AdKind,
+  type AdResult,
+  type Platform,
+  type PlatformCapabilities,
+  type PlatformEnvironment,
+  type PlatformEvents,
+  type PlatformSettings,
+  type PlatformStorage,
+  type PlatformUser,
+  type RewardedResult,
+  type Unsubscribe,
 } from "../types.js";
 
 export const GENERIC_WEB_CAPABILITIES: PlatformCapabilities = {
@@ -41,27 +47,33 @@ export const GENERIC_WEB_CAPABILITIES: PlatformCapabilities = {
 export interface GenericWebOptions {
   /** Storage namespace. Use the game id from game.config.yaml. */
   readonly namespace: string;
+  /** Replaces local storage. Tests inject one. */
+  readonly storage?: PlatformStorage;
 }
 
-export class GenericWebPlatform implements Platform {
-  readonly id = "generic-web";
-  readonly capabilities = GENERIC_WEB_CAPABILITIES;
+/** A platform with no portal SDK: nothing to load, no ads to request, local saves. */
+export class NoSdkPlatform implements Platform {
+  readonly id: string;
+  readonly capabilities: PlatformCapabilities;
   readonly storage: PlatformStorage;
   /** No portal to choose a language; the game falls back to the browser's. */
   readonly language = null;
+  readonly environment: PlatformEnvironment = UNKNOWN_ENVIRONMENT;
+  readonly settings: PlatformSettings = DEFAULT_SETTINGS;
   /** No portal to take the foreground away. */
   readonly foreground = true;
-  readonly settings: PlatformSettings = { muteAudio: false };
-  readonly environment: PlatformEnvironment = { device: null, inPortalApp: false };
 
-  readonly #ads = new AdPolicy(GENERIC_WEB_CAPABILITIES);
+  readonly #ads: AdPolicy;
   readonly #usage = new UsageRecorder();
   #loadingFraction = 0;
   #ready = false;
   #gameplayActive = false;
 
-  constructor(options: GenericWebOptions) {
-    this.storage = new LocalStorageBackend(options.namespace);
+  constructor(id: string, capabilities: PlatformCapabilities, options: GenericWebOptions) {
+    this.id = id;
+    this.capabilities = capabilities;
+    this.#ads = new AdPolicy(capabilities);
+    this.storage = options.storage ?? new LocalStorageBackend(options.namespace);
   }
 
   get usage(): PlatformUsage {
@@ -80,7 +92,7 @@ export class GenericWebPlatform implements Platform {
   on<K extends keyof PlatformEvents>(
     _event: K,
     _handler: (payload: PlatformEvents[K]) => void,
-  ): () => void {
+  ): Unsubscribe {
     return () => undefined;
   }
 
@@ -105,37 +117,45 @@ export class GenericWebPlatform implements Platform {
   }
 
   gameplayStart(): void {
+    if (this.#gameplayActive) return;
     this.#gameplayActive = true;
     this.#usage.recordGameplayStart();
   }
 
   gameplayStop(): void {
+    if (!this.#gameplayActive) return;
     this.#gameplayActive = false;
     this.#usage.recordGameplayStop();
   }
 
   adAvailability(kind: AdKind): AdAvailability {
-    return this.capabilities.ads.includes(kind) ? "available" : "unsupported";
+    // Even a kind the profile lists cannot be requested: there is no SDK to ask.
+    return this.capabilities.ads.includes(kind) ? "disabled" : "unsupported";
+  }
+
+  showInterstitial(): Promise<AdResult> {
+    return Promise.resolve(this.#skip("interstitial"));
+  }
+
+  showRewarded(): Promise<RewardedResult> {
+    return Promise.resolve({ ...this.#skip("rewarded"), rewarded: false });
   }
 
   getUser(): Promise<PlatformUser | null> {
     return Promise.resolve(null);
   }
 
-  showInterstitial(): Promise<AdResult> {
-    this.#usage.recordAdRequested("interstitial");
-    return Promise.resolve({
-      shown: false,
-      reason: this.#ads.check("interstitial") ?? "unsupported",
-    });
+  #skip(kind: AdKind): AdResult {
+    this.#usage.recordAdRequested(kind);
+    const reason = this.#ads.check(kind) ?? this.adAvailability(kind);
+    return { shown: false, reason: reason === "available" ? "disabled" : reason };
   }
+}
 
-  showRewarded(): Promise<RewardedResult> {
-    this.#usage.recordAdRequested("rewarded");
-    return Promise.resolve({
-      shown: false,
-      rewarded: false,
-      reason: this.#ads.check("rewarded") ?? "unsupported",
-    });
+export class GenericWebPlatform extends NoSdkPlatform {
+  declare readonly id: "generic-web";
+
+  constructor(options: GenericWebOptions) {
+    super("generic-web", GENERIC_WEB_CAPABILITIES, options);
   }
 }

@@ -97,6 +97,12 @@ export class GameplayLifecycle {
    * the decision says so, because the SDK has to hear gameplayStop before the break.
    */
   beginAd(call: "commercialBreak" | "rewardedBreak"): AdBreakDecision {
+    // Startup is gameLoadingFinished -> gameplayStart; a break before loading finished is
+    // out of the documented order.
+    if (!this.#loaded) {
+      this.#reject(call, "before-loading-finished");
+      return { allowed: false, stopFirst: false, reason: "before-loading-finished" };
+    }
     if (this.#adActive) {
       this.#reject(call, "during-ad");
       return { allowed: false, stopFirst: false, reason: "during-ad" };

@@ -9,4 +9,6 @@
 # gates do not depend on them.
 packages:
   - "packages/*"
+  # Small example games that exercise one platform adapter end to end. Not part of any
+  # game built from this template, and not bundled into one.
   - "examples/*"

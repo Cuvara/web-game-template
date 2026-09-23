@@ -16,13 +16,21 @@
 import { AdPolicy } from "../ad-policy.js";
 import { PlatformEmitter } from "../emitter.js";
 import { UsageRecorder, type PlatformUsage } from "../usage.js";
-import type {
-  AdHooks,
-  AdResult,
-  Platform,
-  PlatformCapabilities,
-  PlatformEvents,
-  RewardedResult,
+import {
+  DEFAULT_SETTINGS,
+  UNKNOWN_ENVIRONMENT,
+  type AdAvailability,
+  type AdHooks,
+  type AdKind,
+  type AdResult,
+  type Platform,
+  type PlatformCapabilities,
+  type PlatformEnvironment,
+  type PlatformEvents,
+  type PlatformSettings,
+  type PlatformUser,
+  type RewardedResult,
+  type Unsubscribe,
 } from "../types.js";
 import type { YaGamesGlobal, YandexSdk } from "./yandex-sdk.js";
 import { YandexStorage, realTimers, type Timers } from "./yandex-storage.js";
@@ -48,6 +56,9 @@ export const YANDEX_CAPABILITIES: PlatformCapabilities = {
   analytics: "platform-provided",
   loadingApi: "required",
   interstitialMinIntervalS: 60,
+  // The portal raises game_api_pause on a tab switch and stops GameplayAPI by itself
+  // (sdk-events); a stop the game sends first would stop the portal restarting it on return.
+  gameplayStopOnHidden: false,
 };
 
 /** The documented path for an archive upload. */
@@ -161,6 +172,12 @@ export class YandexPlatform implements Platform {
     return this.#language;
   }
 
+  /** Yandex's environment carries the language ({@link language}); nothing else is read. */
+  readonly environment: PlatformEnvironment = UNKNOWN_ENVIRONMENT;
+
+  /** Yandex imposes no audio setting; it pauses the game through game_api_pause instead. */
+  readonly settings: PlatformSettings = DEFAULT_SETTINGS;
+
   get foreground(): boolean {
     return this.#foreground;
   }
@@ -183,8 +200,21 @@ export class YandexPlatform implements Platform {
   on<K extends keyof PlatformEvents>(
     event: K,
     handler: (payload: PlatformEvents[K]) => void,
-  ): () => void {
+  ): Unsubscribe {
     return this.#events.on(event, handler);
+  }
+
+  adAvailability(kind: AdKind): AdAvailability {
+    if (!this.capabilities.ads.includes(kind)) return "unsupported";
+    return this.#sdk ? "available" : "disabled";
+  }
+
+  /**
+   * Always null: the adapter never opens the portal's login dialog (guests keep progress,
+   * 1.2.2), and a player's name is not something a game needs to run.
+   */
+  getUser(): Promise<PlatformUser | null> {
+    return Promise.resolve(null);
   }
 
   initialize(): Promise<void> {
@@ -412,6 +442,8 @@ export class YandexPlatform implements Platform {
 
       const callbacks = {
         onOpen: () => {
+          // A late ad still counts toward the local interval.
+          if (settled) this.#ads.record(kind);
           opened = true;
           this.#adShowing = true;
           this.#timers.clearTimeout(timer);

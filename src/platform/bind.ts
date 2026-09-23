@@ -8,7 +8,10 @@ import type { Game } from "@wgf/game-core";
 import type { Platform } from "@wgf/platform-sdk";
 
 export interface PlatformBinding {
-  /** True while the portal's mute setting or a playing ad requires silence. */
+  /**
+   * True while the portal's mute setting, a playing ad, the portal holding the screen or
+   * lost focus requires silence.
+   */
   readonly audioMuted: boolean;
   /**
    * Report gameplayStart on the player's first pointer, touch or key input rather than at
@@ -22,8 +25,10 @@ export interface BindPlatformOptions {
   /**
    * Called whenever the required mute state changes. The game's audio must follow it and
    * give it priority over any in-game toggle: CrazyGames' `muteAudio` setting "should take
-   * priority over your in-game audio settings", and every portal wants silence while an ad
-   * plays — from the moment it starts, not from the request, which may go unfilled.
+   * priority over your in-game audio settings"; every portal wants silence while an ad
+   * plays — from the moment it starts, not from the request, which may go unfilled; and
+   * Yandex wants sound off while the portal holds the screen (4.7) and whenever the game
+   * loses focus (1.3).
    */
   readonly onAudioMutedChange?: (muted: boolean) => void;
   /**
@@ -76,19 +81,32 @@ export function bindPlatform(
   let stoppedByHide = false;
   // Some portals detect focus loss themselves and ask not to be told about it — CrazyGames
   // does, for gameplayStop. The game still pauses either way; only the report differs.
-  const reportVisibility = platform.capabilities.gameplayStopOnHidden ?? true;
+  const reportVisibility = platform.capabilities.gameplayStopOnHidden;
 
   const onVisibilityChange = (): void => {
     if (document.visibilityState === "hidden") {
+      unfocused = true;
       game.pause("hidden");
       stoppedByHide = reportVisibility && platform.gameplayActive;
       if (stoppedByHide) platform.gameplayStop();
     } else {
+      unfocused = typeof document.hasFocus === "function" ? !document.hasFocus() : false;
       game.resume("hidden");
       const owed = resumeWhenUnpaused.delete(game);
       if ((stoppedByHide || owed) && !game.paused) platform.gameplayStart();
       stoppedByHide = false;
     }
+    update();
+  };
+  // Focus loss without the tab hiding — another window, the portal's own chrome. Silence
+  // only: the game keeps running, and no portal wants a gameplay report for it.
+  const onBlur = (): void => {
+    unfocused = true;
+    update();
+  };
+  const onFocus = (): void => {
+    unfocused = document.visibilityState === "hidden";
+    update();
   };
 
   // Stays armed until it has actually reported gameplayStart: an input that lands while the
@@ -102,11 +120,13 @@ export function bindPlatform(
     for (const type of FIRST_INPUT_EVENTS) window.removeEventListener(type, onFirstInput, true);
   };
 
-  let settingsMuted = platform.settings?.muteAudio ?? false;
+  let settingsMuted = platform.settings.muteAudio;
   let adPlaying = false;
-  let muted = settingsMuted;
+  let portalHolds = !platform.foreground;
+  let unfocused = typeof document !== "undefined" && document.visibilityState === "hidden";
+  let muted = settingsMuted || portalHolds || unfocused;
   const update = (): void => {
-    const next = settingsMuted || adPlaying;
+    const next = settingsMuted || adPlaying || portalHolds || unfocused;
     if (next === muted) return;
     muted = next;
     options.onAudioMutedChange?.(muted);
@@ -159,6 +179,8 @@ export function bindPlatform(
   ];
 
   document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("blur", onBlur);
+  window.addEventListener("focus", onFocus);
 
   // The portal holding the foreground — Yandex's game_api_pause, including the ad it shows
   // by itself at launch, or any ad the adapter brackets — pauses the game under its own
@@ -199,7 +221,9 @@ export function bindPlatform(
     }
     // The foreground has genuinely come back and no ad holds it: lift "platform" as a real
     // foreground:gained would have.
+    portalHolds = false;
     game.resume("platform");
+    update();
   };
   // Arm (or re-arm) the recovery watchdog for the current "platform" pause. Shared by both
   // paths that pause under the portal: the mid-session foreground:lost handler and the
@@ -212,13 +236,17 @@ export function bindPlatform(
     watchdog = scheduleTimeout(recover, recoveryMs);
   };
   const offLost = platform.on("foreground:lost", () => {
+    portalHolds = true;
     game.pause("platform");
+    update();
     armRecovery();
   });
   const offGained = platform.on("foreground:gained", () => {
     // A genuine return arrived; the watchdog is no longer needed.
     clearWatchdog();
+    portalHolds = false;
     game.resume("platform");
+    update();
   });
   // The portal may have taken the foreground before anything subscribed (the launch ad). Arm
   // the same watchdog the loss handler uses: without it a dropped foreground:gained on this
@@ -238,6 +266,8 @@ export function bindPlatform(
     },
     dispose: () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
       offLost();
       offGained();
       clearWatchdog();

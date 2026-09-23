@@ -10,11 +10,22 @@ import type { AdKind, AdSkipReason, PlatformCapabilities } from "./types.js";
 export class AdPolicy {
   readonly #capabilities: PlatformCapabilities;
   readonly #now: () => number;
+  readonly #countsTowardInterval: readonly AdKind[];
   #lastInterstitialMs: number | null = null;
 
-  constructor(capabilities: PlatformCapabilities, now: () => number = Date.now) {
+  /**
+   * `countsTowardInterval` — the ad kinds that restart the interstitial interval when they
+   * play. Interstitials only, unless the portal says otherwise (CrazyGames counts rewarded
+   * ads too).
+   */
+  constructor(
+    capabilities: PlatformCapabilities,
+    now: () => number = Date.now,
+    countsTowardInterval: readonly AdKind[] = ["interstitial"],
+  ) {
     this.#capabilities = capabilities;
     this.#now = now;
+    this.#countsTowardInterval = countsTowardInterval;
   }
 
   /** `null` when the ad may play, otherwise why it may not. */
@@ -31,7 +42,7 @@ export class AdPolicy {
 
   /** Record that an ad actually played. Only a played ad starts the interval. */
   record(kind: AdKind): void {
-    if (kind === "interstitial") this.#lastInterstitialMs = this.#now();
+    if (this.#countsTowardInterval.includes(kind)) this.#lastInterstitialMs = this.#now();
   }
 
   /** Seconds until an interstitial is allowed again. 0 when it is allowed now. */

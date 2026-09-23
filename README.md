@@ -102,13 +102,13 @@ not publish ([docs/platforms/gamevui/](docs/platforms/gamevui/platform-contract.
 Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory and an adapter
 here.
 
-| Platform     | Profile         | Adapter                         | Upload automated          |
-| ------------ | --------------- | ------------------------------- | ------------------------- |
-| Generic Web  | ✅              | ✅                              | n/a — self-hosted         |
-| Yandex Games | ✅              | ✅                              | no — no public API        |
-| Poki         | ✅              | ✅                              | yes — `@poki/cli`         |
-| CrazyGames   | ✅              | ✅ HTML5 SDK v3                 | no — no public API        |
-| GameVui      | ✅ (unverified) | none — GameVui publishes no SDK | no — email / contact form |
+| Platform     | Profile         | Adapter                                           | Upload automated          |
+| ------------ | --------------- | ------------------------------------------------- | ------------------------- |
+| Generic Web  | ✅              | ✅                                                | n/a — self-hosted         |
+| Yandex Games | ✅              | ✅                                                | no — no public API        |
+| Poki         | ✅              | ✅                                                | yes — `@poki/cli`         |
+| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                   | no — no public API        |
+| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves | no — email / contact form |
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)
@@ -116,7 +116,9 @@ and assessed in [compliance/yandex-compliance-report.md](compliance/yandex-compl
 The CrazyGames adapter's are [examples/crazygames-compliance-demo](examples/crazygames-compliance-demo/README.md)
 and [compliance/crazygames-compliance-report.md](compliance/crazygames-compliance-report.md).
 
-An id with a profile but no adapter throws at startup. Degrading silently to no-ads would ship
+Every portal is reached through one contract; `docs/sdk.md` has the adapter matrix, what was
+checked against each portal's current documentation, and each known limitation. An id with a
+profile but no adapter throws at startup. Degrading silently to no-ads would ship
 a title that thinks it has a portal SDK and does not, which is a blocking assertion failure at
 release validation.
 
@@ -171,6 +173,6 @@ Foundation and pipelines implemented and exercised on real runners.
 | Portal adapter — yandex, with `examples/yandex-compliance-demo`              | done        |
 | Portal adapter — poki, with `examples/poki-compliance-demo`                  | done        |
 | CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done        |
-| Portal adapters — gamevui                                                    | not written |
+| GameVui no-SDK adapter (no portal SDK exists; see `docs/sdk.md`)             | done        |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty       |
 | `scripts/build`, `scripts/campaign`                                          | empty       |

@@ -27,16 +27,23 @@ import { PlatformEmitter } from "../emitter.js";
 import { GameplayLifecycle, type RejectedCall } from "../lifecycle.js";
 import { LocalStorageBackend } from "../storage.js";
 import { UsageRecorder, type PlatformUsage } from "../usage.js";
-import type {
-  AdHooks,
-  AdKind,
-  AdResult,
-  AdSkipReason,
-  Platform,
-  PlatformCapabilities,
-  PlatformEvents,
-  PlatformStorage,
-  RewardedResult,
+import {
+  DEFAULT_SETTINGS,
+  UNKNOWN_ENVIRONMENT,
+  type AdAvailability,
+  type AdHooks,
+  type AdKind,
+  type AdResult,
+  type AdSkipReason,
+  type Platform,
+  type PlatformCapabilities,
+  type PlatformEnvironment,
+  type PlatformEvents,
+  type PlatformSettings,
+  type PlatformStorage,
+  type PlatformUser,
+  type RewardedResult,
+  type Unsubscribe,
 } from "../types.js";
 
 /** The documented loader. Poki serves the current SDK version behind it. */
@@ -54,6 +61,9 @@ export const POKI_CAPABILITIES: PlatformCapabilities = {
   // Poki's requirements say not to implement internal ad timers: the SDK decides whether a
   // commercialBreak plays. A local minimum interval would suppress breaks Poki wanted.
   interstitialMinIntervalS: null,
+  // Poki has no pause or visibility API; the game reports gameplayStop itself when it
+  // pauses, a hidden tab included.
+  gameplayStopOnHidden: true,
 };
 
 /** The subset of window.PokiSDK this adapter uses — every member is documented by Poki. */
@@ -166,6 +176,8 @@ export class PokiPlatform implements Platform {
    * the game follows the browser.
    */
   readonly language = null;
+  readonly environment: PlatformEnvironment = UNKNOWN_ENVIRONMENT;
+  readonly settings: PlatformSettings = DEFAULT_SETTINGS;
 
   readonly #ads = new AdPolicy(POKI_CAPABILITIES);
   readonly #events = new PlatformEmitter();
@@ -182,6 +194,9 @@ export class PokiPlatform implements Platform {
   #state: PokiSdkState = "not-initialized";
   #initializing: Promise<void> | null = null;
   #loadingFraction = 0;
+  // init() rejected — Poki's documented symptom of an ad blocker. The game still runs, and
+  // no ad can play; a rewarded offer must not be shown.
+  #initRejected = false;
 
   constructor(options: PokiOptions) {
     this.storage = options.storage ?? new LocalStorageBackend(options.namespace);
@@ -228,8 +243,22 @@ export class PokiPlatform implements Platform {
   on<K extends keyof PlatformEvents>(
     event: K,
     handler: (payload: PlatformEvents[K]) => void,
-  ): () => void {
+  ): Unsubscribe {
     return this.#events.on(event, handler);
+  }
+
+  adAvailability(kind: AdKind): AdAvailability {
+    if (!this.capabilities.ads.includes(kind)) return "unsupported";
+    if (this.#initRejected) return "adblock";
+    return this.#sdk && this.#state === "ready" ? "available" : "disabled";
+  }
+
+  /**
+   * Always null. Poki's User Accounts (login, getUser, cloud sync) exist but are enabled per
+   * title by Poki and throw when they are not; this adapter does not use them.
+   */
+  getUser(): Promise<PlatformUser | null> {
+    return Promise.resolve(null);
   }
 
   initialize(): Promise<void> {
@@ -266,6 +295,7 @@ export class PokiPlatform implements Platform {
     try {
       await sdk.init();
     } catch {
+      this.#initRejected = true;
       // Poki's documented pattern: `PokiSDK.init().then(...).catch(() => { load game
       // anyway })`. A rejection — typically an ad blocker — still leaves an SDK whose ad
       // calls resolve without an ad. Only an init that never settles is unusable, and the
@@ -327,7 +357,10 @@ export class PokiPlatform implements Platform {
 
     const call = kind === "rewarded" ? "rewardedBreak" : "commercialBreak";
     const decision = this.#lifecycle.beginAd(call);
-    if (!decision.allowed) return { shown: false, rewarded: false, reason: "busy" };
+    if (!decision.allowed) {
+      const reason = decision.reason === "during-ad" ? "busy" : "not-ready";
+      return { shown: false, rewarded: false, reason };
+    }
 
     try {
       if (decision.stopFirst) this.#send("gameplayStop");
@@ -383,7 +416,7 @@ export class PokiPlatform implements Platform {
           if (started) this.#played(kind);
           // Grant on Poki's own success flag only. Under an ad blocker it is false, and
           // Poki's guidelines say no reward is given then.
-          return { shown: started, rewarded: result, reason: "not-ready" };
+          return { shown: started, rewarded: result, reason: this.#noAdReason() };
         }
         const commercial = sdk.commercialBreak(onStart).catch(() => {
           if (settled) return; // Late rejection after the deadline: drop it.
@@ -396,7 +429,7 @@ export class PokiPlatform implements Platform {
         }
         settled = true;
         if (started) this.#played(kind);
-        return { shown: started, rewarded: false, reason: "not-ready" };
+        return { shown: started, rewarded: false, reason: this.#noAdReason() };
       } catch {
         settled = true;
         return { shown: started, rewarded: false, reason: "error" };
@@ -409,6 +442,11 @@ export class PokiPlatform implements Platform {
         this.#events.emit("foreground:gained", undefined);
       }
     }
+  }
+
+  /** Why a break that resolved without an ad showed none. */
+  #noAdReason(): AdSkipReason {
+    return this.#initRejected ? "adblock" : "not-ready";
   }
 
   #played(kind: AdKind): void {

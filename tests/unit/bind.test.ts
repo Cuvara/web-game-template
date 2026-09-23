@@ -488,3 +488,26 @@ describe("bindPlatform — the portal holding the foreground", () => {
     expect(starts).toEqual(["resumed"]);
   });
 });
+
+describe("bindPlatform — sound off without focus (Yandex 1.3)", () => {
+  it("mutes on window blur and a hidden tab, and while the portal holds the screen", () => {
+    const game = new Game({ scheduler: new ManualScheduler() });
+    const { platform, calls, emit } = fakePlatform({ stopOnHidden: false });
+    const binding = bindPlatform(game, platform);
+    window.dispatchEvent(new Event("blur"));
+    expect(binding.audioMuted).toBe(true);
+    expect(game.paused).toBe(false); // focus loss silences; it does not pause
+    window.dispatchEvent(new Event("focus"));
+    expect(binding.audioMuted).toBe(false);
+    setVisibility("hidden");
+    expect(binding.audioMuted).toBe(true);
+    setVisibility("visible");
+    expect(binding.audioMuted).toBe(false);
+    emit("foreground:lost", undefined);
+    expect(binding.audioMuted).toBe(true);
+    emit("foreground:gained", undefined);
+    expect(binding.audioMuted).toBe(false);
+    expect(calls).toEqual([]);
+    binding.dispose();
+  });
+});
