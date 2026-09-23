@@ -196,6 +196,17 @@ uploaded, by instruction. Nothing in this report claims a QA-tool result.
 
 ## Automated Tests
 
+**After merging `main` (the Yandex adapter, `d4f6569`)** — the contract was reconciled onto
+main's `on()` / `language` / `foreground`, with the CrazyGames additions made optional so
+the Yandex adapter is unchanged. Verified on the merged tree: lint, format, typecheck clean;
+Vitest **184 / 184** (includes Yandex's unit tests); root build + root e2e **6 / 6**;
+CrazyGames browser suite **87 passed, 0 failed**; Yandex demo e2e **97 passed, 0 failed**;
+Yandex audit 0 errors; CrazyGames audit **0 FAIL**. The merge first produced one audit
+FAIL, which the audit exists to catch: the demo's bundle contained the Yandex adapter via
+the registry. Fixed as described under Known Risks.
+
+The numbers below are from before the merge.
+
 Final run on this tree (main agent, 2026-09-23):
 
 | Suite                                                                  | Result                                                                                                                     |
@@ -287,6 +298,13 @@ the next boot; the main agent's final run above is on that tree.
 6. Confirm the portal's own initial-download figure.
 
 ## Known Risks
+
+- **`createPlatform()` bundles every adapter.** Since the Yandex adapter landed on `main`,
+  `registry.ts` imports it statically, so a title that boots through `createPlatform()`
+  ships the Yandex SDK loader in its CrazyGames build. `scripts/crazygames-audit.mjs`
+  fails such a build (`unexpected_dependencies`); the demo avoids it by constructing
+  `CrazyGamesPlatform` directly. Making the registry load adapters lazily is template work
+  still to do.
 
 - **Untested or not automated:** the Space-key fix (focused buttons still activate); WebKit
   and Firefox (automatable, not configured); real devices; iOS audio interruption; the

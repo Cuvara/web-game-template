@@ -8,15 +8,48 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ## [Unreleased]
 
+### Added — Yandex Games
+
+- **Yandex adapter** (`createPlatform("yandex")`), written against the current official
+  docs. It covers:
+  - loading `/sdk.js`;
+  - `LoadingAPI.ready()` and `GameplayAPI` transitions;
+  - `game_api_pause`/`resume`, including the ad the portal shows at launch;
+  - interstitial and rewarded ads, which keep listening past their open-timeout;
+  - saves through `player.setData`, with a local mirror and revision reconciliation;
+  - the account-selection dialog.
+
+  A missing SDK degrades the game rather than failing boot.
+
+- **`Platform` gains `language`, `foreground` and `on()`**, plus two events, `ad:late-reward`
+  and `storage:changed`. A title that implements `Platform` itself must add them. Titles
+  that only call it need not change.
+- **`src/main.ts` follows the portal's language** when the platform reports one.
+- **`examples/yandex-compliance-demo`**: a small PixiJS game that exercises every lifecycle
+  moment Yandex moderation checks. It comes with:
+  - unit tests;
+  - Playwright e2e on desktop, phone and tablet;
+  - `scripts/verify/yandex-audit.mjs`, a static audit of the build;
+  - `scripts/release/yandex-archive.mjs`, which packages the upload ZIP;
+  - the workflow `yandex-demo.yml`.
+
+  Its assessment is `compliance/yandex-compliance-report.md`: READY_WITH_MANUAL_CHECKS, not
+  submitted, not Yandex-approved.
+
+- The Vite game-config plugin moved to `scripts/build/game-config-plugin.ts` so examples
+  can share it.
+- `PixiRenderer` caps resolution at 2×, matching the Three.js renderer.
+
 ### Added — CrazyGames
 
 - **CrazyGames adapter** (`@wgf/platform-sdk`, HTML5 SDK v3). `createPlatform("crazygames")`
   no longer throws. Gameplay start/stop, loading start/stop, midgame and rewarded ads,
-  Data-module storage, `muteAudio`, system-info locale/device, user. Degrades to a plain web
+  Data-module storage, `muteAudio`, `language` and device from system info, user. Degrades to a plain web
   game when the SDK is disabled (non-CrazyGames domain) or blocked.
-- **Platform contract additions**: `events` (`ad:start`, `ad:end`, `settings:change`),
-  `settings`, `environment`, `adAvailability()`, `getUser()`, and
-  `capabilities.gameplayStopOnHidden`. Ad skip reasons gain `disabled` and `adblock`.
+- **Platform contract additions**, all optional so existing adapters (Yandex) need no
+  change: `settings` with a `settings:change` event, `environment` (device, portal app),
+  `adAvailability()`, `getUser()`, and `capabilities.gameplayStopOnHidden` (absent = true).
+  Ad skip reasons gain `disabled` and `adblock`. Events use the `on()` from the Yandex change.
 - **`examples/crazygames-compliance-demo/`** — a PixiJS game that exercises the integration
   end to end, and `tests/crazygames/` driving it on desktop, mobile and tablet.
 - **`scripts/crazygames-audit.mjs`** with limits tied to their official source in
@@ -26,8 +59,8 @@ not publish versioned releases of its own, so changes are grouped by date.
 
 ### Fixed
 
-- **Builds used absolute asset paths.** `vite.config.ts` now sets `base: "./"`; CrazyGames
-  states absolute paths fail to load, and other portals serve from sub-paths too.
+- **Builds used absolute asset paths.** The root `vite.config.ts` now sets `base: "./"`, as
+  the Yandex demo already did; CrazyGames states absolute paths fail to load.
 - **Focus loss was always reported as a gameplay stop.** CrazyGames asks games not to;
   `bindPlatform` now follows `capabilities.gameplayStopOnHidden`.
 

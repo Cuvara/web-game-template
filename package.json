@@ -1,7 +1,7 @@
 {
   "name": "web-game-template",
   "version": "0.1.0",
-  "description": "Web Game Factory \u2014 reusable game template",
+  "description": "Web Game Factory — reusable game template",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -13,7 +13,7 @@
     "build": "pnpm -r --filter \"./packages/*\" build && vite build",
     "build:crazygames-demo": "pnpm -r --filter \"./packages/*\" build && pnpm --filter @wgf/example-crazygames-compliance-demo build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --force && tsc -b examples/crazygames-compliance-demo --force",
+    "typecheck": "tsc -b --force",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
@@ -30,7 +30,13 @@
     "audit:crazygames": "node scripts/crazygames-audit.mjs",
     "release:package": "node scripts/release/package.mjs",
     "release:manifest": "node scripts/release/make-manifest.mjs",
-    "publish:prepare": "node scripts/publish/make-publication.mjs"
+    "publish:prepare": "node scripts/publish/make-publication.mjs",
+    "demo:yandex:dev": "vite --config examples/yandex-compliance-demo/vite.config.ts",
+    "demo:yandex:build": "vite build --config examples/yandex-compliance-demo/vite.config.ts",
+    "demo:yandex:preview": "vite preview --config examples/yandex-compliance-demo/vite.config.ts",
+    "demo:yandex:audit": "node scripts/verify/yandex-audit.mjs --dir examples/yandex-compliance-demo/dist",
+    "demo:yandex:package": "node scripts/release/yandex-archive.mjs --dir examples/yandex-compliance-demo/dist --out build/yandex/yandex-compliance-demo.zip",
+    "demo:yandex:e2e": "playwright test -c examples/yandex-compliance-demo/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

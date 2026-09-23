@@ -3,8 +3,10 @@
 # packages/* is what the template provides and a game never edits. src/ is the game itself
 # and only consumes these. Keeping the split honest is what stops a game reimplementing
 # something the template already ships.
+#
+# examples/* are small games built on the packages the way a title would be. They are
+# workspace members only so they resolve their dependencies; the template's build and CI
+# gates do not depend on them.
 packages:
   - "packages/*"
-  # Small example games that exercise one platform adapter end to end. Not part of any
-  # game built from this template, and not bundled into one.
   - "examples/*"

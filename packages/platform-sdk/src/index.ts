@@ -10,15 +10,12 @@ export type {
   Platform,
   PlatformCapabilities,
   PlatformEnvironment,
-  PlatformEventSource,
   PlatformEvents,
   PlatformSettings,
   PlatformStorage,
   PlatformUser,
   RewardedResult,
-  Unsubscribe,
 } from "./types.js";
-export { PlatformEmitter } from "./emitter.js";
 export { AdPolicy } from "./ad-policy.js";
 export { UsageRecorder, type PlatformUsage } from "./usage.js";
 export { LocalStorageBackend, MemoryStorageBackend } from "./storage.js";
@@ -48,6 +45,28 @@ export {
   type CrazyGamesSystemInfo,
   type CrazyGamesUser,
 } from "./adapters/crazygames/sdk.js";
+export {
+  YANDEX_CAPABILITIES,
+  YANDEX_SDK_URL,
+  YandexPlatform,
+  loadSdkScript,
+  type YandexOptions,
+} from "./adapters/yandex.js";
+export {
+  YANDEX_DATA_LIMIT_BYTES,
+  YANDEX_MIN_WRITE_INTERVAL_MS,
+  YandexStorage,
+  type Timers,
+  type YandexStorageOptions,
+} from "./adapters/yandex-storage.js";
+export type {
+  YaGamesGlobal,
+  YandexAdCallbacks,
+  YandexPlayer,
+  YandexRewardedCallbacks,
+  YandexSdk,
+} from "./adapters/yandex-sdk.js";
+export { PlatformEmitter } from "./emitter.js";
 export {
   KNOWN_PLATFORM_IDS,
   createPlatform,

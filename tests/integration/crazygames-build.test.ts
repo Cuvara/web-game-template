@@ -1,5 +1,5 @@
 // The CrazyGames SDK URL is written down in three places that cannot import one another:
-// the adapter, the root vite config (runs before packages are built) and the audit's limits
+// the adapter, the shared Vite plugin (runs before packages are built) and the audit's limits
 // file (plain JSON). They must agree, or the build loads one script and the audit checks
 // for another.
 
@@ -12,8 +12,8 @@ const root = resolve(import.meta.dirname, "../..");
 const read = (path: string): string => readFileSync(resolve(root, path), "utf8");
 
 describe("CrazyGames SDK URL", () => {
-  it("is the same in the adapter, the vite config, the limits file and the demo", () => {
-    expect(read("vite.config.ts")).toContain(`"${CRAZYGAMES_SDK_URL}"`);
+  it("is the same in the adapter, the Vite plugin, the limits file and the demo", () => {
+    expect(read("scripts/build/game-config-plugin.ts")).toContain(`"${CRAZYGAMES_SDK_URL}"`);
     const limits = JSON.parse(read("config/platforms/crazygames-limits.json")) as {
       sdk: { url: string };
     };

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Starfall Basket</title>
+    <style>
+      /*
+       * Yandex requirements this block answers:
+       *   1.6.1.8 / 1.6.2.7 — no selection or context menu on long press or right click
+       *   1.10.2            — the page itself never scrolls or pulls to refresh
+       *   1.6.2.1           — the game fills the space it is given
+       * The context menu itself is blocked in src/lifecycle.ts; CSS cannot do that.
+       */
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        background: #0b1026;
+        color: #eef1ff;
+        font:
+          16px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
+      }
+      #game {
+        position: fixed;
+        inset: 0;
+      }
+      #game canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #ui {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+      #ui .hud {
+        position: absolute;
+        top: max(8px, env(safe-area-inset-top));
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-weight: 600;
+        text-shadow: 0 1px 2px #000;
+      }
+      #ui .hud .spacer {
+        flex: 1;
+      }
+      #ui .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 24px;
+        box-sizing: border-box;
+        text-align: center;
+        background: rgba(8, 11, 30, 0.72);
+        pointer-events: auto;
+      }
+      #ui .screen[hidden],
+      #ui .hud[hidden],
+      #ui [hidden] {
+        display: none;
+      }
+      #ui h1 {
+        margin: 0;
+        font-size: clamp(28px, 7vmin, 56px);
+        color: #ffd66b;
+      }
+      #ui p {
+        margin: 0;
+        max-width: 36em;
+      }
+      /* 1.8: interactive elements sized for a finger, whatever the screen. */
+      #ui button {
+        pointer-events: auto;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 10px 22px;
+        border: 0;
+        border-radius: 10px;
+        font: inherit;
+        font-weight: 700;
+        color: #0b1026;
+        background: #ffd66b;
+        cursor: pointer;
+      }
+      #ui button.secondary {
+        background: #3a4478;
+        color: #eef1ff;
+      }
+      #ui button.ad::before {
+        content: "▶ ";
+      }
+      #ui .hud button {
+        padding: 8px 14px;
+        font-size: 14px;
+      }
+      #ui .note {
+        min-height: 1.4em;
+        color: #ffb3b3;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="ui"></div>
+    <div id="boot" data-state="loading">…</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

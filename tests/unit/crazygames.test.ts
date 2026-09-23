@@ -151,9 +151,11 @@ describe("CrazyGamesPlatform — lifecycle", () => {
     expect(CRAZYGAMES_CAPABILITIES.gameplayStopOnHidden).toBe(false);
   });
 
-  it("reads locale, device and app from systemInfo", async () => {
+  it("reads language, device and app from systemInfo", async () => {
     const { platform } = await ready();
-    expect(platform.environment).toEqual({ locale: "de-DE", device: "tablet", inPortalApp: true });
+    expect(platform.environment).toEqual({ device: "tablet", inPortalApp: true });
+    expect(platform.language).toBe("de");
+    expect(platform.foreground).toBe(true);
   });
 });
 
@@ -191,8 +193,8 @@ describe("CrazyGamesPlatform — ads", () => {
   it("emits ad:start only once the ad plays and ad:end after it", async () => {
     const { platform, calls } = await ready();
     const seen: string[] = [];
-    platform.events.on("ad:start", ({ kind }) => seen.push(`start:${kind}`));
-    platform.events.on("ad:end", ({ kind }) => seen.push(`end:${kind}`));
+    platform.on("ad:start", ({ kind }) => seen.push(`start:${kind}`));
+    platform.on("ad:end", ({ kind }) => seen.push(`end:${kind}`));
 
     await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
     expect(calls).toContain("requestAd:midgame");
@@ -203,7 +205,7 @@ describe("CrazyGamesPlatform — ads", () => {
   it("does not emit ad:start for an unfilled request, so the game does not blip its audio", async () => {
     const { platform } = await ready({ ad: { kind: "error-before-start", code: "unfilled" } });
     const started = vi.fn();
-    platform.events.on("ad:start", started);
+    platform.on("ad:start", started);
     await expect(platform.showInterstitial()).resolves.toEqual({
       shown: false,
       reason: "not-ready",
@@ -274,8 +276,8 @@ describe("CrazyGamesPlatform — ads", () => {
   it("gives up on an ad that never starts, then still mutes for it if it starts late", async () => {
     const fake = await ready({ ad: { kind: "never" } });
     const seen: string[] = [];
-    fake.platform.events.on("ad:start", () => seen.push("start"));
-    fake.platform.events.on("ad:end", () => seen.push("end"));
+    fake.platform.on("ad:start", () => seen.push("start"));
+    fake.platform.on("ad:end", () => seen.push("end"));
 
     await expect(fake.platform.showInterstitial()).resolves.toEqual({
       shown: false,
@@ -376,7 +378,7 @@ describe("CrazyGamesPlatform — settings, data, user", () => {
     const fake = await ready({ settings: { disableChat: false, muteAudio: true } });
     expect(fake.platform.settings.muteAudio).toBe(true);
     const changes = vi.fn();
-    fake.platform.events.on("settings:change", changes);
+    fake.platform.on("settings:change", changes);
     fake.changeSettings({ disableChat: false, muteAudio: false });
     expect(changes).toHaveBeenCalledWith({ muteAudio: false });
   });

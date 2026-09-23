@@ -37,9 +37,9 @@ export interface PlatformCapabilities {
   /**
    * Whether the game itself must report a gameplay stop when the tab is hidden. False where
    * the portal detects focus loss on its own and asks games not to report it — CrazyGames
-   * says so explicitly for `gameplayStop`.
+   * says so explicitly for `gameplayStop`. Absent means true.
    */
-  readonly gameplayStopOnHidden: boolean;
+  readonly gameplayStopOnHidden?: boolean;
 }
 
 /** Why an ad did not play. Never a thrown error: a missing ad must not break gameplay. */
@@ -86,10 +86,11 @@ export interface PlatformSettings {
 
 export type DeviceType = "desktop" | "tablet" | "mobile";
 
-/** What the portal knows about where the game is running. Valid after `initialize()`. */
+/**
+ * What the portal knows about where the game is running. Valid after `initialize()`. The
+ * player's language is not here: it is {@link Platform.language}.
+ */
 export interface PlatformEnvironment {
-  /** BCP 47 locale the portal selected for the player, e.g. `en-US`; null when unknown. */
-  readonly locale: string | null;
   readonly device: DeviceType | null;
   /** Running inside the portal's own native app, where the UI must respect safe areas. */
   readonly inPortalApp: boolean;
@@ -101,33 +102,47 @@ export interface PlatformUser {
   readonly avatarUrl: string | null;
 }
 
-export type Unsubscribe = () => void;
-
-export interface PlatformEventSource {
-  on<K extends keyof PlatformEvents>(
-    type: K,
-    handler: (payload: PlatformEvents[K]) => void,
-  ): Unsubscribe;
-}
-
 /** What the game tells the platform about its own lifecycle. */
 export interface Platform {
   readonly id: string;
   readonly capabilities: PlatformCapabilities;
   readonly storage: PlatformStorage;
-  readonly events: PlatformEventSource;
-  readonly settings: PlatformSettings;
-  readonly environment: PlatformEnvironment;
+  /**
+   * Settings the portal imposes, where it has any (CrazyGames: `muteAudio`). Absent means
+   * none — treat as `{ muteAudio: false }`. Changes arrive as `settings:change`.
+   */
+  readonly settings?: PlatformSettings;
+  /** Device and host details, where the portal reports them. Absent means unknown. */
+  readonly environment?: PlatformEnvironment;
   /** A snapshot of what the game has asked for so far. Read by the verify suite. */
   readonly usage: PlatformUsage;
+  /**
+   * The ISO 639-1 language the portal chose for this player, or `null` where the portal
+   * does not say. Valid after {@link initialize}. Yandex requires the game to follow it
+   * (requirement 2.14), so it outranks the browser's own preference.
+   */
+  readonly language: string | null;
+  /**
+   * False while the portal holds the foreground — its own ad, a purchase dialog, the ad it
+   * shows by itself at launch. Read it when binding: the portal may have taken the
+   * foreground before anything subscribed to {@link on}.
+   */
+  readonly foreground: boolean;
+
+  /** Subscribe to a signal the portal raises at the game. Returns the unsubscribe. */
+  on<K extends keyof PlatformEvents>(
+    event: K,
+    handler: (payload: PlatformEvents[K]) => void,
+  ): () => void;
 
   /** Load and hand-shake with the portal. Safe to call more than once. */
   initialize(): Promise<void>;
 
   /**
-   * Report load progress in [0, 1]. Required by every portal whose profile sets
-   * `loading_api: required` — "does not report loading progress" is a listed rejection
-   * cause on Yandex, Poki and CrazyGames.
+   * Report load progress in [0, 1]. Some portals take it; Yandex has no progress API and
+   * only counts the call for release validation. The Factory profiles list "does not
+   * report loading progress" among past rejections — on Yandex the check that matters is
+   * Game Ready ({@link signalReady}), requirement 1.19.2.
    */
   reportLoadingProgress(fraction: number): void;
 
@@ -145,11 +160,14 @@ export interface Platform {
    */
   showInterstitial(): Promise<AdResult>;
   showRewarded(): Promise<RewardedResult>;
-  /** Whether an offer for `kind` should be visible at all. */
-  adAvailability(kind: AdKind): AdAvailability;
+  /**
+   * Whether an offer for `kind` should be visible at all. Absent on adapters that cannot
+   * tell; then only `capabilities.ads` is known.
+   */
+  adAvailability?(kind: AdKind): AdAvailability;
 
-  /** The logged-in portal user, or null for a guest or a portal without accounts. */
-  getUser(): Promise<PlatformUser | null>;
+  /** The logged-in portal user, or null for a guest. Absent on adapters without accounts. */
+  getUser?(): Promise<PlatformUser | null>;
 }
 
 /** Signals the platform raises at the game, which map onto Game.pause/resume reasons. */
@@ -164,4 +182,14 @@ export interface PlatformEvents extends Record<string, unknown> {
   "settings:change": PlatformSettings;
   "foreground:lost": void;
   "foreground:gained": void;
+  /**
+   * A rewarded ad the game had already given up on (it opened after the call timed out)
+   * was watched to the end. The reward is owed; the game decides whether it still applies.
+   */
+  "ad:late-reward": { readonly kind: AdKind };
+  /**
+   * Saved data was replaced from outside the game — on Yandex, the player chose a different
+   * progress track in the portal's account-selection dialog. Re-read anything cached.
+   */
+  "storage:changed": void;
 }

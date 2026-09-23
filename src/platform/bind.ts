@@ -30,7 +30,7 @@ export function bindPlatform(
 ): PlatformBinding {
   // Some portals detect focus loss themselves and ask not to be told about it — CrazyGames
   // does, for gameplayStop. The game still pauses either way; only the report differs.
-  const reportVisibility = platform.capabilities.gameplayStopOnHidden;
+  const reportVisibility = platform.capabilities.gameplayStopOnHidden ?? true;
 
   const onVisibilityChange = (): void => {
     if (document.visibilityState === "hidden") {
@@ -42,7 +42,7 @@ export function bindPlatform(
     }
   };
 
-  let settingsMuted = platform.settings.muteAudio;
+  let settingsMuted = platform.settings?.muteAudio ?? false;
   let adPlaying = false;
   // Set when an ad landed on live gameplay (one that started after withAdBreak gave up on
   // it): that ad is a break, so the portal hears gameplayStop, and gameplayStart after.
@@ -57,13 +57,13 @@ export function bindPlatform(
   if (muted) options.onAudioMutedChange?.(true);
 
   const unsubscribe = [
-    platform.events.on("settings:change", (settings) => {
+    platform.on("settings:change", (settings) => {
       settingsMuted = settings.muteAudio;
       update();
     }),
     // An ad on screen always holds the game, even one that starts after withAdBreak gave up
     // waiting for it. Pause reasons are a set, so this and withAdBreak do not fight.
-    platform.events.on("ad:start", () => {
+    platform.on("ad:start", () => {
       adPlaying = true;
       if (!game.paused) {
         stoppedForAd = true;
@@ -72,7 +72,7 @@ export function bindPlatform(
       game.pause("ad");
       update();
     }),
-    platform.events.on("ad:end", () => {
+    platform.on("ad:end", () => {
       adPlaying = false;
       game.resume("ad");
       if (stoppedForAd && !game.paused) platform.gameplayStart();

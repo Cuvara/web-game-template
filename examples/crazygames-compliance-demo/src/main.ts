@@ -24,7 +24,7 @@
 //   Progress in the Data module ............... saved at every level end.
 
 import { Game } from "@wgf/game-core";
-import { createPlatform, type Platform } from "@wgf/platform-sdk";
+import { CrazyGamesPlatform, type AdAvailability, type Platform } from "@wgf/platform-sdk";
 import { PixiRenderer } from "@wgf/pixi-framework";
 import { Audio } from "./audio.js";
 import { loadStrings, pickLocale, type Strings } from "./i18n.js";
@@ -128,7 +128,7 @@ class Demo {
     await platform.initialize();
     this.#setLoading(0.3);
 
-    this.#strings = await loadStrings(pickLocale(platform.environment.locale, navigator.languages));
+    this.#strings = await loadStrings(pickLocale(platform.language, navigator.languages));
     document.documentElement.lang = this.#strings.locale;
     ui.loadingText.textContent = this.#strings.t("loading");
     this.#setLoading(0.5);
@@ -169,21 +169,21 @@ class Demo {
 
   #bindPlatform(): void {
     const platform = this.#platform;
-    if (platform.settings.muteAudio) this.#audio.mute("platform");
-    platform.events.on("settings:change", ({ muteAudio }) => {
+    if (platform.settings?.muteAudio) this.#audio.mute("platform");
+    platform.on("settings:change", ({ muteAudio }) => {
       if (muteAudio) this.#audio.mute("platform");
       else this.#audio.unmute("platform");
     });
     // Mute on the ad actually starting. And hold the game for ANY ad that starts — including
     // one that starts after the adapter gave up waiting and the next level already began:
     // "Video ads can not interrupt gameplay" means an ad on screen always means a paused game.
-    platform.events.on("ad:start", () => {
+    platform.on("ad:start", () => {
       this.#audio.mute("ad");
       this.#game.pause("ad");
       ui.adShield.hidden = false;
       if (this.#phase === "playing") platform.gameplayStop();
     });
-    platform.events.on("ad:end", () => {
+    platform.on("ad:end", () => {
       this.#audio.unmute("ad");
       if (this.#phase === "ad") return; // #adBreak releases its own hold
       ui.adShield.hidden = true;
@@ -197,7 +197,8 @@ class Demo {
       const hidden = document.visibilityState === "hidden";
       if (hidden) this.#game.pause("hidden");
       else this.#game.resume("hidden");
-      if (!platform.capabilities.gameplayStopOnHidden || this.#phase !== "playing") return;
+      if (!(platform.capabilities.gameplayStopOnHidden ?? true) || this.#phase !== "playing")
+        return;
       if (hidden) platform.gameplayStop();
       else if (!this.#game.paused) platform.gameplayStart();
     });
@@ -284,7 +285,7 @@ class Demo {
 
   #renderOffers(): void {
     const offered = this.#offerThisBreak && !this.#rewardedThisBreak;
-    const availability = this.#platform.adAvailability("rewarded");
+    const availability = rewardedAvailability(this.#platform);
 
     // No rewarded button that cannot work — Basic Launch, a disabled SDK. With an ad blocker
     // the offer is replaced by a notice rather than hidden without explanation.
@@ -394,9 +395,21 @@ class Demo {
   }
 }
 
+/**
+ * `adAvailability` is optional on the contract. Without it only the capability list is
+ * known, which cannot rule out Basic Launch or an ad blocker — so no offer is made.
+ */
+function rewardedAvailability(platform: Platform): AdAvailability {
+  if (platform.adAvailability) return platform.adAvailability("rewarded");
+  return platform.capabilities.ads.includes("rewarded") ? "disabled" : "unsupported";
+}
+
 async function main(): Promise<void> {
   suppressBrowserDefaults();
-  const platform = createPlatform("crazygames", { namespace: GAME_ID });
+  // Constructed directly rather than through createPlatform(): the registry imports every
+  // adapter, and a CrazyGames build must not ship another portal's SDK loader.
+  // scripts/crazygames-audit.mjs (`unexpected_dependencies`) fails the build if it does.
+  const platform: Platform = new CrazyGamesPlatform({ namespace: GAME_ID });
   await new Demo(platform).boot();
 }
 

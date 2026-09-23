@@ -68,7 +68,7 @@ export function installDemoProbe(options: DemoProbeOptions): void {
         paddleX: simulation?.paddleX ?? 0.5,
         nextOrbX: nextOrbX(simulation?.orbs ?? []),
         lastSaveOk: options.lastSaveOk(),
-        rewardedAvailability: options.platform.adAvailability("rewarded"),
+        rewardedAvailability: options.platform.adAvailability?.("rewarded") ?? "unsupported",
         platformId: options.platform.id,
         sdkMode: extras.mode ?? null,
         launchStage: extras.observedLaunchStage ?? null,

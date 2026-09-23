@@ -9,7 +9,6 @@
 // portal SDK script is loaded here, and none should ever be added to this file.
 
 import { AdPolicy } from "../ad-policy.js";
-import { PlatformEmitter } from "../emitter.js";
 import { LocalStorageBackend } from "../storage.js";
 import { UsageRecorder, type PlatformUsage } from "../usage.js";
 import type {
@@ -19,6 +18,7 @@ import type {
   Platform,
   PlatformCapabilities,
   PlatformEnvironment,
+  PlatformEvents,
   PlatformSettings,
   PlatformStorage,
   PlatformUser,
@@ -47,9 +47,12 @@ export class GenericWebPlatform implements Platform {
   readonly id = "generic-web";
   readonly capabilities = GENERIC_WEB_CAPABILITIES;
   readonly storage: PlatformStorage;
-  readonly events = new PlatformEmitter();
+  /** No portal to choose a language; the game falls back to the browser's. */
+  readonly language = null;
+  /** No portal to take the foreground away. */
+  readonly foreground = true;
   readonly settings: PlatformSettings = { muteAudio: false };
-  readonly environment: PlatformEnvironment = { locale: null, device: null, inPortalApp: false };
+  readonly environment: PlatformEnvironment = { device: null, inPortalApp: false };
 
   readonly #ads = new AdPolicy(GENERIC_WEB_CAPABILITIES);
   readonly #usage = new UsageRecorder();
@@ -70,6 +73,14 @@ export class GenericWebPlatform implements Platform {
 
   get ready(): boolean {
     return this.#ready;
+  }
+
+  /** Nothing to subscribe to: without a portal, no signal is ever raised. */
+  on<K extends keyof PlatformEvents>(
+    _event: K,
+    _handler: (payload: PlatformEvents[K]) => void,
+  ): () => void {
+    return () => undefined;
   }
 
   initialize(): Promise<void> {

@@ -16,7 +16,7 @@
 //   where ads are disabled — no dead rewarded buttons ....... adAvailability()
 //   Data module for progress, relied on fully ............... storage
 //   muteAudio setting overrides in-game audio ............... settings, "settings:change"
-//   Locale and device from systemInfo ....................... environment
+//   Language and device from systemInfo ..................... language, environment
 //   Username/avatar from the user module .................... getUser()
 //
 // https://docs.crazygames.com/requirements/intro/ has the Basic vs Full Launch split. This
@@ -35,6 +35,7 @@ import type {
   Platform,
   PlatformCapabilities,
   PlatformEnvironment,
+  PlatformEvents,
   PlatformSettings,
   PlatformStorage,
   PlatformUser,
@@ -107,11 +108,11 @@ const DEVICE_TYPES: readonly DeviceType[] = ["desktop", "tablet", "mobile"];
 export class CrazyGamesPlatform implements Platform {
   readonly id = "crazygames";
   readonly capabilities = CRAZYGAMES_CAPABILITIES;
-  readonly events = new PlatformEmitter();
 
   readonly #options: CrazyGamesOptions;
   readonly #ads: AdPolicy;
   readonly #usage = new UsageRecorder();
+  readonly #events = new PlatformEmitter();
   readonly #fallbackStorage: LocalStorageBackend;
 
   #sdk: CrazyGamesSdk | null = null;
@@ -120,7 +121,8 @@ export class CrazyGamesPlatform implements Platform {
   #sdkEnvironment: CrazyGamesEnvironment | null = null;
   #initializing: Promise<void> | null = null;
   #settings: PlatformSettings = { muteAudio: false };
-  #environment: PlatformEnvironment = { locale: null, device: null, inPortalApp: false };
+  #environment: PlatformEnvironment = { device: null, inPortalApp: false };
+  #language: string | null = null;
   #launchStage: ObservedLaunchStage = "unknown";
   #adsDisabled = false;
   #adblock = false;
@@ -145,6 +147,24 @@ export class CrazyGamesPlatform implements Platform {
 
   get environment(): PlatformEnvironment {
     return this.#environment;
+  }
+
+  /** ISO 639-1, from `systemInfo.locale` (e.g. `en-US` → `en`). Null until known. */
+  get language(): string | null {
+    return this.#language;
+  }
+
+  /**
+   * CrazyGames raises no portal-level pause at the game: its ads are bracketed by
+   * `ad:start`/`ad:end`, and focus loss is the portal's own business. Always true.
+   */
+  readonly foreground = true;
+
+  on<K extends keyof PlatformEvents>(
+    event: K,
+    handler: (payload: PlatformEvents[K]) => void,
+  ): () => void {
+    return this.#events.on(event, handler);
   }
 
   get usage(): PlatformUsage {
@@ -202,6 +222,7 @@ export class CrazyGamesPlatform implements Platform {
     this.#storage = new CrazyGamesDataStorage(sdk);
     this.#migrateFallbackSaves(sdk);
     this.#environment = readEnvironment(sdk);
+    this.#language = readLanguage(sdk);
     this.#applySettings(sdk.game.settings);
     this.#safely(() =>
       sdk.game.addSettingsChangeListener((settings) => this.#applySettings(settings)),
@@ -311,7 +332,7 @@ export class CrazyGamesPlatform implements Platform {
         settled = true;
         clearTimeout(watchdog);
         this.#adInProgress = false;
-        if (started) this.events.emit("ad:end", { kind });
+        if (started) this.#events.emit("ad:end", { kind });
         resolve(result);
       };
 
@@ -325,7 +346,7 @@ export class CrazyGamesPlatform implements Platform {
       const endLate = (): void => {
         if (!lateStarted) return;
         lateStarted = false;
-        this.events.emit("ad:end", { kind });
+        this.#events.emit("ad:end", { kind });
       };
 
       try {
@@ -335,7 +356,7 @@ export class CrazyGamesPlatform implements Platform {
             if (sdk.environment === "crazygames") this.#launchStage = "full";
             if (settled) lateStarted = true;
             else started = true;
-            this.events.emit("ad:start", { kind });
+            this.#events.emit("ad:start", { kind });
           },
           adFinished: () => {
             if (settled) return endLate();
@@ -398,7 +419,7 @@ export class CrazyGamesPlatform implements Platform {
     const next: PlatformSettings = { muteAudio: settings.muteAudio === true };
     const changed = next.muteAudio !== this.#settings.muteAudio;
     this.#settings = next;
-    if (changed) this.events.emit("settings:change", next);
+    if (changed) this.#events.emit("settings:change", next);
   }
 
   // A throwing SDK must not take the game down with it. Lifecycle reports are best-effort;
@@ -421,12 +442,23 @@ function readEnvironment(sdk: CrazyGamesSdk): PlatformEnvironment {
     const info = sdk.user.systemInfo;
     const device = info.device?.type;
     return {
-      locale: info.locale ?? null,
       device: device && DEVICE_TYPES.includes(device) ? device : null,
       inPortalApp:
         info.applicationType === "google_play_store" || info.applicationType === "apple_store",
     };
   } catch {
-    return { locale: null, device: null, inPortalApp: false };
+    return { device: null, inPortalApp: false };
+  }
+}
+
+// "The game should use the user's language based on `locale` info provided through the
+// system info method ... and if not available/set fallback to English."
+// https://docs.crazygames.com/requirements/gameplay/#basic-gameplay-requirements
+function readLanguage(sdk: CrazyGamesSdk): string | null {
+  try {
+    const base = sdk.user.systemInfo.locale?.split(/[-_]/)[0]?.toLowerCase();
+    return base && /^[a-z]{2,3}$/.test(base) ? base : null;
+  } catch {
+    return null;
   }
 }

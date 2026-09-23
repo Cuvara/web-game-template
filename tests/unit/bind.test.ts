@@ -20,7 +20,7 @@ function fakePlatform(options: { stopOnHidden: boolean; muteAudio?: boolean }) {
   const platform = {
     capabilities: { gameplayStopOnHidden: options.stopOnHidden },
     settings: { muteAudio: options.muteAudio ?? false },
-    events,
+    on: events.on.bind(events),
     gameplayStart: () => calls.push("start"),
     gameplayStop: () => calls.push("stop"),
   } as unknown as Platform;

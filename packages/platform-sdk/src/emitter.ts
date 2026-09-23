@@ -1,41 +1,34 @@
-// The platform's own event source.
+// The smallest emitter the adapters need.
 //
-// A copy of the shape of @wgf/game-core's EventBus rather than an import of it: the platform
-// package has no dependencies, and an adapter must not pull the game loop in just to tell
-// the game an ad started.
+// platform-sdk depends on nothing, game-core included, so it cannot borrow game-core's
+// EventBus. A handler that throws is isolated: one broken listener must not stop the game
+// hearing that the portal took the foreground.
 
-import type { PlatformEventSource, PlatformEvents, Unsubscribe } from "./types.js";
+import type { PlatformEvents } from "./types.js";
 
-type Handler = (payload: never) => void;
+type Handler<T> = (payload: T) => void;
 
-export class PlatformEmitter implements PlatformEventSource {
-  readonly #handlers = new Map<keyof PlatformEvents, Set<Handler>>();
+export class PlatformEmitter {
+  readonly #handlers = new Map<keyof PlatformEvents, Set<Handler<never>>>();
 
-  on<K extends keyof PlatformEvents>(
-    type: K,
-    handler: (payload: PlatformEvents[K]) => void,
-  ): Unsubscribe {
-    let set = this.#handlers.get(type);
+  on<K extends keyof PlatformEvents>(event: K, handler: Handler<PlatformEvents[K]>): () => void {
+    let set = this.#handlers.get(event);
     if (!set) {
       set = new Set();
-      this.#handlers.set(type, set);
+      this.#handlers.set(event, set);
     }
-    set.add(handler as Handler);
+    set.add(handler as Handler<never>);
     return () => {
-      set.delete(handler as Handler);
+      set.delete(handler as Handler<never>);
     };
   }
 
-  emit<K extends keyof PlatformEvents>(type: K, payload: PlatformEvents[K]): void {
-    const set = this.#handlers.get(type);
-    if (!set) return;
-    // A throwing listener must not stop the others, nor the adapter that emitted: an ad
-    // callback that dies halfway leaves the game paused forever.
-    for (const handler of [...set]) {
+  emit<K extends keyof PlatformEvents>(event: K, payload: PlatformEvents[K]): void {
+    for (const handler of [...(this.#handlers.get(event) ?? [])]) {
       try {
-        (handler as (payload: PlatformEvents[K]) => void)(payload);
+        (handler as Handler<PlatformEvents[K]>)(payload);
       } catch (error) {
-        console.error(`platform event "${String(type)}" handler failed`, error);
+        console.error(`platform "${String(event)}" handler failed`, error);
       }
     }
   }
