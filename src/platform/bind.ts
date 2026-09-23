@@ -26,7 +26,36 @@ export interface BindPlatformOptions {
    * plays — from the moment it starts, not from the request, which may go unfilled.
    */
   readonly onAudioMutedChange?: (muted: boolean) => void;
+  /**
+   * How long to wait after `foreground:lost` for the matching `foreground:gained` before the
+   * watchdog re-checks the portal directly. A dropped `foreground:gained` — a portal ad that
+   * errors out, a relay that swallows the event — would otherwise leave the game paused under
+   * "platform" forever, with no input path back since the game loop is stopped.
+   *
+   * Default 5000ms: long enough that it never fires during a normal ad (interstitials run a
+   * handful of seconds and hand the foreground back with their own event well inside it), so
+   * the watchdog is a last resort and not a second, racing source of resumes; short enough
+   * that a player staring at a frozen game gets it back in a few seconds rather than never.
+   */
+  readonly foregroundRecoveryMs?: number;
+  /**
+   * setTimeout/clearTimeout seams, defaulting to the globals. Tests inject a manual timer so
+   * the watchdog can be fired by hand instead of waiting on the wall clock.
+   */
+  readonly setTimeout?: (handler: () => void, ms: number) => unknown;
+  readonly clearTimeout?: (handle: unknown) => void;
 }
+
+const DEFAULT_FOREGROUND_RECOVERY_MS = 5000;
+
+/**
+ * Games currently inside a `withAdBreak` body. The foreground watchdog must never resume
+ * while a real ad holds the screen, and withAdBreak's "ad" pause is driven from a different
+ * function than the adapter's ad:start/ad:end, so this is how bindPlatform sees that a break
+ * is in flight. Added at the top of the break and removed in its finally, so — like
+ * resumeWhenUnpaused — it cannot outlive the break it describes.
+ */
+const adBreakActive = new WeakSet<Game>();
 
 const FIRST_INPUT_EVENTS = ["pointerdown", "keydown", "touchstart"] as const;
 
@@ -87,6 +116,14 @@ export function bindPlatform(
   // An ad on screen always holds the game — including one that starts after the adapter
   // gave up waiting for it and play had resumed. Inside withAdBreak the game is already
   // paused and gameplay already stopped, so nothing extra is done or reported there.
+  //
+  // The "ad" reason has two writers: this pair and withAdBreak. They must not both bracket
+  // the same ad, or one's resume drops the other's pause and gameplay restarts mid-ad. The
+  // rule that keeps them from colliding is ownership: this pair takes the "ad" reason only
+  // when it is the one that raised it (heldForAd), and it stands down entirely while a
+  // withAdBreak body owns the break (adBreakActive). So a late ad:start that lands after
+  // withAdBreak's finally already resumed — the hazard — is ignored rather than re-pausing
+  // "ad" with no ad:end to match, and a stray ad:end never resumes a pause it did not raise.
   let heldForAd = false;
   let stoppedForAd = false;
   const unsubscribe = [
@@ -100,7 +137,8 @@ export function bindPlatform(
       // the foreground (which pauses the game) before announcing the ad.
       stoppedForAd = platform.gameplayActive;
       if (stoppedForAd) platform.gameplayStop();
-      if (!game.paused) {
+      // withAdBreak owns the "ad" reason for its break; do not add a second, unbracketed one.
+      if (!game.paused && !adBreakActive.has(game)) {
         heldForAd = true;
         game.pause("ad");
       }
@@ -108,6 +146,8 @@ export function bindPlatform(
     }),
     platform.on("ad:end", () => {
       adPlaying = false;
+      // Only release the "ad" reason if this pair is the one holding it. A withAdBreak break
+      // releases its own in its finally, and a stray ad:end must not drop it early.
       if (heldForAd) {
         heldForAd = false;
         game.resume("ad");
@@ -125,8 +165,48 @@ export function bindPlatform(
   // reason, so a hidden tab or the game's own pause menu is not lifted when the portal hands
   // the foreground back. Yandex 1.3 / 4.7: sound and gameplay stop while the portal is on top.
   // The adapter owns what the portal is told; this owns only the game's own state.
-  const offLost = platform.on("foreground:lost", () => game.pause("platform"));
-  const offGained = platform.on("foreground:gained", () => game.resume("platform"));
+  //
+  // foreground:gained is the only thing that lifts the "platform" pause — so a dropped one
+  // (an ad that errors, a relay that eats the event) would strand the game paused forever,
+  // with the loop stopped and no input able to reach it. The watchdog is the bounded escape:
+  // if gained has not arrived within foregroundRecoveryMs, re-check the portal itself, and if
+  // it now reports the foreground back, lift "platform" as gained would have.
+  const scheduleTimeout = options.setTimeout ?? ((h, ms) => globalThis.setTimeout(h, ms));
+  const cancelTimeout = options.clearTimeout ?? ((handle) => globalThis.clearTimeout(handle as never));
+  const recoveryMs = options.foregroundRecoveryMs ?? DEFAULT_FOREGROUND_RECOVERY_MS;
+  let watchdog: unknown;
+  const clearWatchdog = (): void => {
+    if (watchdog === undefined) return;
+    cancelTimeout(watchdog);
+    watchdog = undefined;
+  };
+  const recover = (): void => {
+    watchdog = undefined;
+    // Never resume while an ad legitimately holds the foreground: a real portal ad — the
+    // adapter's own (heldForAd / adPlaying) or a withAdBreak body (adBreakActive) — keeps the
+    // screen and will send its own foreground:gained when it ends. Recovering here would
+    // restart gameplay under a playing ad, the exact leak the reason split exists to prevent.
+    // But a "platform" pause is still held under that ad (foreground:gained was dropped), so
+    // re-arm rather than give up: once the ad clears, a later tick can safely recover it.
+    if (heldForAd || adPlaying || adBreakActive.has(game)) {
+      watchdog = scheduleTimeout(recover, recoveryMs);
+      return;
+    }
+    // Only trust the portal's own current answer. If it still reports itself on top, the
+    // foreground really is gone and the game stays paused; we only recover a genuine return.
+    if (platform.foreground) game.resume("platform");
+  };
+  const offLost = platform.on("foreground:lost", () => {
+    game.pause("platform");
+    // Replace any stale watchdog: the newest loss is the one that must be recovered from.
+    clearWatchdog();
+    watchdog = scheduleTimeout(recover, recoveryMs);
+  });
+  const offGained = platform.on("foreground:gained", () => {
+    // A genuine return arrived; the watchdog is no longer needed.
+    clearWatchdog();
+    game.resume("platform");
+  });
   // The portal may have taken the foreground before anything subscribed (the launch ad).
   if (!platform.foreground) game.pause("platform");
 
@@ -141,6 +221,7 @@ export function bindPlatform(
       document.removeEventListener("visibilitychange", onVisibilityChange);
       offLost();
       offGained();
+      clearWatchdog();
       removeFirstInput();
       for (const off of unsubscribe) off();
     },
@@ -176,12 +257,17 @@ export async function withAdBreak<T>(
 ): Promise<T> {
   const wasPlaying = platform.gameplayActive;
   resumeWhenUnpaused.delete(game);
+  // This body owns the "ad" reason for the whole break: the adapter's ad:start/ad:end pair
+  // stands down while this is set (so the two writers never both bracket the ad), and the
+  // foreground watchdog will not resume "platform" while a break is in flight.
+  adBreakActive.add(game);
   game.pause("ad");
   options.mute?.();
   if (wasPlaying) platform.gameplayStop();
   try {
     return await body();
   } finally {
+    adBreakActive.delete(game);
     game.resume("ad");
     options.unmute?.();
     const resume = options.resumeGameplay ?? wasPlaying;
