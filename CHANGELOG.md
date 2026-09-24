@@ -10,6 +10,16 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-09-24
+
+Three new portal adapters: Y8, GameDistribution and GameMonetize (PRs #9, #17, #18). All eight
+platform ids (generic-web, Yandex, Poki, CrazyGames, GameVui, Y8, GameDistribution,
+GameMonetize) share one `createPlatform` contract, pass the SDK conformance suite, and run in
+the real-browser suites (SDK smoke builds and the SDK matrix) on both PixiJS and Three.js.
+Existing platforms are unchanged. Live portal-backed ads, rewards and activation remain
+BLOCKED_EXTERNAL / UNVERIFIED_EXTERNAL; see "External portal limitations" below. No breaking
+changes: every new configuration field is optional or applies only to its own platform.
+
 ### Added — Y8
 
 - **Y8 adapter** (`createPlatform("y8")`, `packages/platform-sdk/src/adapters/y8/`), written
@@ -81,6 +91,24 @@ whatever was here at the ref its tech plan pinned.
 - Conformance and contract harnesses state whether a portal's SDK takes gameplay/loading
   reports (`forwardsGameplay`, `forwardsLifecycle` — one name each for the Y8,
   GameDistribution and GameMonetize work) instead of assuming every SDK does.
+
+### External portal limitations (honest status, not implementation failures)
+
+Mocks and local browser tests are not counted as live. Evidence: `docs/audits/live/`.
+
+- **Y8** — live SDK script load PASS (`cdn.y8.com` 2-0, `y8` global present). SDK init with a
+  real App ID, ads/rewards and sign-in/Cloud Storage: BLOCKED_EXTERNAL (need a Y8 App ID /
+  Game ID; #6, #7, #8).
+- **GameDistribution** — live SDK script load PASS and `SDK_READY` received by the template
+  build on 127.0.0.1. Live ads/rewards/pause-resume: BLOCKED_EXTERNAL (#10); pre-roll
+  activation (#11) and self-hosted wrapper acceptance (#12): UNVERIFIED_EXTERNAL; Factory
+  profile (#13) pending.
+- **GameMonetize** — live SDK script load PASS (`SDK_READY` with a placeholder Game ID).
+  `showBanner()` never called live; ads, Verify Game and activation: BLOCKED_EXTERNAL (need a
+  GameMonetize account and Game ID; #14, #15); Factory profile (#16) pending.
+- **Yandex / CrazyGames / Poki / GameVui** — unchanged from 1.0.0: Yandex live
+  BLOCKED_EXTERNAL (portal-served SDK); CrazyGames and Poki live ads/rewards BLOCKED_EXTERNAL
+  (SDK load PASS); GameVui submission UNVERIFIED_EXTERNAL (no public SDK).
 
 ## [1.0.0] — 2026-09-23
 
