@@ -13,7 +13,23 @@ export interface PlatformEntry {
   readonly id: string;
   readonly profile: string;
   readonly role: "required" | "optional";
+  /**
+   * The id the portal issued for this title, where its SDK needs one. Only GameMonetize does
+   * (its "Game ID", from Game Management > My games). Public — it ships in the bundle — but
+   * per title, so the template never carries one. WGF_GAMEMONETIZE_GAME_ID at build time
+   * overrides it (scripts/build/game-config-plugin.ts).
+   */
+  readonly game_id?: string;
 }
+
+/** Platforms whose entry may carry a `game_id`. */
+export const PLATFORMS_WITH_GAME_ID = ["gamemonetize"] as const;
+
+// Mirrors gameMonetizeGameIdProblem in @wgf/platform-sdk, which this file cannot import: it
+// runs under Node before the packages are built. tests/unit/gamemonetize.test.ts keeps the
+// two in step.
+const GAME_ID_FORMAT = /^[A-Za-z0-9_-]{8,64}$/;
+const GAME_ID_PLACEHOLDERS = new Set(["your_game_id_here", "your-game-id", "game_id", "gameid"]);
 
 export const AD_KINDS = ["interstitial", "rewarded", "banner"] as const;
 export type AdKind = (typeof AD_KINDS)[number];
@@ -87,6 +103,19 @@ export function validateGameConfig(raw: unknown): GameConfig {
     const role = entry["role"];
     if (role !== "required" && role !== "optional") {
       fail(`${where}.role must be required or optional, got ${String(role)}`);
+    }
+
+    const gameId = entry["game_id"];
+    if (gameId !== undefined) {
+      if (!(PLATFORMS_WITH_GAME_ID as readonly string[]).includes(id)) {
+        fail(`${where}.game_id is only read for ${PLATFORMS_WITH_GAME_ID.join(", ")}`);
+      }
+      if (typeof gameId !== "string" || !GAME_ID_FORMAT.test(gameId)) {
+        fail(`${where}.game_id must be 8-64 letters, digits, '-' or '_', got ${String(gameId)}`);
+      }
+      if (GAME_ID_PLACEHOLDERS.has(gameId.toLowerCase())) {
+        fail(`${where}.game_id is the documented placeholder, not a Game ID`);
+      }
     }
   }
 

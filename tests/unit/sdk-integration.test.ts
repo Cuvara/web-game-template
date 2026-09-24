@@ -63,6 +63,32 @@ describe("prepare-integration", () => {
     ]);
   });
 
+  it("gamemonetize: loaded at runtime, interstitial only, and needs its Game ID", () => {
+    const placeholderId = "test0000000000000000000000000000";
+    const withId = (entry: Record<string, unknown>) => {
+      const c = config(["gamemonetize"], ["interstitial", "rewarded"]);
+      return { ...c, platforms: [{ ...c.platforms[0], ...entry }] };
+    };
+
+    const missing = buildIntegration(withId({}), sdk, { now });
+    expect(missing.integration.platforms[0]).toMatchObject({
+      adapter: "GameMonetizePlatform",
+      sdk: { source: sdk.GAMEMONETIZE_SDK_URL, loaded: "runtime" },
+      unserved_ad_kinds: ["rewarded"],
+    });
+    expect(missing.problems).toEqual([
+      'gamemonetize: the title declares "rewarded" ads, which the adapter cannot show',
+      "gamemonetize: game_id is missing — set it on the platform entry or in WGF_GAMEMONETIZE_GAME_ID",
+    ]);
+
+    const fromConfig = buildIntegration(withId({ game_id: placeholderId }), sdk, { now });
+    expect(fromConfig.problems.filter((p: string) => p.includes("game_id"))).toEqual([]);
+    const fromEnv = buildIntegration(withId({}), sdk, { now, gameMonetizeGameId: placeholderId });
+    expect(fromEnv.problems.filter((p: string) => p.includes("game_id"))).toEqual([]);
+    // The id is configuration, not an artifact: neither file repeats it.
+    expect(JSON.stringify([fromEnv.integration, fromEnv.report])).not.toContain(placeholderId);
+  });
+
   it("writes a Factory sdk-report whose hash reproduces and that claims no live verification", () => {
     const { report } = buildIntegration(config(["yandex", "gamevui"], []), sdk, {
       commitSha: "abc",

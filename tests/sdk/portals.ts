@@ -13,6 +13,7 @@
 
 import {
   CrazyGamesPlatform,
+  GameMonetizePlatform,
   GameVuiPlatform,
   MemoryStorageBackend,
   PokiPlatform,
@@ -27,9 +28,10 @@ import {
   type YandexRewardedCallbacks,
   type YandexSdk,
 } from "@wgf/platform-sdk";
+import { createGameMonetizeMock } from "../gamemonetize/mock-sdk.js";
 
-/** The four portals the SDK module targets. */
-export const PORTALS = ["yandex", "crazygames", "poki", "gamevui"] as const;
+/** The portals the SDK module targets. */
+export const PORTALS = ["yandex", "crazygames", "poki", "gamevui", "gamemonetize"] as const;
 export type Portal = (typeof PORTALS)[number];
 
 /**
@@ -54,6 +56,11 @@ export interface PortalHarness {
   readonly calls: string[];
   /** Whether this portal has an SDK at all. False for GameVui. */
   readonly hasSdk: boolean;
+  /**
+   * Whether the SDK takes loading and gameplay reports ("ready", "gameplayStart",
+   * "gameplayStop"). False for GameVui and GameMonetize, which document none.
+   */
+  readonly lifecycleApi: boolean;
   /** Script the next ad requests. */
   setAd(outcome: AdOutcome): void;
   /** The portal takes / returns the foreground by itself, where it can. */
@@ -149,6 +156,7 @@ function yandex(options: HarnessOptions): PortalHarness {
     platform,
     calls,
     hasSdk: true,
+    lifecycleApi: true,
     setAd: (outcome) => (ad = outcome),
     portalPause: () => fire("game_api_pause"),
     portalResume: () => fire("game_api_resume"),
@@ -222,6 +230,7 @@ function crazygames(options: HarnessOptions): PortalHarness {
     platform,
     calls,
     hasSdk: true,
+    lifecycleApi: true,
     setAd: (outcome) => (ad = outcome),
     setPortalMute: (muted) => {
       settings = { ...settings, muteAudio: muted };
@@ -267,7 +276,13 @@ function poki(options: HarnessOptions): PortalHarness {
     // Never let the init deadline race the mock.
     setTimeout: () => 0,
   });
-  return { platform, calls, hasSdk: true, setAd: (outcome) => (ad = outcome) };
+  return {
+    platform,
+    calls,
+    hasSdk: true,
+    lifecycleApi: true,
+    setAd: (outcome) => (ad = outcome),
+  };
 }
 
 // -- GameVui -----------------------------------------------------------------------------
@@ -279,7 +294,51 @@ function gamevui(): PortalHarness {
     namespace: "matrix",
     storage: new MemoryStorageBackend(),
   });
-  return { platform, calls: [], hasSdk: false, setAd: () => {} };
+  return { platform, calls: [], hasSdk: false, lifecycleApi: false, setAd: () => {} };
+}
+
+// -- GameMonetize ------------------------------------------------------------------------
+
+function gamemonetize(options: HarnessOptions): PortalHarness {
+  // The shared mock (tests/gamemonetize/mock-sdk.ts), with its calls renamed to the neutral
+  // vocabulary: "load" -> init, "showBanner" -> ad:interstitial. GameMonetize documents no
+  // rewarded ad, so nothing here ever produces "ad:rewarded"; "closed-early" plays the ad.
+  const timers = new HeldTimers();
+  const mock = createGameMonetizeMock({
+    timers,
+    sdk:
+      options.sdk === "missing" ? "missing" : options.sdk === "init-fails" ? "init-error" : "ready",
+    ad: options.ad === "no-fill" ? "no-fill" : "play",
+  });
+  // Recorded as they happen, under the neutral names.
+  const calls: string[] = [];
+  const platform = new GameMonetizePlatform({
+    namespace: "matrix",
+    // Placeholder shaped like a Game ID; never a real one.
+    gameId: "matrix0000000000000000000000000",
+    loadSdk: async (sdkOptions) => {
+      calls.push("init");
+      const sdk = await mock.loadSdk(sdkOptions);
+      if (!sdk) return null;
+      return {
+        showBanner: () => {
+          calls.push("ad:interstitial");
+          return sdk.showBanner();
+        },
+      };
+    },
+    timers,
+    storage: new MemoryStorageBackend(),
+  });
+  return {
+    platform,
+    calls,
+    hasSdk: true,
+    lifecycleApi: false,
+    setAd: (outcome) => mock.setAd(outcome === "no-fill" ? "no-fill" : "play"),
+    portalPause: () => mock.emit("SDK_GAME_PAUSE"),
+    portalResume: () => mock.emit("SDK_GAME_START"),
+  };
 }
 
 export function createHarness(portal: Portal, options: HarnessOptions = {}): PortalHarness {
@@ -292,5 +351,7 @@ export function createHarness(portal: Portal, options: HarnessOptions = {}): Por
       return poki(options);
     case "gamevui":
       return gamevui();
+    case "gamemonetize":
+      return gamemonetize(options);
   }
 }

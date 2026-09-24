@@ -109,6 +109,7 @@ here.
 | Poki         | ✅              | ✅                                                | yes — `@poki/cli`         |
 | CrazyGames   | ✅              | ✅ HTML5 SDK v3                                   | no — no public API        |
 | GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves | no — email / contact form |
+| GameMonetize | ❌ not yet      | ✅ HTML5 SDK — interstitial only; needs a Game ID | no — dashboard upload     |
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)

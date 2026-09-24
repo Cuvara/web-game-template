@@ -1,4 +1,4 @@
-// One contract, four portals.
+// One contract, every portal.
 //
 // Every scenario the SDK module promises runs against every portal adapter, each over a
 // mock of its own SDK (tests/sdk/portals.ts): initialization, loading, game start, ads,
@@ -54,7 +54,8 @@ describe.each(PORTALS)("%s", (portal) => {
       await harness.platform.signalReady();
       await harness.platform.signalReady();
       expect(count(harness.calls, "init")).toBe(harness.hasSdk ? 1 : 0);
-      expect(count(harness.calls, "ready")).toBe(harness.hasSdk ? 1 : 0);
+      // Only where the SDK has a loading call; GameMonetize documents none.
+      expect(count(harness.calls, "ready")).toBe(harness.lifecycleApi ? 1 : 0);
       expect(harness.platform.usage.signalReadyCalls).toBe(2);
     });
 
@@ -68,15 +69,15 @@ describe.each(PORTALS)("%s", (portal) => {
 
   describe("game start", () => {
     it("forwards gameplay transitions, not repeats", async () => {
-      const { platform, calls, hasSdk } = await booted(createHarness(portal));
+      const { platform, calls, lifecycleApi } = await booted(createHarness(portal));
       platform.gameplayStart();
       platform.gameplayStart();
       expect(platform.gameplayActive).toBe(true);
       platform.gameplayStop();
       platform.gameplayStop();
       expect(platform.gameplayActive).toBe(false);
-      expect(count(calls, "gameplayStart")).toBe(hasSdk ? 1 : 0);
-      expect(count(calls, "gameplayStop")).toBe(hasSdk ? 1 : 0);
+      expect(count(calls, "gameplayStart")).toBe(lifecycleApi ? 1 : 0);
+      expect(count(calls, "gameplayStop")).toBe(lifecycleApi ? 1 : 0);
     });
   });
 
@@ -100,9 +101,13 @@ describe.each(PORTALS)("%s", (portal) => {
 
     it("grants a reward only on the portal's reward callback", async () => {
       const { platform, hasSdk } = await booted(createHarness(portal, { ad: "complete" }));
+      const offered = hasSdk && platform.capabilities.ads.includes("rewarded");
       const result = await platform.showRewarded();
-      expect(result.rewarded).toBe(hasSdk);
-      if (hasSdk) expect(result.shown).toBe(true);
+      expect(result.rewarded).toBe(offered);
+      if (offered) expect(result.shown).toBe(true);
+      // A portal without rewarded ads (GameMonetize) refuses it outright.
+      else if (hasSdk)
+        expect(result).toEqual({ shown: false, rewarded: false, reason: "unsupported" });
     });
 
     it("never rewards a player who closes the ad early", async () => {

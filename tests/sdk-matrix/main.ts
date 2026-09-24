@@ -1,6 +1,6 @@
 // SDK matrix harness: one page, any engine × any portal adapter × any SDK condition.
 //
-//   ?engine=pixijs|threejs  &portal=yandex|crazygames|poki|gamevui
+//   ?engine=pixijs|threejs  &portal=yandex|crazygames|poki|gamevui|gamemonetize
 //   &sdk=ok|missing|init-fails  &ad=complete|no-fill|closed-early
 //
 // The boot is src/main.ts's order — initialize, report progress, renderer, scene, ready,

@@ -8,6 +8,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 intended for Web Game Factory to consume by tag; a game created from the template inherits
 whatever was here at the ref its tech plan pinned.
 
+## [Unreleased]
+
+### Added — GameMonetize
+
+- **`GameMonetizePlatform`** (`createPlatform("gamemonetize")`), written against GameMonetize's
+  HTML5 SDK documentation (audited 2026-09-24): `window.SDK_OPTIONS { gameId, onEvent }`, the
+  `api.gamemonetize.com/sdk.js` script loaded at runtime, `SDK_READY` / `SDK_ERROR` /
+  `SDK_GAME_PAUSE` / `SDK_GAME_START`, and `sdk.showBanner()` as the interstitial. Rewarded ads
+  are not documented and resolve `unsupported`. Every request resolves once; lost, late and
+  duplicate SDK callbacks are bounded by deadlines, and the game is never left paused or muted.
+- **Game ID configuration**: optional `game_id` on the gamemonetize platform entry, or
+  `WGF_GAMEMONETIZE_GAME_ID` at build time; validated at build time. Without one the SDK is
+  never requested. `CreatePlatformOptions.portalGameId` carries it; other adapters ignore it.
+- `pnpm sdk:prepare` knows the GameMonetize SDK source and fails a missing Game ID or declared
+  rewarded ads.
+- Tests: `tests/unit/gamemonetize.test.ts`, a deterministic mock (`tests/gamemonetize/`),
+  GameMonetize in the conformance suite, the cross-portal contract, the SDK matrix (PixiJS and
+  Three.js, plus `gamemonetize.html` through the real script loader), the template-build smoke,
+  and an opt-in live SDK-load probe (PASS; ads, Verify Game and activation BLOCKED).
+- `docs/platforms/gamemonetize.md`.
+
+### Changed
+
+- Conformance and contract harnesses state whether a portal's SDK takes gameplay/loading
+  reports (`gameplayApi`, `lifecycleApi`) instead of assuming every SDK does.
+
 ## [1.0.0] — 2026-09-23
 
 First stable production baseline for Web Game Factory. Both renderers, the SDK contract and

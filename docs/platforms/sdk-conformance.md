@@ -43,13 +43,14 @@ sdk-report status:
 
 ## Current results (this ref)
 
-| Platform     | Adapter             | Result                                                                                                                                        |
-| ------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| generic-web  | implemented         | all applicable scenarios pass                                                                                                                 |
-| Yandex Games | implemented         | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                               |
-| Poki         | implemented         | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                               |
-| CrazyGames   | implemented         | all scenarios pass; browser: PixiJS and Three.js in the SDK matrix (`tests/sdk-matrix`, `pnpm test:sdk:matrix`) and the compliance demo suite |
-| GameVui      | implemented, no SDK | `GameVuiPlatform`: local saves, no requestable ad; all applicable scenarios pass; browser: SDK matrix. See [../sdk.md](../sdk.md)             |
+| Platform     | Adapter             | Result                                                                                                                                                     |
+| ------------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| generic-web  | implemented         | all applicable scenarios pass                                                                                                                              |
+| Yandex Games | implemented         | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                                            |
+| Poki         | implemented         | all scenarios pass; browser smoke passes on PixiJS and Three.js                                                                                            |
+| CrazyGames   | implemented         | all scenarios pass; browser: PixiJS and Three.js in the SDK matrix (`tests/sdk-matrix`, `pnpm test:sdk:matrix`) and the compliance demo suite              |
+| GameVui      | implemented, no SDK | `GameVuiPlatform`: local saves, no requestable ad; all applicable scenarios pass; browser: SDK matrix. See [../sdk.md](../sdk.md)                          |
+| GameMonetize | implemented         | all applicable scenarios pass; rewarded is `unsupported` (none documented); browser: SDK matrix and template build. See [gamemonetize.md](gamemonetize.md) |
 
 ### Fixed while building this
 

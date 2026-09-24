@@ -26,7 +26,11 @@ async function main(): Promise<void> {
   const container = element("game");
   const hud = element("hud");
 
-  const platform = createPlatform(primaryPlatform().id, { namespace: config.game.id });
+  const target = primaryPlatform();
+  const platform = createPlatform(target.id, {
+    namespace: config.game.id,
+    portalGameId: target.game_id ?? null,
+  });
   await platform.initialize();
   platform.reportLoadingProgress(0.2);
 

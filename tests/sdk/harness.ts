@@ -15,6 +15,7 @@
 
 import {
   CrazyGamesPlatform,
+  GameMonetizePlatform,
   GameVuiPlatform,
   GenericWebPlatform,
   MemoryStorageBackend,
@@ -30,6 +31,7 @@ import {
   type YandexRewardedCallbacks,
   type YandexSdk,
 } from "@wgf/platform-sdk";
+import { createGameMonetizeMock, type GmAdScript } from "../gamemonetize/mock-sdk.js";
 
 /** How the portal answers the next ad request. */
 export type AdScript =
@@ -74,6 +76,11 @@ export interface Harness {
   readonly cloudStorage: boolean;
   /** Whether a portal SDK is loaded at all, so unavailable/init-failure apply. */
   readonly hasSdk: boolean;
+  /**
+   * Whether the portal SDK takes gameplay start/stop reports. False where it documents no
+   * such call (GameMonetize), so none may be sent.
+   */
+  readonly gameplayApi: boolean;
   create(sdk?: SdkScript): Promise<HarnessInstance>;
 }
 
@@ -116,6 +123,7 @@ const yandex: Harness = {
   portalPauses: true,
   cloudStorage: true,
   hasSdk: true,
+  gameplayApi: true,
   async create(script: SdkScript = "ok") {
     const calls: string[] = [];
     const listeners = new Map<string, Set<() => void>>();
@@ -236,6 +244,7 @@ const poki: Harness = {
   portalPauses: false,
   cloudStorage: false,
   hasSdk: true,
+  gameplayApi: true,
   async create(script: SdkScript = "ok") {
     const calls: string[] = [];
     let ad: AdScript = "play";
@@ -303,6 +312,7 @@ function genericWeb(id: string, extra: Partial<Harness> = {}): Harness {
     portalPauses: false,
     cloudStorage: false,
     hasSdk: false,
+    gameplayApi: false,
     async create() {
       return {
         platform: new GenericWebPlatform({ namespace: `conformance-${id}` }),
@@ -349,6 +359,7 @@ const crazygames: Harness = {
   portalPauses: false,
   cloudStorage: true,
   hasSdk: true,
+  gameplayApi: true,
   async create(script: SdkScript = "ok") {
     const calls: string[] = [];
     const data = new Map<string, string>();
@@ -427,10 +438,59 @@ const crazygames: Harness = {
   },
 };
 
+// -- GameMonetize -------------------------------------------------------------------------
+// Fake of the documented HTML5 surface: window.SDK_OPTIONS { gameId, onEvent }, the events
+// SDK_READY / SDK_ERROR / SDK_GAME_PAUSE / SDK_GAME_START, and sdk.showBanner().
+// https://github.com/MonetizeGame/GameMonetize.com-SDK · tests/gamemonetize/mock-sdk.ts
+// GameMonetize documents no rewarded ad, so the rewarded scenarios check it is refused. The
+// SDK raises SDK_GAME_PAUSE by itself too (an ad it starts on its own), which is the portal
+// pause here.
+
+const GAMEMONETIZE_AD: Record<AdScript, GmAdScript> = {
+  play: "play",
+  "no-fill": "no-fill",
+  "closed-early": "play",
+  error: "error",
+  "stall-open": "stall",
+};
+
+const gamemonetize: Harness = {
+  id: "gamemonetize",
+  adapter: "implemented",
+  ads: ["interstitial"],
+  portalPauses: true,
+  cloudStorage: false,
+  hasSdk: true,
+  gameplayApi: false,
+  async create(script: SdkScript = "ok") {
+    const timers = new ManualTimers();
+    const mock = createGameMonetizeMock({
+      timers,
+      sdk: script === "unavailable" ? "missing" : script === "init-fails" ? "init-error" : "ready",
+    });
+    const platform = new GameMonetizePlatform({
+      namespace: "conformance",
+      gameId: "conformance000000000000000000000",
+      loadSdk: mock.loadSdk,
+      timers,
+      storage: new MemoryStorageBackend(),
+    });
+    return {
+      platform,
+      calls: mock.calls,
+      setAd: (next) => mock.setAd(GAMEMONETIZE_AD[next]),
+      portalPause: () => mock.emit("SDK_GAME_PAUSE"),
+      portalResume: () => mock.emit("SDK_GAME_START"),
+      advance: (ms) => timers.advance(ms),
+    };
+  },
+};
+
 export const HARNESSES: readonly Harness[] = [
   genericWeb("generic-web"),
   yandex,
   poki,
   crazygames,
   gamevui,
+  gamemonetize,
 ];

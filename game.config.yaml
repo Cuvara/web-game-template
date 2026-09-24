@@ -22,6 +22,9 @@ platforms:
   #   role    — required | optional. A release is live only when every required platform is
   #             live; otherwise partially-live. Marking everything required is the same as
   #             marking nothing required.
+  #   game_id — gamemonetize only: the Game ID from the GameMonetize dashboard. Optional here;
+  #             WGF_GAMEMONETIZE_GAME_ID supplies it at build time instead, so it need not be
+  #             committed. Never put a real one in the template (docs/platforms/gamemonetize.md).
   #
   # The untouched scaffold targets generic-web because scaffolding requires CI to be green
   # before any game code exists, and generic-web is the one profile that needs no portal

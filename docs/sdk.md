@@ -158,6 +158,18 @@ request (`adAvailability` → `unsupported`), saves in local storage, pause on a
 Its capabilities deliberately differ from the Factory profile `gamevui@1.0.0`, which lists
 interstitial and banner ads the game cannot actually request.
 
+### GameMonetize — implemented 2026-09-24, interstitial only
+
+Audited against GameMonetize's HTML5 SDK documentation (GitHub README, the SDK page and its
+downloads). The documented surface is `window.SDK_OPTIONS { gameId, onEvent }`, the events
+`SDK_READY` / `SDK_ERROR` / `SDK_GAME_PAUSE` / `SDK_GAME_START`, and `sdk.showBanner()` — a
+full-screen ad, so the adapter's interstitial. No rewarded ad, loading, gameplay, language,
+user or save API is documented, so none is claimed: `showRewarded()` resolves `unsupported`.
+The Game ID comes from the platform entry's `game_id` or `WGF_GAMEMONETIZE_GAME_ID`; without
+one the SDK is never requested. Live SDK load passes; ads, Verify Game and activation need a
+GameMonetize account. Details, every ad edge case and the publishing steps:
+[platforms/gamemonetize.md](platforms/gamemonetize.md).
+
 ## Factory profile findings
 
 The audit found profile values the portals' own docs contradict. Profiles are versioned in

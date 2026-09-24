@@ -202,9 +202,14 @@ describe.each(HARNESSES)("$id", (harness) => {
       expect(platform.gameplayActive).toBe(false);
       const starts = instance.calls.filter((c) => /gameplayStart|GameplayAPI\.start/.test(c));
       const stops = instance.calls.filter((c) => /gameplayStop|GameplayAPI\.stop/.test(c));
-      if (harness.hasSdk) {
+      if (harness.gameplayApi) {
         expect(starts).toHaveLength(1);
         expect(stops).toHaveLength(1);
+      } else {
+        // No gameplay call is documented: nothing may reach the SDK, but it is still counted.
+        expect([...starts, ...stops]).toEqual([]);
+        expect(platform.usage.gameplayStartCalls).toBe(1);
+        expect(platform.usage.gameplayStopCalls).toBe(1);
       }
     });
   });
@@ -228,7 +233,9 @@ describe.each(HARNESSES)("$id", (harness) => {
     when(harness.ads.length > 0)("an ad takes the foreground and gives it back", async () => {
       const instance = await ready(harness);
       const seen = record(instance);
-      await instance.platform.showRewarded();
+      // The rewarded ad where the portal offers one; GameMonetize offers only interstitials.
+      if (offers("rewarded")) await instance.platform.showRewarded();
+      else await instance.platform.showInterstitial();
       // Poki's adapter takes the foreground itself; Yandex's portal raises game_api_pause.
       // Either way the game sees it lost and regained, bracketing ad:start / ad:end.
       expect(seen).toContain("foreground:lost");

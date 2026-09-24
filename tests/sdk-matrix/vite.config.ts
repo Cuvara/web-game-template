@@ -29,5 +29,12 @@ export default defineConfig({
     target: "es2020",
     sourcemap: false,
     chunkSizeWarningLimit: 4096,
+    rollupOptions: {
+      // gamemonetize.html boots GameMonetize through the adapter's own script loader.
+      input: {
+        index: resolve(import.meta.dirname, "index.html"),
+        gamemonetize: resolve(import.meta.dirname, "gamemonetize.html"),
+      },
+    },
   },
 });

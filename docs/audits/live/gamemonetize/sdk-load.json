@@ -1,0 +1,21 @@
+{
+  "platform": "gamemonetize",
+  "url": "https://api.gamemonetize.com/sdk.js",
+  "scriptLoaded": true,
+  "error": null,
+  "globalName": "sdk",
+  "globalPresent": true,
+  "methodsFound": ["showBanner"],
+  "methodsMissing": [],
+  "gameIdSource": "placeholder",
+  "eventsObserved": ["SDK_READY"],
+  "initOutcome": "SDK_READY",
+  "at": "2026-09-24T07:40:07.153Z",
+  "buildSha": "1f5dee2",
+  "sdkLoadStatus": "PASS",
+  "blocked": {
+    "ads": "showBanner fill and SDK_GAME_PAUSE/SDK_GAME_START around a real ad need a real Game ID and GameMonetize's ad server; not requested here",
+    "verify": "GameMonetize's 'Verify Game' runs in the dashboard against an uploaded build",
+    "activation": "REQUEST ACTIVATION is reviewed by GameMonetize's content manager"
+  }
+}

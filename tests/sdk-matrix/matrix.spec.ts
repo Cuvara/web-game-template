@@ -8,7 +8,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const ENGINES = ["pixijs", "threejs"] as const;
-const PORTALS = ["yandex", "crazygames", "poki", "gamevui"] as const;
+const PORTALS = ["yandex", "crazygames", "poki", "gamevui", "gamemonetize"] as const;
+// GameMonetize documents no loading, gameplay or rewarded call (docs/platforms/gamemonetize.md).
+const NO_LIFECYCLE_API = new Set<string>(["gamevui", "gamemonetize"]);
+const NO_REWARDED = new Set<string>(["gamevui", "gamemonetize"]);
 
 interface MatrixState {
   paused: boolean;
@@ -66,19 +69,24 @@ for (const engine of ENGINES) {
       }) => {
         const errors = await boot(page, `engine=${engine}&portal=${portal}`);
         const hasSdk = portal !== "gamevui";
+        const lifecycleApi = !NO_LIFECYCLE_API.has(portal);
+        const offersRewarded = !NO_REWARDED.has(portal);
 
         await expect(page.locator("#hud")).toHaveAttribute("data-engine", engine);
         await expect(page.locator("#game canvas")).toBeVisible();
         await expect.poll(() => steps(page), { timeout: 5_000 }).toBeGreaterThan(0);
 
         // Loading reported, gameplay not yet: it waits for the player.
-        expect(await calls(page)).toEqual(hasSdk ? expect.arrayContaining(["init", "ready"]) : []);
+        expect(await calls(page)).toEqual(
+          hasSdk ? expect.arrayContaining(lifecycleApi ? ["init", "ready"] : ["init"]) : [],
+        );
+        if (!lifecycleApi) expect(await calls(page)).not.toContain("ready");
         expect(await calls(page)).not.toContain("gameplayStart");
 
         await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });
         await expect.poll(async () => (await state(page)).gameplayActive).toBe(true);
         expect((await calls(page)).filter((c) => c === "gameplayStart")).toHaveLength(
-          hasSdk ? 1 : 0,
+          lifecycleApi ? 1 : 0,
         );
 
         const interstitial = await run<{ shown: boolean }>(page, "interstitial");
@@ -89,7 +97,7 @@ for (const engine of ENGINES) {
         expect(after.gameplayActive).toBe(true);
 
         const rewarded = await run<{ rewarded: boolean }>(page, "rewarded");
-        expect(rewarded.rewarded).toBe(hasSdk);
+        expect(rewarded.rewarded).toBe(offersRewarded);
 
         // The loop is still stepping after the breaks.
         const before = await steps(page);
@@ -141,6 +149,16 @@ for (const portal of PORTALS.filter((p) => p !== "gamevui")) {
 
 test("yandex: the portal's own pause holds the game and its sound (4.7)", async ({ page }) => {
   await boot(page, "engine=threejs&portal=yandex");
+  await run(page, "portalPause");
+  expect(await state(page)).toMatchObject({ paused: true, audioMuted: true, foreground: false });
+  await run(page, "portalResume");
+  expect(await state(page)).toMatchObject({ paused: false, audioMuted: false, foreground: true });
+});
+
+test("gamemonetize: the SDK's own SDK_GAME_PAUSE holds the game and its sound", async ({
+  page,
+}) => {
+  await boot(page, "engine=threejs&portal=gamemonetize");
   await run(page, "portalPause");
   expect(await state(page)).toMatchObject({ paused: true, audioMuted: true, foreground: false });
   await run(page, "portalResume");
