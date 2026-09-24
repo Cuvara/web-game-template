@@ -3,18 +3,10 @@
 import { GameLoop, ManualScheduler } from "@wgf/game-core";
 import { MemoryStorageBackend } from "@wgf/platform-sdk";
 import { describe, expect, it } from "vitest";
-import {
-  NEW_PROGRESS,
-  loadProgress,
-  parseProgress,
-  saveProgress,
-} from "../../examples/crazygames-compliance-demo/src/save.js";
-import {
-  OrbSimulation,
-  levelSpec,
-} from "../../examples/crazygames-compliance-demo/src/simulation.js";
-import { pickLocale } from "../../examples/crazygames-compliance-demo/src/i18n.js";
-import { keyLabels } from "../../examples/crazygames-compliance-demo/src/keys.js";
+import { NEW_PROGRESS, loadProgress, parseProgress, saveProgress } from "../../src/save.js";
+import { OrbSimulation, levelSpec } from "../../src/simulation.js";
+import { pickLocale } from "../../src/i18n.js";
+import { keyLabels } from "../../src/keys.js";
 
 /** Run a level for `seconds` of wall time at `hz`, steering right, through the real loop. */
 function runAt(hz: number, seconds: number): OrbSimulation {

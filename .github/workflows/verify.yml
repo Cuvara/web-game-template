@@ -13,6 +13,10 @@
 name: Verify
 
 on:
+  # Main as well as PRs into it: the SDK browser suites guard the adapters, and a merge that
+  # breaks one should fail on main, not on the next PR someone opens.
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -146,6 +150,54 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  sdk-matrix:
+    # Every portal adapter under PixiJS and Three.js, over mocked portal SDKs, in a real
+    # headless Chromium (playwright.sdk-matrix.config.ts builds and previews its own harness
+    # from tests/sdk-matrix). Template-owned: it needs nothing from examples/.
+    name: sdk matrix — every adapter × engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: ./.github/actions/setup-workspace
+        with:
+          install-browsers: "true"
+
+      # No package build: the harness aliases @wgf/* to package sources.
+      - name: sdk matrix — desktop, mobile
+        run: pnpm test:sdk:matrix
+
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: playwright-report-sdk-matrix-${{ github.run_id }}
+          path: playwright-report/sdk-matrix
+          retention-days: 7
+          if-no-files-found: ignore
+
+  examples:
+    # Which example demos this checkout ships. A game created by the Factory has no
+    # examples/, and the demo jobs below must skip there rather than fail. hashFiles is not
+    # available in a job-level `if`, so it is evaluated here once and passed on as outputs.
+    name: detect example demos
+    runs-on: ubuntu-latest
+    outputs:
+      poki: ${{ steps.detect.outputs.poki }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          sparse-checkout: examples
+
+      - id: detect
+        run: |
+          echo "poki=${{ hashFiles('examples/poki-compliance-demo/package.json') != '' }}" >> "$GITHUB_OUTPUT"
+
   poki:
     # The Poki compliance demo: its production build, the static audit of that build, and
     # the end-to-end suite on desktop, mobile and tablet. It runs against the demo rather
@@ -156,6 +208,8 @@ jobs:
     # audit reads files. Poki Inspector and the Poki CLI are not run in CI — see
     # compliance/poki-compliance-report.md for what stays manual.
     name: poki compliance — audit and e2e
+    needs: examples
+    if: needs.examples.outputs.poki == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
