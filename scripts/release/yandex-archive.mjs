@@ -17,7 +17,28 @@ import { dirname, join, relative, resolve } from "node:path";
 import AdmZip from "adm-zip";
 import { isEntryPoint, parseArgs } from "../_shared.mjs";
 
-const MAX_UNCOMPRESSED_MB = 100;
+export const MAX_UNCOMPRESSED_MB = 100;
+
+/**
+ * Why `name` (a POSIX path inside the archive) breaks requirement 1.22, or null when it does
+ * not. Shared with scripts/release/package.mjs so the release packager and this script judge
+ * a Yandex archive by one rule.
+ */
+export function entryNameProblem(name) {
+  if (/\s/.test(name) || /[^\x20-\x7e]/.test(name)) {
+    return `"${name}": no spaces or non-ASCII characters allowed (requirement 1.22)`;
+  }
+  return null;
+}
+
+/** Why `bytes` uncompressed exceeds requirement 1.21, or null when it fits. */
+export function uncompressedSizeProblem(bytes) {
+  const mb = bytes / 1024 / 1024;
+  if (mb > MAX_UNCOMPRESSED_MB) {
+    return `${mb.toFixed(1)} MB uncompressed; the limit is ${MAX_UNCOMPRESSED_MB} (1.21)`;
+  }
+  return null;
+}
 
 function walk(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -31,9 +52,8 @@ export function packageArchive({ dir, out }) {
   const zip = new AdmZip();
   for (const file of files) {
     const name = relative(dir, file).split("\\").join("/");
-    if (/\s/.test(name) || /[^\x20-\x7e]/.test(name)) {
-      throw new Error(`"${name}": no spaces or non-ASCII characters allowed (requirement 1.22)`);
-    }
+    const problem = entryNameProblem(name);
+    if (problem) throw new Error(problem);
     if (name.endsWith(".map")) continue; // not needed on the portal, and it publishes source
     const folder = dirname(name);
     zip.addLocalFile(file, folder === "." ? "" : folder);
@@ -49,9 +69,8 @@ export function packageArchive({ dir, out }) {
   }
   const uncompressed = written.reduce((sum, entry) => sum + entry.header.size, 0);
   const uncompressedMb = uncompressed / 1024 / 1024;
-  if (uncompressedMb > MAX_UNCOMPRESSED_MB) {
-    throw new Error(`${uncompressedMb.toFixed(1)} MB uncompressed; the limit is 100 (1.21)`);
-  }
+  const tooBig = uncompressedSizeProblem(uncompressed);
+  if (tooBig) throw new Error(tooBig);
   return {
     out,
     entries: names.length,
