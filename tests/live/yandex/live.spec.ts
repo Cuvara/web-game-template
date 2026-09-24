@@ -32,7 +32,8 @@ test("Yandex live SDK is BLOCKED off-portal (portal-served /sdk.js)", async ({ p
         reason:
           "SDK is origin-relative /sdk.js served only inside the Yandex portal iframe; " +
           "init, interstitial, rewarded, pause/resume and player storage require the portal backend.",
-        exercisedBy: "manual tester page opened in a Yandex Games draft build in the developer console",
+        exercisedBy:
+          "manual tester page opened in a Yandex Games draft build in the developer console",
       },
       null,
       2,
