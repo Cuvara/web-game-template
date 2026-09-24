@@ -48,7 +48,8 @@ export function makeFixture(
   write(
     "game.config.yaml",
     `game:\n  id: fixture-game\n  name: Fixture\n  version: ${version}\n` +
-      `engine:\n  type: pixijs\nplatforms:\n${entries}\n`,
+      `engine:\n  type: pixijs\nplatforms:\n${entries}\n` +
+      `monetization:\n  ad_kinds: []\n  iap: false\n`,
   );
   write(
     "package.json",

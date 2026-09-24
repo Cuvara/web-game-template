@@ -217,8 +217,8 @@ describe("scripts/_shared.mjs applies the same rules", () => {
     };
     const loaded = shared.readGameConfig(ROOT, env);
     expect(loaded).toEqual(validateGameConfig(applyPortalIdOverrides(raw, env)));
-    expect(shared.targetPlatform(loaded, env, ROOT).id).toBe("y8");
-    expect(shared.targetPlatform(loaded, { WGF_TARGET_PLATFORM: "gamemonetize" }, ROOT).id).toBe(
+    expect(shared.targetPlatform(loaded, env).id).toBe("y8");
+    expect(shared.targetPlatform(loaded, { WGF_TARGET_PLATFORM: "gamemonetize" }).id).toBe(
       "gamemonetize",
     );
     expect(shared.resolvePlatformBuild(ROOT, "gamemonetize", env)).toEqual(

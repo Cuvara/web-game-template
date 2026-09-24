@@ -34,9 +34,9 @@ import AdmZip from "adm-zip";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { parse } from "yaml";
-import { isEntryPoint, parseArgs, readGameConfig, repoRoot } from "../_shared.mjs";
+import { distDigest, isEntryPoint, parseArgs, readGameConfig, repoRoot } from "../_shared.mjs";
 import { wrapperHtml } from "./gamedistribution-wrapper.mjs";
 import { entryNameProblem, uncompressedSizeProblem } from "./yandex-archive.mjs";
 
@@ -61,35 +61,23 @@ export function sha256(buffer) {
   return "sha256:" + createHash("sha256").update(buffer).digest("hex");
 }
 
-const byCodePoint = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+// Python sorts str by code point; JavaScript's default comparison uses UTF-16 code units,
+// which differ above U+FFFF. Entry order must match the Factory's sorted() exactly.
+const byCodePoint = (a, b) => {
+  const left = [...a].map((c) => c.codePointAt(0));
+  const right = [...b].map((c) => c.codePointAt(0));
+  for (let i = 0; i < Math.min(left.length, right.length); i++) {
+    if (left[i] !== right[i]) return left[i] - right[i];
+  }
+  return left.length - right.length;
+};
 
 /**
- * The digest of a build directory, identical to the Factory's `bundle_digest`
- * (scripts/wgf_release/step.py): an os.walk — each directory's files in sorted order, then
- * its sorted subdirectories, node_modules skipped — feeding
- * `relpath-from-root utf8 + "\0" + sha256(bytes)` into one sha256. The path is relative to
- * the REPOSITORY root, not to the dist, so the digest also pins where the bundle lives.
- * Null for a directory without files, as there.
+ * The digest of a build directory, identical to the Factory's `bundle_digest`. One
+ * implementation, in scripts/_shared.mjs, shared with build:platforms which records it;
+ * re-exported here because the packager is where it is checked.
  */
-export function distDigest(root, dir) {
-  const outer = createHash("sha256");
-  let count = 0;
-  const walk = (current) => {
-    const entries = readdirSync(current, { withFileTypes: true });
-    const files = entries.filter((e) => e.isFile()).map((e) => e.name);
-    const dirs = entries.filter((e) => e.isDirectory() && e.name !== "node_modules");
-    for (const name of files.sort(byCodePoint)) {
-      const full = join(current, name);
-      const rel = relative(root, full).split("\\").join("/");
-      outer.update(Buffer.from(rel + "\0", "utf8"));
-      outer.update(createHash("sha256").update(readFileSync(full)).digest());
-      count++;
-    }
-    for (const name of dirs.map((e) => e.name).sort(byCodePoint)) walk(join(current, name));
-  };
-  walk(resolve(dir));
-  return count > 0 ? "sha256:" + outer.digest("hex") : null;
-}
+export { distDigest };
 
 /**
  * The Factory's `content_digest` of an archive: sha256 over `name + "\0" + sha256(bytes)` in

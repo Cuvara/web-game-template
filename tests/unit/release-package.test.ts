@@ -131,7 +131,11 @@ describe("release:package archives", () => {
       {
         id: "gamedistribution",
         files: BASIC_DIST,
-        extra: { hosting: "self-hosted", game_url: "https://games.example.com/g/" },
+        extra: {
+          game_id: "0123456789abcdef0123456789abcdef",
+          hosting: "self-hosted",
+          game_url: "https://games.example.com/g/",
+        },
       },
     ]);
     run(f);

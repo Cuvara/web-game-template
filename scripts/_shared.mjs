@@ -52,10 +52,15 @@ const rulesCache = new Map();
  * then share one copy of the rules rather than two that could drift. TypeScript is a
  * devDependency already, and is only loaded when a script asks for the config.
  */
-export function gameConfigRules(root = repoRoot()) {
-  if (rulesCache.has(root)) return rulesCache.get(root);
+export function gameConfigRules() {
+  // The rules are the tooling's own, not data of the tree being read: a fixture root (tests
+  // run the release scripts against temporary layouts) has no src/, and a game repository's
+  // src/core is template-owned anyway. So the file comes from the repository these scripts
+  // live in, whatever `root` the caller is looking at.
+  const own = repoRoot();
+  if (rulesCache.has(own)) return rulesCache.get(own);
   const ts = createRequire(import.meta.url)("typescript");
-  const path = resolve(root, "src/core/game-config.ts");
+  const path = resolve(own, "src/core/game-config.ts");
   const { outputText } = ts.transpileModule(readFileSync(path, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     fileName: path,
@@ -65,7 +70,7 @@ export function gameConfigRules(root = repoRoot()) {
     module.exports,
     module,
   );
-  rulesCache.set(root, module.exports);
+  rulesCache.set(own, module.exports);
   return module.exports;
 }
 
@@ -83,7 +88,7 @@ export function gameConfigPath(root = repoRoot(), env = process.env) {
  * Throws with the validator's message on a config the build would refuse.
  */
 export function readGameConfig(root = repoRoot(), env = process.env) {
-  const rules = gameConfigRules(root);
+  const rules = gameConfigRules();
   const raw = parse(readFileSync(gameConfigPath(root, env), "utf8"));
   return rules.validateGameConfig(rules.applyPortalIdOverrides(raw, env));
 }
@@ -92,8 +97,8 @@ export function readGameConfig(root = repoRoot(), env = process.env) {
  * The platforms[] entry a build targets: WGF_TARGET_PLATFORM (which must name an entry),
  * else the first required entry, else the first. Same rule as the Vite plugin.
  */
-export function targetPlatform(gameConfig, env = process.env, root = repoRoot()) {
-  return gameConfigRules(root).resolveTargetPlatform(gameConfig, env);
+export function targetPlatform(gameConfig, env = process.env) {
+  return gameConfigRules().resolveTargetPlatform(gameConfig, env);
 }
 
 /**
@@ -103,7 +108,7 @@ export function targetPlatform(gameConfig, env = process.env, root = repoRoot())
  */
 export function resolvePlatformBuild(root, platformId, env = process.env) {
   const raw = parse(readFileSync(gameConfigPath(root, env), "utf8"));
-  return gameConfigRules(root).resolveBuild(raw, { ...env, WGF_TARGET_PLATFORM: platformId });
+  return gameConfigRules().resolveBuild(raw, { ...env, WGF_TARGET_PLATFORM: platformId });
 }
 
 /**
