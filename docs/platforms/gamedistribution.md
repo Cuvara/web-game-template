@@ -139,10 +139,11 @@ platforms:
 - `game_id`, `hosting`, `game_url` on any other platform entry fail the build.
 - Rewarded ads need the rewarded flag set for the game in the developer panel; without it
   `preloadAd` rejects and `adAvailability("rewarded")` is `disabled`.
-- Profile: `config/platforms/gamedistribution.yaml` is a **draft, template-side** profile —
-  the Factory has no `gamedistribution.yaml` yet. It carries the assertions
-  `evaluate-assertions.mjs` checks (SDK present, https, English, no banner, no external links).
-  Upstream it to the Factory; it is not in `pinned.json`.
+- Profile: the Factory carries a core profile `gamedistribution@1.0.0`
+  (`status: unverified`), which Factory `init` vendors into a game's `config/platforms/`. The
+  template's own `config/platforms/gamedistribution.yaml` is the earlier draft, with the
+  assertions `evaluate-assertions.mjs` checks (SDK present, https, English, no banner, no
+  external links); it is not in the template's `pinned.json`.
 
 ## `GD_SDK_REFERRER_URL` and self-hosting
 
@@ -162,12 +163,12 @@ What the sources say:
 
 What the template does — the minimum, and nothing invented:
 
-| Mode                                    | Build / release                                                                                                                                                          | Referrer                                                          |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| GD-hosted (default)                     | `dist/` zipped as `gamedistribution.zip` and uploaded                                                                                                                    | none needed; the SDK derives the domain from GD's frame           |
-| Self-hosted (`hosting: self-hosted`)    | `dist/` is deployed to `game_url` (https, validated); `gamedistribution.zip` contains **only** the wrapper `index.html` (`scripts/release/gamedistribution-wrapper.mjs`) | the wrapper computes it **at run time** from where it is embedded |
-| Local development (`pnpm dev`, preview) | nothing                                                                                                                                                                  | absent — the SDK uses the page itself; the adapter sets nothing   |
-| Any iframe embed                        | nothing                                                                                                                                                                  | whatever the embedding wrapper passed, untouched                  |
+| Mode                                    | Build / release                                                                                                                                                                                           | Referrer                                                          |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| GD-hosted (default)                     | `build/platforms/gamedistribution/dist/` zipped as `gamedistribution.zip` and uploaded                                                                                                                    | none needed; the SDK derives the domain from GD's frame           |
+| Self-hosted (`hosting: self-hosted`)    | `build/platforms/gamedistribution/dist/` is deployed to `game_url` (https, validated); `gamedistribution.zip` contains **only** the wrapper `index.html` (`scripts/release/gamedistribution-wrapper.mjs`) | the wrapper computes it **at run time** from where it is embedded |
+| Local development (`pnpm dev`, preview) | nothing                                                                                                                                                                                                   | absent — the SDK uses the page itself; the adapter sets nothing   |
+| Any iframe embed                        | nothing                                                                                                                                                                                                   | whatever the embedding wrapper passed, untouched                  |
 
 The wrapper follows `index_iframe.html` value for value (embedding page from
 `document.referrer` when framed, an incoming `gd_sdk_referrer_url` passed through, a
@@ -244,7 +245,7 @@ the fake and the mock, which emit the documented events in the order the 1.43.58
   `shown` bookkeeping can be off by one.
 - Self-hosting is supported technically but is against GD's guidelines unless GD agrees.
 - The template's analytics package must stay off for GD (§7).
-- Every build bundles every adapter (the registry imports them all), so the other portals' SDK
-  URLs appear as strings in a GD bundle and GD's in theirs. Only the target's SDK is ever
-  loaded. This predates GD.
+- Fixed in contract 2: each platform is built separately (`pnpm build:platforms`) and a GD
+  build bundles only the GD adapter, so no other portal's SDK URL is in it (`platform_sdk`
+  is measured from the shipped files).
 - Chromium only; Safari/iOS audio behaviour during GD ads is a manual check.

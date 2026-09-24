@@ -5,17 +5,25 @@ game loop, the platform abstraction, the build, the test layout and seven CI/CD 
 that a new title starts with all of them rather than an approximation of them.
 
 ```bash
-pnpm install
-pnpm dev          # http://localhost:5173
-pnpm test         # unit + integration
-pnpm build        # packages, then dist/
+pnpm install --frozen-lockfile
+pnpm dev               # http://localhost:5173
+pnpm test              # unit, integration, SDK conformance
+pnpm build             # packages, then dist/ for the target platform
+pnpm build:platforms   # one build per platform → build/platforms/<id>/dist/
 ```
 
 Node 20+, pnpm 9. `corepack enable pnpm`, or `npm i -g pnpm@9` if you would rather not run an
 elevated shell on Windows.
 
+- [docs/factory-contract.md](docs/factory-contract.md) — **the Factory ↔ template API**
+  (contract 2): config, scripts, outputs, digests, the game API, QA and release rules
+- [AGENTS.md](AGENTS.md) / [CLAUDE.md](CLAUDE.md) — instructions for coding agents in a game
+  repository
 - [docs/architecture.md](docs/architecture.md) — how the pieces fit
 - [docs/development.md](docs/development.md) — working in it day to day
+- [docs/wgf-integration.md](docs/wgf-integration.md) — the Factory flow end to end
+- [docs/sdk.md](docs/sdk.md) — the platform SDK and each adapter's audit
+- [docs/production-build.md](docs/production-build.md) — per-platform builds and packages
 - [docs/testing.md](docs/testing.md) — the three test layers
 - [docs/ci-cd.md](docs/ci-cd.md) — the seven pipelines and the two gates
 - [docs/release.md](docs/release.md) — freezing a candidate
@@ -46,13 +54,16 @@ The Factory holds no game source. This template holds no game. A game repository
 
 ## The split that runs through everything
 
-| Location     | Owned by     | A game may          |
-| ------------ | ------------ | ------------------- |
-| `packages/*` | the template | use it, not edit it |
-| `src/*`      | the game     | fill it in          |
+| Location                                                                         | Owned by     | A game may          |
+| -------------------------------------------------------------------------------- | ------------ | ------------------- |
+| `packages/*`, `scripts/`, configs                                                | the template | use it, not edit it |
+| `src/main.ts`, `src/core/`, `src/platform/`, `src/game/{context,integration}.ts` | the template | use it, not edit it |
+| `game.config.yaml`, `config/platforms/`, `src/platform/integration-plan.ts`      | the Factory  | read it             |
+| `src/game/index.ts` — `createGame(context)` — and the rest of `src/`             | the game     | fill it in          |
 
 Reimplementing in `src/` something `packages/` already provides is the most common scaffolding
-mistake, and this split is what makes it visible in review.
+mistake, and this split is what makes it visible in review. The exact list is in
+[docs/factory-contract.md](docs/factory-contract.md#1-ownership).
 
 ```
 packages/
@@ -63,15 +74,16 @@ packages/
   three-framework   Renderer for engine.type: threejs
 
 src/
+  main.ts           the boot sequence (template-owned); calls createGame(context)
   core/             config, i18n, the verify probe
-  game/             the game itself — replace boot-scene.ts
-  platform/         wiring between platform signals and Game.pause
+  game/             index.ts createGame — the game's one entry; boot-scene.ts is the scaffold
+  platform/         bootPlatform, PlatformGameplay, the integration plan, pause/mute binding
   rendering/        engine selection; engine-specific game code
-  ui/ audio/ input/ assets/ analytics/     slots, currently empty
+  ui/ audio/ input/ assets/ analytics/     slots for the game
 
 config/platforms/   platform profiles vendored from the Factory at the pinned version
-scripts/            verify, release and publish tooling (plain ESM, no framework)
-tests/              unit, integration, e2e, verify
+scripts/            build, verify, release and publish tooling (plain ESM, no framework)
+tests/              unit, integration, sdk, e2e, verify
 ```
 
 ## Three ideas worth knowing before reading the code
@@ -86,7 +98,7 @@ runtime counterpart of a field in `core/reference/platforms/<id>.yaml`. `AdPolic
 profile's own rules locally, so an unsupported ad kind or an interstitial inside the minimum
 interval fails the first time it runs instead of weeks later in review.
 
-**Game code never imports a portal SDK.** That is what lets one build target several portals,
+**Game code never imports a portal SDK.** That is what lets one codebase ship to several portals,
 and release validation checks it: every profile carries a `package.platform_sdk` assertion.
 
 ## Engines
@@ -99,8 +111,9 @@ not publish ([docs/platforms/gamevui/](docs/platforms/gamevui/platform-contract.
 
 ## Platforms
 
-Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory (Y8's is proposed here, in `config/platforms/y8.yaml`) and an adapter
-here.
+Game code calls `GameIntegration` / `PlatformGameplay`, which drive `@wgf/platform-sdk`. Each
+platform has a profile in the Factory and an adapter here, and each is built separately: a
+build carries only its own platform's adapter.
 
 | Platform     | Profile         | Adapter                                                      | Upload automated             |
 | ------------ | --------------- | ------------------------------------------------------------ | ---------------------------- |
@@ -109,9 +122,11 @@ here.
 | Poki         | ✅              | ✅                                                           | yes — `@poki/cli`            |
 | CrazyGames   | ✅              | ✅ HTML5 SDK v3                                              | no — no public API           |
 | GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves            | no — email / contact form    |
-| GameDist.    | draft           | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`       | no — developer panel         |
-| Y8           | proposed here   | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md)) | no — Developer Portal upload |
-| GameMonetize | ❌ not yet      | ✅ HTML5 SDK — interstitial only; needs a Game ID            | no — dashboard upload        |
+| GameDist.    | ✅ (unverified) | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`       | no — developer panel         |
+| Y8           | ✅ (unverified) | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md)) | no — Developer Portal upload |
+| GameMonetize | ✅ (unverified) | ✅ HTML5 SDK — interstitial only; needs a Game ID            | no — dashboard upload        |
+
+"✅ (unverified)" is a Factory core profile at `1.0.0` marked `status: unverified` there.
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)
@@ -120,10 +135,11 @@ The CrazyGames adapter's are [examples/crazygames-compliance-demo](examples/craz
 and [compliance/crazygames-compliance-report.md](compliance/crazygames-compliance-report.md).
 
 Every portal is reached through one contract; `docs/sdk.md` has the adapter matrix, what was
-checked against each portal's current documentation, and each known limitation. An id with a
-profile but no adapter throws at startup. Degrading silently to no-ads would ship
-a title that thinks it has a portal SDK and does not, which is a blocking assertion failure at
-release validation.
+checked against each portal's current documentation, and each known limitation. An unknown
+platform id, or a portal build missing its portal id (Y8 App ID, GameDistribution or
+GameMonetize Game ID), fails the build. Degrading silently to no-ads would ship a title that
+thinks it has a portal SDK and does not, which is a blocking assertion failure at release
+validation.
 
 ## Pipelines
 
@@ -137,8 +153,9 @@ release validation.
 | `campaign.yml`  | dispatch only                | gate **G7**                          |
 | `bootstrap.yml` | first push in a new repo     | one-time setup, then deletes itself  |
 
-Outside the seven, `yandex-demo.yml` builds, audits and browser-tests the Yandex example
-whenever the packages or the example change. It guards the adapter; it is not a gate.
+Outside the seven, `yandex-demo.yml`, `crazygames.yml` and `gamevui-demo.yml` build, audit and
+browser-test the compliance examples, and `live-portal-validation.yml` runs the opt-in live SDK
+checks. They guard the adapters; none is a gate.
 
 `publish.yml` and `campaign.yml` run in GitHub environments with required reviewers. That is
 the gate — and both workflows refuse to run if their environment has none, because an
@@ -153,6 +170,7 @@ game repository on a free organization cannot enforce G6 or G7 this way.
 | ----------- | ---------- | ----------------------------------------- |
 | unit        | Vitest     | package sources                           |
 | integration | Vitest     | real files on disk                        |
+| sdk         | Vitest     | every adapter over fake portal SDKs       |
 | e2e         | Playwright | the built bundle via `pnpm preview`       |
 | verify      | Playwright | the built bundle, measuring package facts |
 
@@ -179,5 +197,8 @@ Foundation and pipelines implemented and exercised on real runners.
 | GameVui no-SDK adapter (no portal SDK exists; see `docs/sdk.md`)             | done  |
 | Y8 adapter (see `docs/platforms/y8.md`)                                      | done  |
 | GameDistribution adapter and self-hosted wrapper                             | done  |
+| GameMonetize adapter (see `docs/platforms/gamemonetize.md`)                  | done  |
+| Contract 2: per-platform builds, `createGame` game API, `sdk:check`          | done  |
+| Contract 2: facts from the artifact, per-platform release, `golden:check`    | done  |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty |
-| `scripts/build`, `scripts/campaign`                                          | empty |
+| `scripts/campaign`                                                           | empty |
