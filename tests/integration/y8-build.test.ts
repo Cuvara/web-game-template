@@ -3,6 +3,10 @@
 //
 // The SDK URL is written in two places that cannot import each other — the adapter and the
 // Vite plugin, which runs before the packages are built — so they are checked to agree.
+//
+// Contract 2 changed two behaviours tested here: the IDs may sit on the y8 platform entry
+// (app_id, game_id), with WGF_Y8_APP_ID / WGF_Y8_GAME_ID overriding them, and a Y8 build
+// without an App ID now fails instead of warning (WGF_ALLOW_UNCONFIGURED_PORTAL=1 excepted).
 
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,7 +14,8 @@ import { join, resolve } from "node:path";
 import { Y8_SDK_URL, validateY8Config } from "@wgf/platform-sdk";
 import { describe, expect, it } from "vitest";
 import { parse, stringify } from "yaml";
-import { gameConfigPlugin, readPlatformConfig } from "../../scripts/build/game-config-plugin.js";
+import { gameConfigPlugin, platformConfigFor } from "../../scripts/build/game-config-plugin.js";
+import { resolveBuild } from "../../src/core/game-config.js";
 
 const root = resolve(import.meta.dirname, "../..");
 const read = (path: string): string => readFileSync(resolve(root, path), "utf8");
@@ -22,33 +27,44 @@ describe("Y8 SDK URL", () => {
   });
 });
 
-describe("Y8 settings from the build environment", () => {
-  it("unset: no Y8 settings, and the adapter reports it as not configured", () => {
-    const config = readPlatformConfig({});
-    expect(config).toEqual({ y8: null });
-    expect(validateY8Config(config.y8).ok).toBe(false);
+describe("Y8 settings: the platform entry, overridden by the build environment", () => {
+  const raw = (ids: Record<string, string> = {}) => ({
+    ...(parse(read("game.config.yaml")) as Record<string, unknown>),
+    platforms: [{ id: "y8", profile: "y8@1.0.0", role: "required", ...ids }],
   });
 
-  it("App ID with or without a Game ID", () => {
-    expect(readPlatformConfig({ WGF_Y8_APP_ID: " app-1 " })).toEqual({
-      y8: { appId: "app-1", gameId: null },
-    });
-    expect(readPlatformConfig({ WGF_Y8_APP_ID: "app-1", WGF_Y8_GAME_ID: "game-1" })).toEqual({
-      y8: { appId: "app-1", gameId: "game-1" },
-    });
+  it("unset: the build fails, unless explicitly let through unconfigured", () => {
+    expect(() => resolveBuild(raw(), {})).toThrow(/y8 build needs app_id .*WGF_Y8_APP_ID/);
+    const build = resolveBuild(raw(), { WGF_ALLOW_UNCONFIGURED_PORTAL: "1" });
+    expect(build.portalConfigured).toBe(false);
+    expect(platformConfigFor(build.target)).toEqual({ y8: null });
+    expect(validateY8Config(platformConfigFor(build.target).y8).ok).toBe(false);
+  });
+
+  it("App ID with or without a Game ID, from the file or the environment", () => {
+    const fromFile = resolveBuild(raw({ app_id: "app-1" }), {}).target;
+    expect(platformConfigFor(fromFile)).toEqual({ y8: { appId: "app-1", gameId: null } });
+    const fromEnv = resolveBuild(raw({ app_id: "app-1" }), {
+      WGF_Y8_APP_ID: " app-2 ",
+      WGF_Y8_GAME_ID: "game-1",
+    }).target;
+    expect(platformConfigFor(fromEnv)).toEqual({ y8: { appId: "app-2", gameId: "game-1" } });
   });
 
   it.each([
-    [{ WGF_Y8_APP_ID: "<app id>" }, /WGF_Y8_APP_ID .* malformed/],
-    [{ WGF_Y8_APP_ID: "ok", WGF_Y8_GAME_ID: "has space" }, /WGF_Y8_GAME_ID .* malformed/],
-    [{ WGF_Y8_GAME_ID: "game-1" }, /WGF_Y8_APP_ID is not/],
-  ])("malformed settings fail the build: %j", (env, message) => {
-    expect(() => readPlatformConfig(env)).toThrow(message);
+    [{ WGF_Y8_APP_ID: "<app id>" }, /app_id "<app id>" is malformed/],
+    [{ WGF_Y8_APP_ID: "ok", WGF_Y8_GAME_ID: "has space" }, /game_id "has space" is malformed/],
+    [{ WGF_Y8_GAME_ID: "game-1" }, /needs app_id/],
+  ])("malformed or incomplete settings fail the build: %j", (env, message) => {
+    expect(() => resolveBuild(raw(), env)).toThrow(message);
   });
 
   it("agrees with the adapter's own validation for anything the build accepts", () => {
-    const { y8 } = readPlatformConfig({ WGF_Y8_APP_ID: "a.b_c-1", WGF_Y8_GAME_ID: "g" });
-    expect(validateY8Config(y8)).toMatchObject({ ok: true, warnings: [] });
+    const { target } = resolveBuild(raw({ app_id: "a.b_c-1", game_id: "g" }), {});
+    expect(validateY8Config(platformConfigFor(target).y8)).toMatchObject({
+      ok: true,
+      warnings: [],
+    });
   });
 });
 
@@ -65,43 +81,35 @@ describe("the Vite plugin for a Y8 build", () => {
   };
 
   const run = (id: string, env: Record<string, string>) => {
-    const saved = { ...process.env };
-    Object.assign(process.env, env);
-    try {
-      const plugin = gameConfigPlugin({
-        configPath: configFor(id),
-        localesDir: resolve(root, "public/locales"),
-      });
-      const html = (plugin.transformIndexHtml as () => unknown)();
-      const warnings: string[] = [];
-      const load = plugin.load as (this: unknown, id: string) => string | null;
-      const module = load.call(
-        { warn: (m: string) => warnings.push(m) },
-        "\0virtual:platform-config",
-      );
-      return { html, module, warnings };
-    } finally {
-      for (const key of Object.keys(env)) delete process.env[key];
-      Object.assign(process.env, saved);
-    }
+    const plugin = gameConfigPlugin({
+      configPath: configFor(id),
+      localesDir: resolve(root, "public/locales"),
+      env,
+    });
+    const html = (plugin.transformIndexHtml as () => unknown)();
+    const load = plugin.load as (this: unknown, id: string) => string | null;
+    const module = load.call({ warn: () => undefined }, "\0virtual:platform-config");
+    return { html, module };
   };
 
   it("configured: an async <script> in <head>, and the IDs in the bundle's platform config", () => {
-    const { html, module, warnings } = run("y8", { WGF_Y8_APP_ID: "app-1", WGF_Y8_GAME_ID: "g-1" });
+    const { html, module } = run("y8", { WGF_Y8_APP_ID: "app-1", WGF_Y8_GAME_ID: "g-1" });
     expect(html).toEqual([
       { tag: "script", attrs: { src: Y8_SDK_URL, async: true }, injectTo: "head-prepend" },
     ]);
     expect(module).toBe(
       `export default ${JSON.stringify({ y8: { appId: "app-1", gameId: "g-1" } })};`,
     );
-    expect(warnings).toEqual([]);
   });
 
-  it("unconfigured: no script, a build warning, and the game runs without the SDK", () => {
-    const { html, module, warnings } = run("y8", {});
+  it("unconfigured: fails the build", () => {
+    expect(() => run("y8", {})).toThrow(/y8 build needs app_id/);
+  });
+
+  it("unconfigured but let through: no script, and the game runs without the SDK", () => {
+    const { html, module } = run("y8", { WGF_ALLOW_UNCONFIGURED_PORTAL: "1" });
     expect(html).toEqual([]);
     expect(module).toContain('"y8":null');
-    expect(warnings[0]).toMatch(/WGF_Y8_APP_ID is unset/);
   });
 
   it("another platform's build never carries Y8 IDs or the Y8 script", () => {

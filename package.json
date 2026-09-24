@@ -8,9 +8,16 @@
   "engines": {
     "node": ">=20"
   },
+  "wgf": {
+    "template": {
+      "version": "1.1.0",
+      "contract": 2
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "pnpm -r --filter \"./packages/*\" build && vite build",
+    "build:platforms": "node scripts/build/build-platforms.mjs",
     "build:crazygames-demo": "pnpm -r --filter \"./packages/*\" build && pnpm --filter @wgf/example-crazygames-compliance-demo build",
     "preview": "vite preview",
     "typecheck": "tsc -b --force && node scripts/typecheck-examples.mjs",

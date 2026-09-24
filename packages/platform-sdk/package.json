@@ -6,14 +6,49 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./adapters/generic-web": {
+      "types": "./dist/adapters/generic-web.d.ts",
+      "import": "./dist/adapters/generic-web.js"
+    },
+    "./adapters/yandex": {
+      "types": "./dist/adapters/yandex.d.ts",
+      "import": "./dist/adapters/yandex.js"
+    },
+    "./adapters/poki": {
+      "types": "./dist/adapters/poki.d.ts",
+      "import": "./dist/adapters/poki.js"
+    },
+    "./adapters/crazygames": {
+      "types": "./dist/adapters/crazygames/platform.d.ts",
+      "import": "./dist/adapters/crazygames/platform.js"
+    },
+    "./adapters/gamevui": {
+      "types": "./dist/adapters/gamevui.d.ts",
+      "import": "./dist/adapters/gamevui.js"
+    },
+    "./adapters/y8": {
+      "types": "./dist/adapters/y8/platform.d.ts",
+      "import": "./dist/adapters/y8/platform.js"
+    },
+    "./adapters/gamedistribution": {
+      "types": "./dist/adapters/gamedistribution/platform.d.ts",
+      "import": "./dist/adapters/gamedistribution/platform.js"
+    },
+    "./adapters/gamemonetize": {
+      "types": "./dist/adapters/gamemonetize.d.ts",
+      "import": "./dist/adapters/gamemonetize.js"
+    },
+    "./sdk-signatures.json": "./sdk-signatures.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "sdk-signatures.json"
   ],
   "scripts": {
     "build": "tsc -b",

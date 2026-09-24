@@ -1,8 +1,10 @@
 {
   "crazygames": ["sdk.crazygames.com"],
-  "poki": ["game-cdn.poki.com"],
-  "yandex": ["YaGames"],
-  "y8": ["cdn.y8.com"],
   "gamedistribution": ["html5.api.gamedistribution.com"],
-  "gamemonetize": ["api.gamemonetize.com"]
+  "gamemonetize": ["api.gamemonetize.com"],
+  "gamevui": [],
+  "generic-web": [],
+  "poki": ["game-cdn.poki.com", "poki-sdk"],
+  "y8": ["cdn.y8.com"],
+  "yandex": ["YaGames"]
 }

@@ -33,13 +33,14 @@ export const PLATFORMS = [
     ad_kinds: ["interstitial", "rewarded"],
     env: { WGF_Y8_APP_ID: "wgf-smoke-app", WGF_Y8_GAME_ID: "wgf-smoke-game" },
   },
-  // The same target built with no Y8 settings at all: the game must still boot.
+  // The same target built with no Y8 settings at all: the game must still boot. A build
+  // without an App ID fails unless explicitly let through, as here.
   {
     id: "y8",
     name: "y8-unconfigured",
     profile: "y8@1.0.0",
     ad_kinds: ["interstitial", "rewarded"],
-    env: { WGF_Y8_APP_ID: "", WGF_Y8_GAME_ID: "" },
+    env: { WGF_Y8_APP_ID: "", WGF_Y8_GAME_ID: "", WGF_ALLOW_UNCONFIGURED_PORTAL: "1" },
   },
   // A Game ID shaped like a real one and belonging to no title (tests/gamedistribution/
   // fake-sdk.ts TEST_GD_GAME_ID). The browser smoke serves a mock SDK, so it is never sent.
@@ -62,6 +63,7 @@ export const PLATFORMS = [
     name: "gamemonetize-no-game-id",
     profile: "gamemonetize@1.0.0",
     ad_kinds: ["interstitial"],
+    env: { WGF_ALLOW_UNCONFIGURED_PORTAL: "1" },
   },
 ];
 
@@ -108,9 +110,13 @@ for (const engine of ENGINES) {
       {
         cwd: root,
         stdio: "inherit",
-        // A GameMonetize Game ID comes from the generated config only, never from the environment.
+        // A GameMonetize Game ID comes from the generated config only, never from the
+        // environment. The target is the config's one entry, and only the variants that say
+        // so may build without their portal ids.
         env: {
           ...process.env,
+          WGF_TARGET_PLATFORM: "",
+          WGF_ALLOW_UNCONFIGURED_PORTAL: "",
           ...(platform.env ?? {}),
           WGF_GAME_CONFIG: configPath,
           WGF_GAMEMONETIZE_GAME_ID: "",

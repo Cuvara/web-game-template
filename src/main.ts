@@ -15,8 +15,7 @@
 import { Analytics, NullSink } from "@wgf/analytics-sdk";
 import { Game } from "@wgf/game-core";
 import availableLocales from "virtual:locales";
-// W1 replaces: targetPlatform() (primaryPlatform stays as its deprecated alias).
-import { config, platformOptions, primaryPlatform as targetPlatform } from "./core/config.js";
+import { config, platformOptions, targetPlatform } from "./core/config.js";
 import { loadLocale } from "./core/i18n.js";
 import { installProbe } from "./core/probe.js";
 import type { GameContext, GameHandle, ViewportSize } from "./game/context.js";
@@ -80,7 +79,7 @@ async function main(): Promise<void> {
   document.documentElement.lang = i18n.locale;
   platform.reportLoadingProgress(0.4);
 
-  const renderer = await createRenderer(config.engine.type);
+  const renderer = await createRenderer();
   hud.dataset["engine"] = renderer.kind;
   platform.reportLoadingProgress(0.6);
   const viewport = (): ViewportSize => ({
