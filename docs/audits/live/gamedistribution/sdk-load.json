@@ -1,0 +1,26 @@
+{
+  "platform": "gamedistribution",
+  "url": "https://html5.api.gamedistribution.com/main.min.js",
+  "globalName": "gdsdk",
+  "scriptLoaded": true,
+  "error": null,
+  "globalPresent": true,
+  "methodsFound": [
+    "showAd",
+    "preloadAd"
+  ],
+  "methodsMissing": [],
+  "initOutcome": "resolved",
+  "initDetail": "events on 127.0.0.1:4180: SDK_READY",
+  "at": "2026-09-24T09:10:06.390Z",
+  "buildSha": "1f5dee2+uncommitted-gamedistribution",
+  "gameId": "template test ID (belongs to no title)",
+  "sdkLoadStatus": "PASS",
+  "blocked": {
+    "ads": "showAd fill needs a registered Game ID on an approved domain and GD's ad server",
+    "pauseResume": "SDK_GAME_PAUSE / SDK_GAME_START around a real ad need a real ad",
+    "reward": "SDK_REWARDED_WATCH_COMPLETE needs a filled rewarded ad and the rewarded flag",
+    "activation": "the developer panel's pre-roll activation needs a publisher account",
+    "selfHosted": "a self-hosted wrapper on GameDistribution needs GD's agreement (Guidelines §3.1)"
+  }
+}

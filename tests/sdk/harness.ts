@@ -15,6 +15,7 @@
 
 import {
   CrazyGamesPlatform,
+  GameDistributionPlatform,
   GameVuiPlatform,
   GenericWebPlatform,
   MemoryStorageBackend,
@@ -23,6 +24,7 @@ import {
   YandexPlatform,
   YandexStorage,
   type CrazyGamesSdk,
+  type CreatePlatformOptions,
   type Platform,
   type PokiSdk,
   type Timers,
@@ -32,6 +34,12 @@ import {
   type YandexSdk,
 } from "@wgf/platform-sdk";
 import { createY8Mock, type Y8AdScript } from "../y8/mock-y8-sdk.js";
+import {
+  FakeGdSdk,
+  TEST_GD_GAME_ID,
+  fakeLoader,
+  type GdAdScript,
+} from "../gamedistribution/fake-sdk.js";
 
 /** How the portal answers the next ad request. */
 export type AdScript =
@@ -77,10 +85,12 @@ export interface Harness {
   /** Whether a portal SDK is loaded at all, so unavailable/init-failure apply. */
   readonly hasSdk: boolean;
   /**
-   * Whether the portal SDK has gameplay start/stop calls to forward to. Defaults to hasSdk;
-   * false for Y8, whose SDK has none, so reports stay local.
+   * Whether the portal SDK has gameplay start/stop calls to forward to. False where it has
+   * none (Y8, GameDistribution): the transitions are tracked locally and the SDK hears nothing.
    */
-  readonly gameplayApi?: boolean;
+  readonly forwardsGameplay?: boolean;
+  /** Per-portal settings createPlatform needs (GameDistribution's Game ID). */
+  readonly platformOptions?: Omit<CreatePlatformOptions, "namespace">;
   create(sdk?: SdkScript): Promise<HarnessInstance>;
 }
 
@@ -457,7 +467,7 @@ const y8: Harness = {
   portalPauses: false,
   cloudStorage: true,
   hasSdk: true,
-  gameplayApi: false,
+  forwardsGameplay: false,
   async create(script: SdkScript = "ok") {
     const mock = createY8Mock(new EventTarget(), {
       defer: () => {},
@@ -484,6 +494,54 @@ const y8: Harness = {
   },
 };
 
+// -- GameDistribution ---------------------------------------------------------------------
+// The deterministic fake in tests/gamedistribution/fake-sdk.ts: GD_OPTIONS.onEvent with
+// SDK_READY / SDK_ERROR, gdsdk.showAd(type) bracketed by SDK_GAME_PAUSE / SDK_GAME_START, and
+// SDK_REWARDED_WATCH_COMPLETE as the only reward. The SDK has no loading or gameplay calls.
+// https://github.com/GameDistribution/GD-HTML5 · /wiki/SDK-Implementation · /wiki/Rewarded-Ads
+
+const GD_AD: Record<AdScript, GdAdScript> = {
+  play: "complete",
+  "no-fill": "no-fill",
+  "closed-early": "closed-early",
+  error: "error",
+  "stall-open": "stall-open",
+};
+
+const gamedistribution: Harness = {
+  id: "gamedistribution",
+  adapter: "implemented",
+  ads: ["interstitial", "rewarded"],
+  // SDK_GAME_PAUSE / SDK_GAME_START also arrive outside the game's own ads (the pre-roll).
+  portalPauses: true,
+  cloudStorage: false,
+  hasSdk: true,
+  forwardsGameplay: false,
+  platformOptions: { gamedistribution: { gameId: TEST_GD_GAME_ID } },
+  async create(script: SdkScript = "ok") {
+    const sdk = new FakeGdSdk();
+    const timers = new ManualTimers();
+    const platform = new GameDistributionPlatform({
+      namespace: "conformance",
+      gameId: TEST_GD_GAME_ID,
+      storage: new MemoryStorageBackend(),
+      timers,
+      loadSdk: fakeLoader(
+        sdk,
+        script === "unavailable" ? "unavailable" : script === "init-fails" ? "error" : "ready",
+      ),
+    });
+    return {
+      platform,
+      calls: sdk.calls,
+      setAd: (next) => (sdk.ad = GD_AD[next]),
+      portalPause: () => sdk.emit("SDK_GAME_PAUSE"),
+      portalResume: () => sdk.emit("SDK_GAME_START"),
+      advance: (ms) => timers.advance(ms),
+    };
+  },
+};
+
 export const HARNESSES: readonly Harness[] = [
   genericWeb("generic-web"),
   yandex,
@@ -491,4 +549,5 @@ export const HARNESSES: readonly Harness[] = [
   crazygames,
   gamevui,
   y8,
+  gamedistribution,
 ];

@@ -10,7 +10,7 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
-### Added
+### Added — Y8
 
 - **Y8 adapter** (`createPlatform("y8")`, `packages/platform-sdk/src/adapters/y8/`), written
   from <https://docs.y8.com/> as read on 2026-09-24. Loads the CDN script with the documented
@@ -25,6 +25,24 @@ whatever was here at the ref its tech plan pinned.
   are BLOCKED pending a real App ID / Game ID. See `docs/platforms/y8.md`.
 - `tests/y8/mock-y8-sdk.js`, one deterministic Y8 mock shared by the unit, conformance,
   matrix and real-bundle browser suites.
+
+### Added — GameDistribution
+
+- **`createPlatform("gamedistribution")`** — `GameDistributionPlatform`, written against the
+  GD HTML5 SDK 1.43.58 docs: the documented snippet loaded once at runtime, `SDK_READY` /
+  `SDK_ERROR` (late and doubled events honoured), `showAd` interstitial and rewarded, reward
+  only on `SDK_REWARDED_WATCH_COMPLETE` (never twice; `ad:late-reward` after a deadline),
+  `SDK_GAME_PAUSE`/`SDK_GAME_START` as the foreground, rewarded availability from
+  `preloadAd`, and start/hand-back deadlines so a lost event cannot leave the game paused.
+- **`platforms[].game_id`** (required for gamedistribution, validated at build time; the SDK's
+  placeholder is refused) and **`hosting: self-hosted` + `game_url`**: the GD submission is
+  then the official wrapper page (`scripts/release/gamedistribution-wrapper.mjs`) that frames
+  the game with `gd_sdk_referrer_url`, computed at run time. `CreatePlatformOptions` gains
+  `gamedistribution`.
+- A draft template-side profile `config/platforms/gamedistribution.yaml`, a deterministic
+  fake and browser mock SDK, GD in conformance, the game-side contract, the SDK matrix, the
+  template build smoke and the live SDK-load probe. `docs/platforms/gamedistribution.md`.
+- Scripts' `readGameConfig` honours `WGF_GAME_CONFIG`, as the Vite build already did.
 
 ## [1.0.0] — 2026-09-23
 

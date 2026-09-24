@@ -20,6 +20,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { isEntryPoint, parseArgs, readGameConfig, repoRoot } from "../_shared.mjs";
+import { wrapperHtml } from "./gamedistribution-wrapper.mjs";
 
 const RELEASE_ID = /^r[0-9]+$/;
 
@@ -47,6 +48,11 @@ function submissionFiles(dir) {
     }
   }
   return out;
+}
+
+/** GameDistribution with `hosting: self-hosted`: the submission is the wrapper page only. */
+export function isGameDistributionSelfHosted(target) {
+  return target.id === "gamedistribution" && target.hosting === "self-hosted";
 }
 
 function main() {
@@ -87,13 +93,21 @@ function main() {
   const packages = [];
   for (const target of targets) {
     const zip = new AdmZip();
-    // addLocalFile with the CONTENTS at the archive root mirrors the old addLocalFolder(dist,
-    // "") layout, minus the *.map files. The second arg is the zip folder for the entry; the
-    // relative directory (posix-separated) preserves assets/ without a leading dist/.
-    for (const abs of files) {
-      const rel = relative(distDir, abs).split(sep);
-      const zipFolder = rel.slice(0, -1).join("/");
-      zip.addLocalFile(abs, zipFolder);
+    if (isGameDistributionSelfHosted(target)) {
+      // A self-hosted GameDistribution title is served from game_url; what GameDistribution
+      // receives is "a zipped index.html-file containing an iframe" with
+      // gd_sdk_referrer_url (GD-HTML5 README). dist/ is deployed to game_url, not uploaded.
+      zip.addFile("index.html", Buffer.from(wrapperHtml(target.game_url), "utf8"));
+    } else {
+      // addLocalFile with the CONTENTS at the archive root mirrors the old
+      // addLocalFolder(dist, "") layout, minus the *.map files. The second arg is the zip
+      // folder for the entry; the relative directory (posix-separated) preserves assets/
+      // without a leading dist/.
+      for (const abs of files) {
+        const rel = relative(distDir, abs).split(sep);
+        const zipFolder = rel.slice(0, -1).join("/");
+        zip.addLocalFile(abs, zipFolder);
+      }
     }
     const filename = `${target.id}.zip`;
     const zipPath = resolve(outDir, filename);

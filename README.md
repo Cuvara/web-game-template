@@ -109,6 +109,7 @@ here.
 | Poki         | ✅              | ✅                                                           | yes — `@poki/cli`            |
 | CrazyGames   | ✅              | ✅ HTML5 SDK v3                                              | no — no public API           |
 | GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves            | no — email / contact form    |
+| GameDist.    | draft           | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`       | no — developer panel         |
 | Y8           | proposed here   | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md)) | no — Developer Portal upload |
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
@@ -176,5 +177,6 @@ Foundation and pipelines implemented and exercised on real runners.
 | CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done  |
 | GameVui no-SDK adapter (no portal SDK exists; see `docs/sdk.md`)             | done  |
 | Y8 adapter (see `docs/platforms/y8.md`)                                      | done  |
+| GameDistribution adapter and self-hosted wrapper                             | done  |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty |
 | `scripts/build`, `scripts/campaign`                                          | empty |

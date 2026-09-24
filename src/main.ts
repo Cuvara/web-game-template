@@ -10,7 +10,7 @@ import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";
 import availableLocales from "virtual:locales";
 import platformConfig from "virtual:platform-config";
-import { config, primaryPlatform } from "./core/config.js";
+import { config, platformOptions, primaryPlatform } from "./core/config.js";
 import { loadLocale } from "./core/i18n.js";
 import { installProbe } from "./core/probe.js";
 import { BootScene } from "./game/boot-scene.js";
@@ -27,8 +27,9 @@ async function main(): Promise<void> {
   const container = element("game");
   const hud = element("hud");
 
-  const platform = createPlatform(primaryPlatform().id, {
-    namespace: config.game.id,
+  const primary = primaryPlatform();
+  const platform = createPlatform(primary.id, {
+    ...platformOptions(primary),
     y8: platformConfig.y8,
   });
   await platform.initialize();

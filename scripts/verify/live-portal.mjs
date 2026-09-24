@@ -46,7 +46,7 @@ const run = spawnSync(
 );
 
 // Aggregate the sanitized evidence each spec wrote.
-const platforms = ["yandex", "crazygames", "poki", "gamevui", "y8"];
+const platforms = ["yandex", "crazygames", "poki", "gamevui", "y8", "gamedistribution"];
 const matrix = {};
 for (const p of platforms) {
   const f = resolve(root, `docs/audits/live/${p}/sdk-load.json`);
@@ -54,7 +54,9 @@ for (const p of platforms) {
 }
 
 const cell = (p) => matrix[p]?.sdkLoadStatus ?? "UNVERIFIED";
-console.log("\nLIVE SDK-load matrix (real script reachability + surface; init/ads/reward are BLOCKED off-portal):");
+console.log(
+  "\nLIVE SDK-load matrix (real script reachability + surface; init/ads/reward are BLOCKED off-portal):",
+);
 console.log("  platform     SDK-load");
 for (const p of platforms) console.log(`  ${p.padEnd(12)} ${cell(p)}`);
 

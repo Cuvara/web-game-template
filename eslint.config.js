@@ -63,6 +63,7 @@ export default tseslint.config(
       "tests/poki/mock-poki-sdk.js",
       "tests/sdk-browser/mock-yandex-sdk.js",
       "tests/y8/mock-y8-sdk.js",
+      "tests/gamedistribution/mock-gd-sdk.js",
     ],
     languageOptions: {
       globals: globals.browser,

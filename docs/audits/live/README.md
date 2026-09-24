@@ -59,7 +59,13 @@ secret. A missing secret → BLOCKED, never PASS.
 3. **Yandex** — upload a draft build in the [developer console](https://games.yandex.com/) and
    open it; the portal serves `/sdk.js`. Verify init, interstitial, rewarded (reward exactly
    once across reward/close/error orderings), `game_api_pause`/`resume`, and player storage.
-4. **GameVui** — no SDK exists; the generic-web build is the deliverable. Hosting basics
+4. **GameDistribution** — off-portal the probe already loads the real `main.min.js`, sees
+   `SDK_READY`, and boots the template's GD build against it (`sdk-load.json`,
+   `adapter-boot.json`). Ads need a registered Game ID on an approved domain: upload the
+   build in the GD developer panel, view the pre-roll in full once (activation), then check
+   pause+mute on `SDK_GAME_PAUSE`, resume on `SDK_GAME_START`, and a single reward on
+   `SDK_REWARDED_WATCH_COMPLETE`. See `docs/platforms/gamedistribution.md`.
+5. **GameVui** — no SDK exists; the generic-web build is the deliverable. Hosting basics
    (localStorage, resize, canvas) are checked here; full boot is covered by `pnpm test:e2e`.
 5. **Y8** — the harness proves the real `cdn.y8.com` script loads, re-announces
    `y8sdk.ready` on `emitReadyEvent()` and exposes every method the adapter calls. Everything

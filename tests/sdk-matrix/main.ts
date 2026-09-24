@@ -1,6 +1,6 @@
 // SDK matrix harness: one page, any engine × any portal adapter × any SDK condition.
 //
-//   ?engine=pixijs|threejs  &portal=yandex|crazygames|poki|gamevui
+//   ?engine=pixijs|threejs  &portal=yandex|crazygames|poki|gamevui|gamedistribution
 //   &sdk=ok|missing|init-fails  &ad=complete|no-fill|closed-early
 //
 // The boot is src/main.ts's order — initialize, report progress, renderer, scene, ready,
@@ -70,6 +70,7 @@ async function main(): Promise<void> {
       engine,
       portal,
       hasSdk: harness.hasSdk,
+      forwardsLifecycle: harness.forwardsLifecycle,
       calls: () => [...harness.calls],
       usage: () => platform.usage,
       state: () => ({
@@ -85,6 +86,13 @@ async function main(): Promise<void> {
       portalPause: () => harness.portalPause?.(),
       portalResume: () => harness.portalResume?.(),
       setPortalMute: (muted: boolean) => harness.setPortalMute?.(muted),
+      sdkEvent: (name: string) => harness.sdkEvent?.(name),
+      /** Collect the game's late-reward notices, so a test can count them. */
+      lateRewards: (() => {
+        const seen: string[] = [];
+        platform.on("ad:late-reward", ({ kind }) => seen.push(kind));
+        return () => [...seen];
+      })(),
       /** Write, then read back through the platform's storage. */
       save: async (key: string) => {
         await platform.storage.set(key, "42");

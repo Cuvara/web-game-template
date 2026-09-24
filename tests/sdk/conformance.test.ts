@@ -100,8 +100,16 @@ describe.each(HARNESSES)("$id", (harness) => {
   describe("not-configured", () => {
     if (harness.adapter === "implemented") {
       it("createPlatform builds this adapter", () => {
-        expect(createPlatform(harness.id, { namespace: "conformance" }).id).toBe(harness.id);
+        const options = { namespace: "conformance", ...harness.platformOptions };
+        expect(createPlatform(harness.id, options).id).toBe(harness.id);
       });
+      if (harness.platformOptions) {
+        // Settings the portal cannot run without (GameDistribution's Game ID) fail at
+        // startup rather than boot a build that can never earn.
+        it("createPlatform refuses loudly without its required settings", () => {
+          expect(() => createPlatform(harness.id, { namespace: "conformance" })).toThrow();
+        });
+      }
     } else {
       // Not a pass for the platform: the limitation is reported beside it.
       it(`createPlatform refuses loudly — ${harness.limitation}`, () => {
@@ -202,13 +210,13 @@ describe.each(HARNESSES)("$id", (harness) => {
       expect(platform.gameplayActive).toBe(false);
       const starts = instance.calls.filter((c) => /gameplayStart|GameplayAPI\.start/.test(c));
       const stops = instance.calls.filter((c) => /gameplayStop|GameplayAPI\.stop/.test(c));
-      if (harness.gameplayApi ?? harness.hasSdk) {
+      if (harness.hasSdk && harness.forwardsGameplay !== false) {
         expect(starts).toHaveLength(1);
         expect(stops).toHaveLength(1);
       } else {
-        // Nothing to forward to: the transitions are only counted, once each.
-        expect(starts).toEqual([]);
-        expect(stops).toEqual([]);
+        // Nothing to forward to: the SDK must hear no gameplay call at all.
+        expect(starts).toHaveLength(0);
+        expect(stops).toHaveLength(0);
         expect(platform.usage.gameplayStartCalls).toBe(1);
         expect(platform.usage.gameplayStopCalls).toBe(1);
       }

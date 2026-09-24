@@ -60,7 +60,14 @@ export const PLATFORMS: Record<string, PlatformDescriptor> = {
     platform: "poki",
     url: "https://game-cdn.poki.com/scripts/v2/poki-sdk.js",
     globalName: "PokiSDK",
-    methods: ["init", "gameLoadingFinished", "commercialBreak", "rewardedBreak", "gameplayStart", "gameplayStop"],
+    methods: [
+      "init",
+      "gameLoadingFinished",
+      "commercialBreak",
+      "rewardedBreak",
+      "gameplayStart",
+      "gameplayStop",
+    ],
     portalServed: false,
   },
   y8: {
@@ -69,6 +76,13 @@ export const PLATFORMS: Record<string, PlatformDescriptor> = {
     // The global is `y8`; the SDK object itself is y8.sdk() (https://docs.y8.com/sdk/intro/).
     globalName: "y8",
     methods: ["sdk", "emitReadyEvent"],
+    portalServed: false,
+  },
+  gamedistribution: {
+    platform: "gamedistribution",
+    url: "https://html5.api.gamedistribution.com/main.min.js",
+    globalName: "gdsdk",
+    methods: ["showAd", "preloadAd"],
     portalServed: false,
   },
 };
