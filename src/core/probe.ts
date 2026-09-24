@@ -9,11 +9,15 @@
 
 import type { Game } from "@wgf/game-core";
 import type { Platform, PlatformUsage } from "@wgf/platform-sdk";
+import type { GameplayMomentRecord } from "../platform/gameplay.js";
 
 export interface WgfProbe {
   readonly gameId: string;
   readonly gameVersion: string;
+  /** The adapter running. Differs from {@link target} only when substituted or degraded. */
   readonly platformId: string;
+  /** The platform id the build targets. */
+  readonly target: string;
   readonly engine: string;
   /**
    * Milliseconds from navigation start to the moment the game signalled ready. This is the
@@ -23,6 +27,14 @@ export interface WgfProbe {
   usage(): PlatformUsage;
   framesRendered(): number;
   elapsedMs(): number;
+  /** Fixed simulation steps run; stands still while paused. */
+  steps(): number;
+  /** The active scene's id, or null before the first scene. */
+  scene(): string | null;
+  /** Whether the game is paused for any reason (hidden tab, ad, portal, pause menu). */
+  paused(): boolean;
+  /** The gameplay hooks the game called, oldest first (PlatformGameplay's record). */
+  moments(): readonly GameplayMomentRecord[];
 }
 
 declare global {
@@ -34,6 +46,10 @@ declare global {
 export interface InstallProbeOptions {
   readonly game: Game;
   readonly platform: Platform;
+  /** Defaults to the running adapter's id. */
+  readonly target?: string;
+  /** Anything that keeps the moment record; PlatformGameplay in main.ts. None: no moments. */
+  readonly gameplay?: { moments(): readonly GameplayMomentRecord[] };
   readonly gameId: string;
   readonly gameVersion: string;
   readonly engine: string;
@@ -46,10 +62,15 @@ export function installProbe(options: InstallProbeOptions): void {
     gameId: options.gameId,
     gameVersion: options.gameVersion,
     platformId: options.platform.id,
+    target: options.target ?? options.platform.id,
     engine: options.engine,
     timeToInteractiveMs: options.timeToInteractiveMs,
     usage: () => options.platform.usage,
     framesRendered: () => options.game.framesRendered,
     elapsedMs: () => options.game.elapsedMs,
+    steps: () => options.game.steps,
+    scene: () => options.game.scenes.current?.id ?? null,
+    paused: () => options.game.paused,
+    moments: () => options.gameplay?.moments() ?? [],
   };
 }
