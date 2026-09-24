@@ -63,13 +63,14 @@ afterEach(() => {
 });
 
 describe("sdk-signatures.json", () => {
-  it("lists every portal that ships an SDK, and not the SDK-less platforms", () => {
-    expect(Object.keys(SIGNATURES).sort()).toEqual(
-      ["crazygames", "gamedistribution", "gamemonetize", "poki", "y8", "yandex"].sort(),
-    );
-    expect(SIGNATURES).not.toHaveProperty("generic-web");
-    expect(SIGNATURES).not.toHaveProperty("gamevui");
-    for (const needles of Object.values(SIGNATURES)) expect(needles.length).toBeGreaterThan(0);
+  // Every platform is listed, so adding one is a deliberate edit here; the SDK-less ones list
+  // nothing, which is what makes their artifacts scan as "none".
+  it("gives every portal that ships an SDK a signature, and the SDK-less platforms none", () => {
+    const withSdk = ["crazygames", "gamedistribution", "gamemonetize", "poki", "y8", "yandex"];
+    for (const id of withSdk) expect(SIGNATURES[id]?.length ?? 0).toBeGreaterThan(0);
+    expect(SIGNATURES["generic-web"]).toEqual([]);
+    expect(SIGNATURES["gamevui"]).toEqual([]);
+    expect(Object.keys(SIGNATURES).sort()).toEqual([...withSdk, "generic-web", "gamevui"].sort());
   });
 
   // A signature that is a substring of another portal's would make one SDK read as two.
