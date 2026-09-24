@@ -242,7 +242,9 @@ describe.each(HARNESSES)("$id", (harness) => {
     when(harness.ads.length > 0)("an ad takes the foreground and gives it back", async () => {
       const instance = await ready(harness);
       const seen = record(instance);
-      await instance.platform.showRewarded();
+      // The rewarded ad where the portal offers one; GameMonetize offers only interstitials.
+      if (offers("rewarded")) await instance.platform.showRewarded();
+      else await instance.platform.showInterstitial();
       // Poki's adapter takes the foreground itself; Yandex's portal raises game_api_pause.
       // Either way the game sees it lost and regained, bracketing ad:start / ad:end.
       expect(seen).toContain("foreground:lost");

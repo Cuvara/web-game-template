@@ -46,7 +46,15 @@ const run = spawnSync(
 );
 
 // Aggregate the sanitized evidence each spec wrote.
-const platforms = ["yandex", "crazygames", "poki", "gamevui", "y8", "gamedistribution"];
+const platforms = [
+  "yandex",
+  "crazygames",
+  "poki",
+  "gamevui",
+  "y8",
+  "gamedistribution",
+  "gamemonetize",
+];
 const matrix = {};
 for (const p of platforms) {
   const f = resolve(root, `docs/audits/live/${p}/sdk-load.json`);

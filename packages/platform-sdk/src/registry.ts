@@ -10,6 +10,7 @@ import {
   GameDistributionPlatform,
   type GameDistributionConfig,
 } from "./adapters/gamedistribution/platform.js";
+import { GameMonetizePlatform } from "./adapters/gamemonetize.js";
 import { GameVuiPlatform } from "./adapters/gamevui.js";
 import { GenericWebPlatform } from "./adapters/generic-web.js";
 import { PokiPlatform } from "./adapters/poki.js";
@@ -18,8 +19,10 @@ import { YandexPlatform } from "./adapters/yandex.js";
 import type { Platform } from "./types.js";
 
 /**
- * Every platform id with a profile: the Factory's reference data, plus `y8`, whose profile is
- * proposed from this repository (config/platforms/y8.yaml) until the Factory adopts it.
+ * Every platform id with an adapter. Most have a profile in the Factory's reference data;
+ * `y8` has one proposed from this repository (config/platforms/y8.yaml), `gamedistribution` a
+ * draft (config/platforms/gamedistribution.yaml), and gamemonetize's is still to be written
+ * there (docs/platforms/gamemonetize.md lists the values the adapter implies).
  */
 export const KNOWN_PLATFORM_IDS = [
   "generic-web",
@@ -29,6 +32,7 @@ export const KNOWN_PLATFORM_IDS = [
   "gamevui",
   "y8",
   "gamedistribution",
+  "gamemonetize",
 ] as const;
 
 export type PlatformId = (typeof KNOWN_PLATFORM_IDS)[number];
@@ -47,6 +51,11 @@ export interface CreatePlatformOptions {
    * by every other.
    */
   readonly gamedistribution?: GameDistributionConfig;
+  /**
+   * The id the portal itself issued for this title, where its SDK needs one — GameMonetize's
+   * Game ID. From the platform entry in game.config.yaml. Ignored by every other adapter.
+   */
+  readonly portalGameId?: string | null;
 }
 
 export function isPlatformId(value: string): value is PlatformId {
@@ -73,6 +82,11 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
       return new GameDistributionPlatform({
         namespace: options.namespace,
         gameId: options.gamedistribution?.gameId ?? "",
+      });
+    case "gamemonetize":
+      return new GameMonetizePlatform({
+        namespace: options.namespace,
+        gameId: options.portalGameId ?? null,
       });
     default:
       throw new Error(

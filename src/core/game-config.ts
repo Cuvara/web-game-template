@@ -13,7 +13,13 @@ export interface PlatformEntry {
   readonly id: string;
   readonly profile: string;
   readonly role: "required" | "optional";
-  /** gamedistribution only: the 32-hex Game ID from the developer panel. Public, not a secret. */
+  /**
+   * The Game ID the portal issued for this title, where its SDK needs one:
+   * - gamedistribution (required): the 32-hex Game ID from the developer panel.
+   * - gamemonetize (optional): the "Game ID" from Game Management > My games.
+   *   WGF_GAMEMONETIZE_GAME_ID at build time overrides it (scripts/build/game-config-plugin.ts).
+   * Public — it ships in the bundle — but per title, so the template never carries one.
+   */
   readonly game_id?: string;
   /**
    * gamedistribution only. `gamedistribution` (the default): the build is uploaded and
@@ -29,11 +35,20 @@ export interface PlatformEntry {
 export const GAMEDISTRIBUTION_HOSTING = ["gamedistribution", "self-hosted"] as const;
 export type GameDistributionHosting = (typeof GAMEDISTRIBUTION_HOSTING)[number];
 
+/** Platforms whose entry may carry a `game_id`. */
+export const PLATFORMS_WITH_GAME_ID = ["gamedistribution", "gamemonetize"] as const;
+
 // Kept as literals rather than imported from @wgf/platform-sdk: this file runs under Node
 // before the packages are built. tests/unit/gamedistribution.test.ts asserts they agree.
 const GD_GAME_ID = /^[0-9a-f]{32}$/i;
 const GD_PLACEHOLDER_GAME_ID = "4f3d7d38d24b740c95da2b03dc3a2333";
-const GD_ONLY_FIELDS = ["game_id", "hosting", "game_url"] as const;
+const GD_ONLY_FIELDS = ["hosting", "game_url"] as const;
+
+// Mirrors gameMonetizeGameIdProblem in @wgf/platform-sdk, which this file cannot import: it
+// runs under Node before the packages are built. tests/unit/gamemonetize.test.ts keeps the
+// two in step.
+const GAME_ID_FORMAT = /^[A-Za-z0-9_-]{8,64}$/;
+const GAME_ID_PLACEHOLDERS = new Set(["your_game_id_here", "your-game-id", "game_id", "gameid"]);
 
 export const AD_KINDS = ["interstitial", "rewarded", "banner"] as const;
 export type AdKind = (typeof AD_KINDS)[number];
@@ -113,6 +128,18 @@ export function validateGameConfig(raw: unknown): GameConfig {
     else {
       for (const field of GD_ONLY_FIELDS) {
         if (field in entry) fail(`${where}.${field} applies to gamedistribution only`);
+      }
+      const gameId = entry["game_id"];
+      if (gameId !== undefined) {
+        if (!(PLATFORMS_WITH_GAME_ID as readonly string[]).includes(id)) {
+          fail(`${where}.game_id is only read for ${PLATFORMS_WITH_GAME_ID.join(", ")}`);
+        }
+        if (typeof gameId !== "string" || !GAME_ID_FORMAT.test(gameId)) {
+          fail(`${where}.game_id must be 8-64 letters, digits, '-' or '_', got ${String(gameId)}`);
+        }
+        if (GAME_ID_PLACEHOLDERS.has(gameId.toLowerCase())) {
+          fail(`${where}.game_id is the documented placeholder, not a Game ID`);
+        }
       }
     }
   }

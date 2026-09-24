@@ -111,6 +111,7 @@ here.
 | GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves            | no — email / contact form    |
 | GameDist.    | draft           | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`       | no — developer panel         |
 | Y8           | proposed here   | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md)) | no — Developer Portal upload |
+| GameMonetize | ❌ not yet      | ✅ HTML5 SDK — interstitial only; needs a Game ID            | no — dashboard upload        |
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)

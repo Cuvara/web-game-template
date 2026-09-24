@@ -44,6 +44,44 @@ whatever was here at the ref its tech plan pinned.
   template build smoke and the live SDK-load probe. `docs/platforms/gamedistribution.md`.
 - Scripts' `readGameConfig` honours `WGF_GAME_CONFIG`, as the Vite build already did.
 
+### Added — GameMonetize
+
+- **`GameMonetizePlatform`** (`createPlatform("gamemonetize")`), written against GameMonetize's
+  HTML5 SDK documentation (audited 2026-09-24): `window.SDK_OPTIONS { gameId, onEvent }`, the
+  `api.gamemonetize.com/sdk.js` script loaded at runtime, `SDK_READY` / `SDK_ERROR` /
+  `SDK_GAME_PAUSE` / `SDK_GAME_START`, and `sdk.showBanner()` as the interstitial. Rewarded ads
+  are not documented and resolve `unsupported`. Every request resolves once; lost, late and
+  duplicate SDK callbacks are bounded by deadlines, and the game is never left paused or muted.
+- **Game ID configuration**: optional `game_id` on the gamemonetize platform entry, or
+  `WGF_GAMEMONETIZE_GAME_ID` at build time; validated at build time. Without one the SDK is
+  never requested. `CreatePlatformOptions.portalGameId` carries it; other adapters ignore it.
+- `pnpm sdk:prepare` knows the GameMonetize SDK source and fails a missing Game ID or declared
+  rewarded ads.
+- Tests: `tests/unit/gamemonetize.test.ts`, a deterministic mock (`tests/gamemonetize/`),
+  GameMonetize in the conformance suite, the cross-portal contract, the SDK matrix (PixiJS and
+  Three.js, plus `gamemonetize.html` through the real script loader), the template-build smoke,
+  and an opt-in live SDK-load probe (PASS; ads, Verify Game and activation BLOCKED).
+- `docs/platforms/gamemonetize.md`.
+
+### Fixed — GameMonetize audit against the live SDK (2026-09-24)
+
+- The ad-start deadline is 25 s, past the SDK's own 12 s + 8 s cancel; at 10 s a slow but
+  real ad was treated as late.
+- The script loader refuses at once, and leaves the other `SDK_OPTIONS` alone, when other code
+  has already loaded the SDK (one instance that reads its options once); it used to overwrite
+  them and wait out the 5 s init deadline for events that could not arrive.
+- `pnpm sdk:prepare` fails a GameMonetize title that declares no interstitial:
+  `sdk.showBanner()` calls are mandatory.
+- The mock reports ad failures the way the live SDK does (`SDK_GAME_START`, no `SDK_ERROR`)
+  and models its cooldown on premature calls; `SDK_ERROR` during an ad stays covered as a
+  defensive case.
+
+### Changed
+
+- Conformance and contract harnesses state whether a portal's SDK takes gameplay/loading
+  reports (`forwardsGameplay`, `forwardsLifecycle` — one name each for the Y8,
+  GameDistribution and GameMonetize work) instead of assuming every SDK does.
+
 ## [1.0.0] — 2026-09-23
 
 First stable production baseline for Web Game Factory. Both renderers, the SDK contract and

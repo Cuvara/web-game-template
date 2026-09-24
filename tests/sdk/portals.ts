@@ -14,6 +14,7 @@
 import {
   CrazyGamesPlatform,
   GameDistributionPlatform,
+  GameMonetizePlatform,
   GameVuiPlatform,
   MemoryStorageBackend,
   PokiPlatform,
@@ -37,6 +38,7 @@ import {
   fakeLoader,
   type GdAdScript,
 } from "../gamedistribution/fake-sdk.js";
+import { createGameMonetizeMock } from "../gamemonetize/mock-sdk.js";
 
 /** The portals the SDK module targets. */
 export const PORTALS = [
@@ -46,6 +48,7 @@ export const PORTALS = [
   "gamevui",
   "y8",
   "gamedistribution",
+  "gamemonetize",
 ] as const;
 export type Portal = (typeof PORTALS)[number];
 
@@ -73,7 +76,7 @@ export interface PortalHarness {
   readonly hasSdk: boolean;
   /**
    * Whether the SDK takes loading-finished and gameplay start/stop calls ("ready",
-   * "gameplayStart", "gameplayStop"). False for GameVui (no SDK), Y8 and GameDistribution (their
+   * "gameplayStart", "gameplayStop"). False for GameVui (no SDK), Y8, GameDistribution and GameMonetize (their
    * SDKs have no such calls; the adapter tracks them locally).
    */
   readonly forwardsLifecycle: boolean;
@@ -401,6 +404,50 @@ function y8(options: HarnessOptions): PortalHarness {
   };
 }
 
+// -- GameMonetize ------------------------------------------------------------------------
+
+function gamemonetize(options: HarnessOptions): PortalHarness {
+  // The shared mock (tests/gamemonetize/mock-sdk.ts), with its calls renamed to the neutral
+  // vocabulary: "load" -> init, "showBanner" -> ad:interstitial. GameMonetize documents no
+  // rewarded ad, so nothing here ever produces "ad:rewarded"; "closed-early" plays the ad.
+  const timers = new HeldTimers();
+  const mock = createGameMonetizeMock({
+    timers,
+    sdk:
+      options.sdk === "missing" ? "missing" : options.sdk === "init-fails" ? "init-error" : "ready",
+    ad: options.ad === "no-fill" ? "no-fill" : "play",
+  });
+  // Recorded as they happen, under the neutral names.
+  const calls: string[] = [];
+  const platform = new GameMonetizePlatform({
+    namespace: "matrix",
+    // Placeholder shaped like a Game ID; never a real one.
+    gameId: "matrix0000000000000000000000000",
+    loadSdk: async (sdkOptions) => {
+      calls.push("init");
+      const sdk = await mock.loadSdk(sdkOptions);
+      if (!sdk) return null;
+      return {
+        showBanner: () => {
+          calls.push("ad:interstitial");
+          return sdk.showBanner();
+        },
+      };
+    },
+    timers,
+    storage: new MemoryStorageBackend(),
+  });
+  return {
+    platform,
+    calls,
+    hasSdk: true,
+    forwardsLifecycle: false,
+    setAd: (outcome) => mock.setAd(outcome === "no-fill" ? "no-fill" : "play"),
+    portalPause: () => mock.emit("SDK_GAME_PAUSE"),
+    portalResume: () => mock.emit("SDK_GAME_START"),
+  };
+}
+
 export function createHarness(portal: Portal, options: HarnessOptions = {}): PortalHarness {
   switch (portal) {
     case "yandex":
@@ -415,5 +462,7 @@ export function createHarness(portal: Portal, options: HarnessOptions = {}): Por
       return y8(options);
     case "gamedistribution":
       return gamedistribution(options);
+    case "gamemonetize":
+      return gamemonetize(options);
   }
 }

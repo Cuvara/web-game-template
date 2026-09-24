@@ -8,10 +8,20 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const ENGINES = ["pixijs", "threejs"] as const;
-const PORTALS = ["yandex", "crazygames", "poki", "gamevui", "y8", "gamedistribution"] as const;
-// Portals whose SDK takes loading-finished and gameplay calls. Y8's and GameDistribution's
-// have none.
+const PORTALS = [
+  "yandex",
+  "crazygames",
+  "poki",
+  "gamevui",
+  "y8",
+  "gamedistribution",
+  "gamemonetize",
+] as const;
+// Portals whose SDK takes loading-finished and gameplay calls. Y8's, GameDistribution's and
+// GameMonetize's have none.
 const FORWARDS_LIFECYCLE = new Set<string>(["yandex", "crazygames", "poki"]);
+// GameMonetize documents no rewarded call (docs/platforms/gamemonetize.md).
+const NO_REWARDED = new Set<string>(["gamevui", "gamemonetize"]);
 
 interface MatrixState {
   paused: boolean;
@@ -70,6 +80,7 @@ for (const engine of ENGINES) {
         const errors = await boot(page, `engine=${engine}&portal=${portal}`);
         const hasSdk = portal !== "gamevui";
         const forwards = FORWARDS_LIFECYCLE.has(portal);
+        const offersRewarded = !NO_REWARDED.has(portal);
 
         await expect(page.locator("#hud")).toHaveAttribute("data-engine", engine);
         await expect(page.locator("#game canvas")).toBeVisible();
@@ -79,6 +90,7 @@ for (const engine of ENGINES) {
         expect(await calls(page)).toEqual(
           forwards ? expect.arrayContaining(["init", "ready"]) : hasSdk ? ["init"] : [],
         );
+        if (!forwards) expect(await calls(page)).not.toContain("ready");
         expect(await calls(page)).not.toContain("gameplayStart");
 
         await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });
@@ -95,7 +107,7 @@ for (const engine of ENGINES) {
         expect(after.gameplayActive).toBe(true);
 
         const rewarded = await run<{ rewarded: boolean }>(page, "rewarded");
-        expect(rewarded.rewarded).toBe(hasSdk);
+        expect(rewarded.rewarded).toBe(offersRewarded);
 
         // The loop is still stepping after the breaks.
         const before = await steps(page);
@@ -147,6 +159,16 @@ for (const portal of PORTALS.filter((p) => p !== "gamevui")) {
 
 test("yandex: the portal's own pause holds the game and its sound (4.7)", async ({ page }) => {
   await boot(page, "engine=threejs&portal=yandex");
+  await run(page, "portalPause");
+  expect(await state(page)).toMatchObject({ paused: true, audioMuted: true, foreground: false });
+  await run(page, "portalResume");
+  expect(await state(page)).toMatchObject({ paused: false, audioMuted: false, foreground: true });
+});
+
+test("gamemonetize: the SDK's own SDK_GAME_PAUSE holds the game and its sound", async ({
+  page,
+}) => {
+  await boot(page, "engine=threejs&portal=gamemonetize");
   await run(page, "portalPause");
   expect(await state(page)).toMatchObject({ paused: true, audioMuted: true, foreground: false });
   await run(page, "portalResume");

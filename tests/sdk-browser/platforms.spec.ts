@@ -12,10 +12,12 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { MOCK_SDK_SOURCE as MOCK_CRAZYGAMES } from "../crazygames/mock-sdk.js";
 import { createY8Mock } from "../y8/mock-y8-sdk.js";
+import { MOCK_SDK_SOURCE as MOCK_GAMEMONETIZE } from "../gamemonetize/mock-sdk.js";
 
 const ENGINES = ["pixijs", "threejs"] as const;
 const POKI_SDK_URL = "https://game-cdn.poki.com/scripts/v2/poki-sdk.js";
 const CRAZYGAMES_SDK_URL = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
+const GAMEMONETIZE_SDK_URL = "https://api.gamemonetize.com/sdk.js";
 const MOCK_YANDEX = readFileSync(resolve(import.meta.dirname, "mock-yandex-sdk.js"), "utf8");
 const MOCK_POKI = readFileSync(
   resolve(import.meta.dirname, "..", "poki", "mock-poki-sdk.js"),
@@ -41,6 +43,8 @@ declare global {
     __cgCalls__?: { name: string }[];
     __y8?: { calls: string[]; sdk: { lastInit?: { appConfig: { appId: string } } } };
     __y8Mock?: Record<string, unknown>;
+    __gmCalls?: string[];
+    __gmEmit?: (name: string) => void;
   }
 }
 
@@ -61,6 +65,13 @@ async function boot(page: Page, bundle: string, sdk: Sdk = "mock"): Promise<stri
     sdk === "block"
       ? route.abort()
       : route.fulfill({ contentType: "text/javascript", body: MOCK_CRAZYGAMES }),
+  );
+  // Registered after "**/sdk.js" (Yandex's), which would also match this URL: the route
+  // registered last wins.
+  await page.route(GAMEMONETIZE_SDK_URL, (route) =>
+    sdk === "block"
+      ? route.abort()
+      : route.fulfill({ contentType: "text/javascript", body: MOCK_GAMEMONETIZE }),
   );
   await page.goto(`/${bundle}/`);
   await expect(page.locator("#hud")).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
@@ -167,6 +178,46 @@ for (const engine of ENGINES) {
     test(`crazygames: the game still boots when the SDK is blocked`, async ({ page }) => {
       await boot(page, `${engine}-crazygames`, "block");
       expect(await advances(page)).toBe(true);
+    });
+
+    test(`gamemonetize: SDK init with the configured Game ID, portal pause and resume`, async ({
+      page,
+    }) => {
+      const errors = await boot(page, `${engine}-gamemonetize`);
+      expect(await page.evaluate(() => window.__wgf__!.platformId)).toBe("gamemonetize");
+      expect(await page.evaluate(() => window.__gmCalls)).toEqual(["load:gameId"]);
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { SDK_OPTIONS: { gameId: string } }).SDK_OPTIONS.gameId,
+        ),
+      ).toBe("smoke000000000000000000000000000");
+      expect(await advances(page)).toBe(true);
+
+      // SDK_GAME_PAUSE — an ad is about to play — must stop the game until SDK_GAME_START.
+      await page.evaluate(() => window.__gmEmit!("SDK_GAME_PAUSE"));
+      expect(await advances(page)).toBe(false);
+      await expect(page.locator("html")).toHaveAttribute("data-audio-muted", "true");
+      await page.evaluate(() => window.__gmEmit!("SDK_GAME_START"));
+      expect(await advances(page)).toBe(true);
+      await expect(page.locator("html")).toHaveAttribute("data-audio-muted", "false");
+      expect(errors).toEqual([]);
+    });
+
+    test(`gamemonetize: the game still boots when the SDK is blocked`, async ({ page }) => {
+      await boot(page, `${engine}-gamemonetize`, "block");
+      expect(await advances(page)).toBe(true);
+    });
+
+    test(`gamemonetize: a build without a Game ID never requests the SDK`, async ({ page }) => {
+      const requested: string[] = [];
+      page.on("request", (request) => {
+        if (new URL(request.url()).hostname !== "localhost") requested.push(request.url());
+      });
+      const errors = await boot(page, `${engine}-gamemonetize-no-game-id`);
+      expect(await page.evaluate(() => window.__wgf__!.platformId)).toBe("gamemonetize");
+      expect(await advances(page)).toBe(true);
+      expect(requested).toEqual([]);
+      expect(errors).toEqual([]);
     });
   });
 }

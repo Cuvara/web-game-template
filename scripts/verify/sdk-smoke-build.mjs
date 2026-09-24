@@ -49,6 +49,20 @@ export const PLATFORMS = [
     ad_kinds: ["interstitial", "rewarded"],
     entry: { game_id: "0123456789abcdef0123456789abcdef" },
   },
+  // A placeholder shaped like a GameMonetize Game ID — never a real one — and a build with
+  // none, which must run without ever requesting the SDK.
+  {
+    id: "gamemonetize",
+    profile: "gamemonetize@1.0.0",
+    ad_kinds: ["interstitial"],
+    game_id: "smoke000000000000000000000000000",
+  },
+  {
+    id: "gamemonetize",
+    name: "gamemonetize-no-game-id",
+    profile: "gamemonetize@1.0.0",
+    ad_kinds: ["interstitial"],
+  },
 ];
 
 // The game imports the @wgf/* packages from their dist, as `pnpm build` does.
@@ -61,12 +75,17 @@ mkdirSync(out, { recursive: true });
 for (const engine of ENGINES) {
   for (const platform of PLATFORMS) {
     const name = `${engine}-${platform.name ?? platform.id}`;
+    const entry = {
+      id: platform.id,
+      profile: platform.profile,
+      role: "required",
+      ...platform.entry,
+    };
+    if (platform.game_id) entry.game_id = platform.game_id;
     const config = {
       ...base,
       engine: { ...base.engine, type: engine },
-      platforms: [
-        { id: platform.id, profile: platform.profile, role: "required", ...platform.entry },
-      ],
+      platforms: [entry],
       monetization: { ...base.monetization, ad_kinds: platform.ad_kinds },
     };
     const configPath = resolve(out, `${name}.game.config.yaml`);
@@ -89,7 +108,13 @@ for (const engine of ENGINES) {
       {
         cwd: root,
         stdio: "inherit",
-        env: { ...process.env, ...(platform.env ?? {}), WGF_GAME_CONFIG: configPath },
+        // A GameMonetize Game ID comes from the generated config only, never from the environment.
+        env: {
+          ...process.env,
+          ...(platform.env ?? {}),
+          WGF_GAME_CONFIG: configPath,
+          WGF_GAMEMONETIZE_GAME_ID: "",
+        },
       },
     );
     console.log(`built ${name}`);

@@ -23,6 +23,9 @@ export function primaryPlatform(): PlatformEntry {
 export function platformOptions(entry: PlatformEntry): CreatePlatformOptions {
   return {
     namespace: config.game.id,
-    ...(entry.game_id ? { gamedistribution: { gameId: entry.game_id } } : {}),
+    ...(entry.id === "gamedistribution" && entry.game_id
+      ? { gamedistribution: { gameId: entry.game_id } }
+      : {}),
+    ...(entry.id === "gamemonetize" ? { portalGameId: entry.game_id ?? null } : {}),
   };
 }

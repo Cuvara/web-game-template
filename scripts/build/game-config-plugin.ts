@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import type { Plugin } from "vite";
 import { parse } from "yaml";
-import { validateGameConfig } from "../../src/core/game-config.js";
+import { validateGameConfig, type GameConfig } from "../../src/core/game-config.js";
 
 // Kept as a literal rather than imported from @wgf/platform-sdk: this file runs under Node
 // before the packages are built. tests/integration/crazygames-build.test.ts asserts the two
@@ -54,6 +54,27 @@ export function readPlatformConfig(env: NodeJS.ProcessEnv = process.env): Platfo
   return { y8: { appId, gameId: gameId === "" ? null : gameId } };
 }
 
+/**
+ * game.config.yaml, validated, with WGF_GAMEMONETIZE_GAME_ID applied to the gamemonetize
+ * entry when set. The override lets a release job supply the Game ID without it being
+ * committed; it is validated exactly like one written in the file.
+ */
+export function loadGameConfig(
+  configPath: string,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): GameConfig {
+  const raw = parse(readFileSync(configPath, "utf8")) as { platforms?: unknown };
+  const override = env["WGF_GAMEMONETIZE_GAME_ID"];
+  if (override !== undefined && override !== "" && Array.isArray(raw?.platforms)) {
+    raw.platforms = raw.platforms.map((entry: unknown) =>
+      (entry as { id?: unknown })?.id === "gamemonetize"
+        ? { ...(entry as object), game_id: override }
+        : entry,
+    );
+  }
+  return validateGameConfig(raw);
+}
+
 export interface GameConfigPluginOptions {
   /** Absolute path to game.config.yaml. */
   readonly configPath: string;
@@ -85,7 +106,14 @@ export function gameConfigPlugin(options: GameConfigPluginOptions): Plugin {
     },
     load(id) {
       if (id === RESOLVED_VIRTUAL_ID) {
-        const config = validateGameConfig(parse(readFileSync(options.configPath, "utf8")));
+        const config = loadGameConfig(options.configPath);
+        const gameMonetize = config.platforms.find((entry) => entry.id === "gamemonetize");
+        if (gameMonetize && !gameMonetize.game_id) {
+          this.warn(
+            "the gamemonetize platform entry has no game_id (and WGF_GAMEMONETIZE_GAME_ID is " +
+              "unset) — the build runs without ads and GameMonetize's Verify Game will fail",
+          );
+        }
         return `export default ${JSON.stringify(config)};`;
       }
       if (id === RESOLVED_LOCALES_ID) {

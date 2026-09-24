@@ -1,4 +1,4 @@
-// One contract, four portals.
+// One contract, every portal.
 //
 // Every scenario the SDK module promises runs against every portal adapter, each over a
 // mock of its own SDK (tests/sdk/portals.ts): initialization, loading, game start, ads,
@@ -107,9 +107,13 @@ describe.each(PORTALS)("%s", (portal) => {
 
     it("grants a reward only on the portal's reward callback", async () => {
       const { platform, hasSdk } = await booted(createHarness(portal, { ad: "complete" }));
+      const offered = hasSdk && platform.capabilities.ads.includes("rewarded");
       const result = await platform.showRewarded();
-      expect(result.rewarded).toBe(hasSdk);
-      if (hasSdk) expect(result.shown).toBe(true);
+      expect(result.rewarded).toBe(offered);
+      if (offered) expect(result.shown).toBe(true);
+      // A portal without rewarded ads (GameMonetize) refuses it outright.
+      else if (hasSdk)
+        expect(result).toEqual({ shown: false, rewarded: false, reason: "unsupported" });
     });
 
     it("never rewards a player who closes the ad early", async () => {

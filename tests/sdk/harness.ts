@@ -16,6 +16,7 @@
 import {
   CrazyGamesPlatform,
   GameDistributionPlatform,
+  GameMonetizePlatform,
   GameVuiPlatform,
   GenericWebPlatform,
   MemoryStorageBackend,
@@ -40,6 +41,7 @@ import {
   fakeLoader,
   type GdAdScript,
 } from "../gamedistribution/fake-sdk.js";
+import { createGameMonetizeMock, type GmAdScript } from "../gamemonetize/mock-sdk.js";
 
 /** How the portal answers the next ad request. */
 export type AdScript =
@@ -86,7 +88,7 @@ export interface Harness {
   readonly hasSdk: boolean;
   /**
    * Whether the portal SDK has gameplay start/stop calls to forward to. False where it has
-   * none (Y8, GameDistribution): the transitions are tracked locally and the SDK hears nothing.
+   * none (Y8, GameDistribution, GameMonetize): the transitions are tracked locally and the SDK hears nothing.
    */
   readonly forwardsGameplay?: boolean;
   /** Per-portal settings createPlatform needs (GameDistribution's Game ID). */
@@ -320,6 +322,7 @@ function genericWeb(id: string, extra: Partial<Harness> = {}): Harness {
     portalPauses: false,
     cloudStorage: false,
     hasSdk: false,
+    forwardsGameplay: false,
     async create() {
       return {
         platform: new GenericWebPlatform({ namespace: `conformance-${id}` }),
@@ -542,6 +545,55 @@ const gamedistribution: Harness = {
   },
 };
 
+// -- GameMonetize -------------------------------------------------------------------------
+// Fake of the documented HTML5 surface: window.SDK_OPTIONS { gameId, onEvent }, the events
+// SDK_READY / SDK_ERROR / SDK_GAME_PAUSE / SDK_GAME_START, and sdk.showBanner().
+// https://github.com/MonetizeGame/GameMonetize.com-SDK · tests/gamemonetize/mock-sdk.ts
+// GameMonetize documents no rewarded ad, so the rewarded scenarios check it is refused. The
+// SDK raises SDK_GAME_PAUSE by itself too (an ad it starts on its own), which is the portal
+// pause here.
+
+const GAMEMONETIZE_AD: Record<AdScript, GmAdScript> = {
+  play: "play",
+  "no-fill": "no-fill",
+  "closed-early": "play",
+  // How the live SDK reports a failed ad: cancelled, SDK_GAME_START without a pause.
+  error: "ad-error",
+  "stall-open": "stall",
+};
+
+const gamemonetize: Harness = {
+  id: "gamemonetize",
+  adapter: "implemented",
+  ads: ["interstitial"],
+  portalPauses: true,
+  cloudStorage: false,
+  hasSdk: true,
+  forwardsGameplay: false,
+  async create(script: SdkScript = "ok") {
+    const timers = new ManualTimers();
+    const mock = createGameMonetizeMock({
+      timers,
+      sdk: script === "unavailable" ? "missing" : script === "init-fails" ? "init-error" : "ready",
+    });
+    const platform = new GameMonetizePlatform({
+      namespace: "conformance",
+      gameId: "conformance000000000000000000000",
+      loadSdk: mock.loadSdk,
+      timers,
+      storage: new MemoryStorageBackend(),
+    });
+    return {
+      platform,
+      calls: mock.calls,
+      setAd: (next) => mock.setAd(GAMEMONETIZE_AD[next]),
+      portalPause: () => mock.emit("SDK_GAME_PAUSE"),
+      portalResume: () => mock.emit("SDK_GAME_START"),
+      advance: (ms) => timers.advance(ms),
+    };
+  },
+};
+
 export const HARNESSES: readonly Harness[] = [
   genericWeb("generic-web"),
   yandex,
@@ -550,4 +602,5 @@ export const HARNESSES: readonly Harness[] = [
   gamevui,
   y8,
   gamedistribution,
+  gamemonetize,
 ];

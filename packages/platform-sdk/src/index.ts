@@ -54,6 +54,21 @@ export {
   type GameDistributionSdkLoader,
 } from "./adapters/gamedistribution/sdk.js";
 export {
+  GAMEMONETIZE_CAPABILITIES,
+  GAMEMONETIZE_SCRIPT_ID,
+  GAMEMONETIZE_SDK_URL,
+  GameMonetizePlatform,
+  gameMonetizeGameIdProblem,
+  loadGameMonetizeSdk,
+  type GameMonetizeEvent,
+  type GameMonetizeEventName,
+  type GameMonetizeOptions,
+  type GameMonetizeSdk,
+  type GameMonetizeSdkLoader,
+  type GameMonetizeSdkOptions,
+  type GameMonetizeSdkState,
+} from "./adapters/gamemonetize.js";
+export {
   CRAZYGAMES_CAPABILITIES,
   CrazyGamesPlatform,
   type CrazyGamesMode,

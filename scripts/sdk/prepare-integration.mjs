@@ -38,6 +38,7 @@ function sdkSources(sdk) {
     // <script async> in <head> when the build has an App ID; the adapter injects it otherwise.
     y8: { source: sdk.Y8_SDK_URL, loaded: "html-head" },
     gamedistribution: { source: sdk.GAMEDISTRIBUTION_SDK_URL, loaded: "runtime" },
+    gamemonetize: { source: sdk.GAMEMONETIZE_SDK_URL, loaded: "runtime" },
   };
 }
 
@@ -77,7 +78,7 @@ function featuresFor(capabilities, hasSdk, adKinds) {
 export function buildIntegration(
   gameConfig,
   sdk,
-  { commitSha = "unknown", now = new Date() } = {},
+  { commitSha = "unknown", now = new Date(), gameMonetizeGameId = undefined } = {},
 ) {
   const sources = sdkSources(sdk);
   const adKinds = gameConfig.monetization?.ad_kinds ?? [];
@@ -92,6 +93,23 @@ export function buildIntegration(
     const unserved = adKinds.filter((kind) => !platform.capabilities.ads.includes(kind));
     for (const kind of unserved) {
       problems.push(`${entry.id}: the title declares "${kind}" ads, which the adapter cannot show`);
+    }
+    // GameMonetize's SDK needs the title's Game ID; without one no ad can play and the
+    // portal's "Verify Game" fails. The id itself is never written to the artifacts.
+    if (entry.id === "gamemonetize") {
+      // "Now you must call sdk.showBanner() at the appropriate time in your game to show
+      // ads" — GameMonetize's integration step 2. A title with no interstitial never does.
+      if (!adKinds.includes("interstitial")) {
+        problems.push(
+          'gamemonetize: the title declares no "interstitial" ads; GameMonetize requires sdk.showBanner() calls',
+        );
+      }
+      const why = sdk.gameMonetizeGameIdProblem(gameMonetizeGameId || entry.game_id);
+      if (why) {
+        problems.push(
+          `gamemonetize: game_id is ${why} — set it on the platform entry or in WGF_GAMEMONETIZE_GAME_ID`,
+        );
+      }
     }
     return {
       id: entry.id,
@@ -170,6 +188,7 @@ async function main() {
   const sdk = await import(pathToFileURL(dist).href);
   const { integration, report, problems } = buildIntegration(readGameConfig(root), sdk, {
     commitSha: typeof args.commit === "string" ? args.commit : commitSha(root),
+    gameMonetizeGameId: process.env["WGF_GAMEMONETIZE_GAME_ID"],
   });
 
   const out = resolve(root, typeof args.out === "string" ? args.out : "build/sdk");

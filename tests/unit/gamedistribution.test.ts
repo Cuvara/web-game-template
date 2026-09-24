@@ -176,7 +176,16 @@ describe("GameDistribution — configuration", () => {
       role: "optional",
       game_id: TEST_GD_GAME_ID,
     } as never);
-    expect(() => validateGameConfig(raw)).toThrow(/gamedistribution only/);
+    // game_id is shared with gamemonetize since the GameMonetize merge; still refused here.
+    expect(() => validateGameConfig(raw)).toThrow(/game_id is only read for gamedistribution/);
+    const hosted = config({ game_id: TEST_GD_GAME_ID });
+    hosted.platforms.push({
+      id: "poki",
+      profile: "poki@1.0.0",
+      role: "optional",
+      hosting: "self-hosted",
+    } as never);
+    expect(() => validateGameConfig(hosted)).toThrow(/gamedistribution only/);
   });
 });
 
