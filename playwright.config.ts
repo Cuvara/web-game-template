@@ -9,7 +9,9 @@
 //                     majority mobile and CrazyGames lists missing mobile support as a
 //                     rejection cause.
 //   verify          — measures package facts for release validation. Separate because it
-//                     is slower, samples frame rate over seconds, and writes a file.
+//                     is slower, samples frame rate over seconds, and writes files. It serves
+//                     each platform artifact (build/platforms/<id>/dist, else dist/) on its
+//                     own preview server, so it does not use the webServer below.
 
 import { defineConfig, devices } from "@playwright/test";
 
