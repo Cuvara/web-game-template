@@ -61,6 +61,15 @@ secret. A missing secret → BLOCKED, never PASS.
    once across reward/close/error orderings), `game_api_pause`/`resume`, and player storage.
 4. **GameVui** — no SDK exists; the generic-web build is the deliverable. Hosting basics
    (localStorage, resize, canvas) are checked here; full boot is covered by `pnpm test:e2e`.
+5. **Y8** — the harness proves the real `cdn.y8.com` script loads, re-announces
+   `y8sdk.ready` on `emitReadyEvent()` and exposes every method the adapter calls. Everything
+   past that needs the game's own App ID / Game ID (from the Developer Portal's SDK
+   Initialization tab, supplied as `WGF_Y8_APP_ID` / `WGF_Y8_GAME_ID` at build time — never
+   committed). Build with them, upload to the [Y8 Developer Portal](https://developer.y8.com/),
+   and while the game is in review Y8 serves Google's test creatives. Verify: pause + mute
+   only when an ad appears (a frequency-capped second break must leave the game running),
+   reward only after a full view, sign-in from a click, and a Cloud Storage save/load for a
+   signed-in player. See `docs/platforms/y8.md`.
 
 Store screenshots + the sanitized JSON under this directory when a cell reaches PASS, and
 update `docs/audits/LIVE-PORTAL-VALIDATION-*.md`.

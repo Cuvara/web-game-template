@@ -63,6 +63,14 @@ export const PLATFORMS: Record<string, PlatformDescriptor> = {
     methods: ["init", "gameLoadingFinished", "commercialBreak", "rewardedBreak", "gameplayStart", "gameplayStop"],
     portalServed: false,
   },
+  y8: {
+    platform: "y8",
+    url: "https://cdn.y8.com/minimal-sdk/2-0/y8.min.js",
+    // The global is `y8`; the SDK object itself is y8.sdk() (https://docs.y8.com/sdk/intro/).
+    globalName: "y8",
+    methods: ["sdk", "emitReadyEvent"],
+    portalServed: false,
+  },
 };
 
 /**

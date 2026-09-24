@@ -9,16 +9,21 @@ import { CrazyGamesPlatform } from "./adapters/crazygames/platform.js";
 import { GameVuiPlatform } from "./adapters/gamevui.js";
 import { GenericWebPlatform } from "./adapters/generic-web.js";
 import { PokiPlatform } from "./adapters/poki.js";
+import { Y8Platform } from "./adapters/y8/platform.js";
 import { YandexPlatform } from "./adapters/yandex.js";
 import type { Platform } from "./types.js";
 
-/** Every platform id that has a profile in the Factory's reference data. */
+/**
+ * Every platform id with a profile: the Factory's reference data, plus `y8`, whose profile is
+ * proposed from this repository (config/platforms/y8.yaml) until the Factory adopts it.
+ */
 export const KNOWN_PLATFORM_IDS = [
   "generic-web",
   "yandex",
   "poki",
   "crazygames",
   "gamevui",
+  "y8",
 ] as const;
 
 export type PlatformId = (typeof KNOWN_PLATFORM_IDS)[number];
@@ -26,6 +31,11 @@ export type PlatformId = (typeof KNOWN_PLATFORM_IDS)[number];
 export interface CreatePlatformOptions {
   /** Storage namespace, normally the game id. */
   readonly namespace: string;
+  /**
+   * Y8's `{ appId, gameId? }`, injected at build time (virtual:platform-config). Ignored by
+   * every other platform. Missing or malformed, the Y8 adapter runs without its SDK.
+   */
+  readonly y8?: unknown;
 }
 
 export function isPlatformId(value: string): value is PlatformId {
@@ -44,6 +54,8 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
       return new PokiPlatform({ namespace: options.namespace });
     case "gamevui":
       return new GameVuiPlatform({ namespace: options.namespace });
+    case "y8":
+      return new Y8Platform({ namespace: options.namespace, config: options.y8 });
     default:
       throw new Error(
         `Unknown platform "${id}". Known ids: ${KNOWN_PLATFORM_IDS.join(", ")}. ` +

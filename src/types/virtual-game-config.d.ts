@@ -14,3 +14,9 @@ declare module "virtual:locales" {
   const locales: string[];
   export default locales;
 }
+
+/** Per-title portal settings from the build environment. See readPlatformConfig. */
+declare module "virtual:platform-config" {
+  const config: { readonly y8: unknown };
+  export default config;
+}

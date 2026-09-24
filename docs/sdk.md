@@ -5,13 +5,14 @@ unverified. Code: `packages/platform-sdk`. Wiring into the game: `src/platform/b
 
 ```text
 Game code (src/, examples/)
- │   calls only the Platform contract — never window.YaGames / CrazyGames / PokiSDK
+ │   calls only the Platform contract — never window.YaGames / CrazyGames / PokiSDK / y8
  ▼
 @wgf/platform-sdk — Platform (types.ts), created by createPlatform(id) from game.config.yaml
  ├── YandexPlatform       adapters/yandex.ts        /sdk.js, loaded at runtime
  ├── CrazyGamesPlatform   adapters/crazygames/      HTML5 SDK v3, <script> in <head>
  ├── PokiPlatform         adapters/poki.ts          poki-sdk.js v2, loaded at runtime
  ├── GameVuiPlatform      adapters/gamevui.ts       no SDK exists — local saves, no ads
+ ├── Y8Platform           adapters/y8/              cdn.y8.com 2-0, <script async> in <head>
  └── GenericWebPlatform   adapters/generic-web.ts   self-hosted, no portal
 ```
 
@@ -157,6 +158,17 @@ target it, so the adapter never loads it.
 request (`adAvailability` → `unsupported`), saves in local storage, pause on a hidden tab.
 Its capabilities deliberately differ from the Factory profile `gamevui@1.0.0`, which lists
 interstitial and banner ads the game cannot actually request.
+
+### Y8 — PASS against the docs (2026-09-24), live ads/storage BLOCKED
+
+Audited against every page of <https://docs.y8.com/>; details, the configuration path
+(`WGF_Y8_APP_ID` / `WGF_Y8_GAME_ID`) and the live status are in
+[platforms/y8.md](platforms/y8.md). In short: the `y8sdk.ready` race is handled the documented
+way (listener first, then `emitReadyEvent()`); the game pauses and mutes only on `beforeAd`,
+so a skipped or capped break never pauses it; rewards only on `adViewed`; watchdogs bound a
+break that never answers, never ends, or ends without `adBreakDone`; Cloud Storage for
+signed-in players and local saves for guests. The Factory has no Y8 profile yet;
+`config/platforms/y8.yaml` is a proposal.
 
 ## Factory profile findings
 

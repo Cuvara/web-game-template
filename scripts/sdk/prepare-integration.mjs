@@ -35,6 +35,8 @@ function sdkSources(sdk) {
     yandex: { source: sdk.YANDEX_SDK_URL, loaded: "runtime" },
     poki: { source: sdk.POKI_SDK_URL, loaded: "runtime" },
     crazygames: { source: sdk.CRAZYGAMES_SDK_URL, loaded: "html-head" },
+    // <script async> in <head> when the build has an App ID; the adapter injects it otherwise.
+    y8: { source: sdk.Y8_SDK_URL, loaded: "html-head" },
   };
 }
 

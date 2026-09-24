@@ -99,16 +99,17 @@ not publish ([docs/platforms/gamevui/](docs/platforms/gamevui/platform-contract.
 
 ## Platforms
 
-Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory and an adapter
+Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory (Y8's is proposed here, in `config/platforms/y8.yaml`) and an adapter
 here.
 
-| Platform     | Profile         | Adapter                                           | Upload automated          |
-| ------------ | --------------- | ------------------------------------------------- | ------------------------- |
-| Generic Web  | ✅              | ✅                                                | n/a — self-hosted         |
-| Yandex Games | ✅              | ✅                                                | no — no public API        |
-| Poki         | ✅              | ✅                                                | yes — `@poki/cli`         |
-| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                   | no — no public API        |
-| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves | no — email / contact form |
+| Platform     | Profile         | Adapter                                                      | Upload automated             |
+| ------------ | --------------- | ------------------------------------------------------------ | ---------------------------- |
+| Generic Web  | ✅              | ✅                                                           | n/a — self-hosted            |
+| Yandex Games | ✅              | ✅                                                           | no — no public API           |
+| Poki         | ✅              | ✅                                                           | yes — `@poki/cli`            |
+| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                              | no — no public API           |
+| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves            | no — email / contact form    |
+| Y8           | proposed here   | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md)) | no — Developer Portal upload |
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)
@@ -174,5 +175,6 @@ Foundation and pipelines implemented and exercised on real runners.
 | Portal adapter — poki, with `examples/poki-compliance-demo`                  | done  |
 | CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done  |
 | GameVui no-SDK adapter (no portal SDK exists; see `docs/sdk.md`)             | done  |
+| Y8 adapter (see `docs/platforms/y8.md`)                                      | done  |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty |
 | `scripts/build`, `scripts/campaign`                                          | empty |

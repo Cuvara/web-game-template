@@ -59,7 +59,11 @@ export default tseslint.config(
   },
   {
     // Served to the browser in place of a portal's SDK script; plain browser scripts.
-    files: ["tests/poki/mock-poki-sdk.js", "tests/sdk-browser/mock-yandex-sdk.js"],
+    files: [
+      "tests/poki/mock-poki-sdk.js",
+      "tests/sdk-browser/mock-yandex-sdk.js",
+      "tests/y8/mock-y8-sdk.js",
+    ],
     languageOptions: {
       globals: globals.browser,
     },

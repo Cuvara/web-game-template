@@ -202,9 +202,15 @@ describe.each(HARNESSES)("$id", (harness) => {
       expect(platform.gameplayActive).toBe(false);
       const starts = instance.calls.filter((c) => /gameplayStart|GameplayAPI\.start/.test(c));
       const stops = instance.calls.filter((c) => /gameplayStop|GameplayAPI\.stop/.test(c));
-      if (harness.hasSdk) {
+      if (harness.gameplayApi ?? harness.hasSdk) {
         expect(starts).toHaveLength(1);
         expect(stops).toHaveLength(1);
+      } else {
+        // Nothing to forward to: the transitions are only counted, once each.
+        expect(starts).toEqual([]);
+        expect(stops).toEqual([]);
+        expect(platform.usage.gameplayStartCalls).toBe(1);
+        expect(platform.usage.gameplayStopCalls).toBe(1);
       }
     });
   });
@@ -352,6 +358,15 @@ describe.each(HARNESSES)("$id", (harness) => {
       await platform.storage.remove("best");
       await expect(platform.storage.get("best")).resolves.toBeNull();
     });
+    when(harness.cloudStorage && harness.id === "y8")(
+      "a signed-in player's saves reach Y8 Cloud Storage",
+      async () => {
+        const instance = await ready(harness);
+        await instance.platform.storage.set("best", "9");
+        await expect(instance.platform.storage.get("best")).resolves.toBe("9");
+        expect(instance.calls).toEqual(expect.arrayContaining(["saveData", "loadData"]));
+      },
+    );
     when(harness.cloudStorage && harness.id === "yandex")(
       "saves reach the portal's cloud storage",
       async () => {
