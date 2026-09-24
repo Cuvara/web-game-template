@@ -36,6 +36,7 @@
     "test:crazygames": "playwright test -c playwright.crazygames.config.ts",
     "test:sdk:matrix": "playwright test -c playwright.sdk-matrix.config.ts",
     "sdk:prepare": "node scripts/sdk/prepare-integration.mjs",
+    "sdk:check": "node scripts/sdk/check-integration.mjs",
     "facts": "node scripts/verify/collect-facts.mjs",
     "assert": "node scripts/verify/evaluate-assertions.mjs",
     "audit:crazygames": "node scripts/crazygames-audit.mjs",
