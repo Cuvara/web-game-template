@@ -34,7 +34,9 @@ jobs:
           install-browsers: "true"
 
       - name: build
-        run: pnpm build
+        # dist/ for the live runner, and one build per platform for the packager, which
+        # refuses to zip anything else.
+        run: pnpm build && pnpm build:platforms
 
       - name: package release artifact
         run: pnpm release:package --release r1
