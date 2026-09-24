@@ -8,6 +8,6 @@
   "references": [
     { "path": "../../packages/game-core" },
     { "path": "../../packages/platform-sdk" },
-    { "path": "../../packages/pixi-framework" }
+    { "path": "../../packages/three-framework" }
   ]
 }

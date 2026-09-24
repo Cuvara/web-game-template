@@ -26,7 +26,6 @@ on:
       - "examples/crazygames-compliance-demo/**"
       - "tests/crazygames/**"
       - "tests/unit/crazygames*"
-      - "tests/integration/crazygames*"
       - "scripts/crazygames-audit.mjs"
       - "config/platforms/crazygames-limits.json"
       - "playwright.crazygames.config.ts"
@@ -49,14 +48,34 @@ permissions:
   contents: read
 
 jobs:
-  crazygames:
-    name: adapter, demo, audit
+  example:
+    # Template-only: a game created by the Factory ships no examples/, so the demo this
+    # workflow drives may be absent. hashFiles is not available in a job-level `if`, so
+    # presence is evaluated here and the job below skips when the demo is absent.
+    name: detect crazygames-compliance-demo
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     # Same de-duplication as ci.yml: a PR from this repository is the push event again.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name != github.repository
+    outputs:
+      present: ${{ steps.detect.outputs.present }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: examples
+
+      - id: detect
+        run: |
+          echo "present=${{ hashFiles('examples/crazygames-compliance-demo/package.json') != '' }}" >> "$GITHUB_OUTPUT"
+
+  crazygames:
+    name: adapter, demo, audit
+    needs: example
+    if: needs.example.outputs.present == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v5
@@ -71,11 +90,14 @@ jobs:
       - name: typecheck
         run: pnpm typecheck
 
+      # The adapter's own tests live in tests/unit; the demo's live with the demo.
       - name: unit
-        run: pnpm vitest run --project unit tests/unit/crazygames
+        run: >-
+          pnpm vitest run --project unit tests/unit/crazygames
+          examples/crazygames-compliance-demo/tests/unit
 
       - name: integration
-        run: pnpm vitest run --project integration tests/integration/crazygames
+        run: pnpm vitest run --project integration examples/crazygames-compliance-demo/tests/integration
 
       - name: build demo
         run: pnpm build:crazygames-demo

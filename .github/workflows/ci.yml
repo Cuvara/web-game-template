@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   ci:
-    name: lint, typecheck, unit, integration
+    name: lint, typecheck, unit, integration, sdk
     runs-on: ubuntu-latest
     # A push and a pull_request from the same repository are the same commit twice. Skip the
     # pull_request event unless it comes from a fork, whose pushes we never see.
@@ -61,6 +61,11 @@ jobs:
       - name: sdk-conformance
         run: pnpm test:sdk
 
+      # The boot wiring (bootPlatform -> installGameplay -> createGame) and the integration
+      # plan the Factory's `sdk` step regenerates. Static, so it belongs on the source guard.
+      - name: sdk-check
+        run: pnpm sdk:check
+
       - name: Summary
         if: always()
         run: |
@@ -71,3 +76,30 @@ jobs:
             echo
             echo "status: **${{ job.status }}**"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  golden:
+    # The Factory's golden-run ports (examples/*/wgf-golden, examples/wgf-golden-shared).
+    # Template-only: a game created by the Factory ships no examples/, so every step after
+    # checkout is skipped there. hashFiles is not available in a job-level `if`, which is why
+    # the guard sits on the steps.
+    name: golden ports
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: ./.github/actions/setup-workspace
+        if: hashFiles('examples/wgf-golden-shared/README.md') != ''
+
+      - name: golden-check
+        if: hashFiles('examples/wgf-golden-shared/README.md') != ''
+        run: node scripts/verify/golden-check.mjs
+
+      - name: skipped — no golden ports in this checkout
+        if: hashFiles('examples/wgf-golden-shared/README.md') == ''
+        run: echo "examples/wgf-golden-shared is absent; nothing to check."

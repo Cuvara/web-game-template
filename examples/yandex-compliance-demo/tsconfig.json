@@ -4,9 +4,9 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  // tests/ is here, not in the root tsconfig: the e2e spec shares the template's
-  // tests/crazygames fixtures, which is why there is no rootDir.
-  "include": ["src", "tests", "vite.config.ts"],
+  // The demo boots through the template's own src/core, whose virtual modules are declared
+  // in src/types.
+  "include": ["src", "tests", "*.config.ts", "../../src/types"],
   "references": [
     { "path": "../../packages/game-core" },
     { "path": "../../packages/platform-sdk" },
