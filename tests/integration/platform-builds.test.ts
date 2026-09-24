@@ -17,7 +17,7 @@ import { stringify } from "yaml";
 // @ts-expect-error — plain ESM script without type declarations.
 import { buildPlatforms } from "../../scripts/build/build-platforms.mjs";
 // @ts-expect-error — plain ESM script without type declarations.
-import { distDigest } from "../../scripts/_shared.mjs";
+import { distDigest, testedEngines } from "../../scripts/_shared.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const OUT = `build/test-platforms-${process.pid}`;
@@ -65,6 +65,11 @@ const entry = (id: string, role: string, extra: Record<string, string> = {}) => 
   ...extra,
 });
 
+// Both engines in the template itself. In a game repository only the game's own engine: its
+// code imports that engine's library directly, so a build for the other engine would bundle
+// both and prove nothing about a combination that never ships.
+const ENGINES = testedEngines(ROOT) as Engine[];
+
 const RUNS: Record<Engine, { platforms: ReturnType<typeof entry>[]; env: NodeJS.ProcessEnv }> = {
   pixijs: {
     platforms: [
@@ -108,7 +113,7 @@ beforeAll(() => {
     shell: process.platform === "win32",
   });
   const configDir = mkdtempSync(join(tmpdir(), "wgf-platforms-"));
-  for (const engine of Object.keys(RUNS) as Engine[]) {
+  for (const engine of ENGINES) {
     const configPath = join(configDir, `${engine}.game.config.yaml`);
     writeFileSync(
       configPath,
@@ -142,7 +147,7 @@ afterAll(() => {
   rmSync(resolve(ROOT, OUT), { recursive: true, force: true });
 });
 
-describe.each(Object.keys(RUNS) as Engine[])("build:platforms, %s", (engine) => {
+describe.each(ENGINES)("build:platforms, %s", (engine) => {
   const ids = RUNS[engine].platforms.map((platform) => platform.id);
   const other: Engine = engine === "pixijs" ? "threejs" : "pixijs";
 

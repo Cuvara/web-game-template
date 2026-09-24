@@ -74,6 +74,36 @@ export function gameConfigRules() {
   return module.exports;
 }
 
+const ALL_ENGINES = ["pixijs", "threejs"];
+
+/**
+ * The engines the engine-matrix suites build and boot (tests/integration/platform-builds,
+ * scripts/verify/sdk-smoke-build.mjs and the tests/sdk-browser specs).
+ *
+ * The untouched template — game.id `example-game`, whose default game draws only through the
+ * Renderer interface — is checked against both, so no template change can break either
+ * engine. A game is written for the engine its plan chose (a PixiJS game imports pixi.js
+ * directly), so in a game repository the matrix is that one engine: building its code for the
+ * other would test a combination that can never ship. WGF_TEST_ENGINES=pixijs,threejs
+ * overrides either way.
+ */
+export function testedEngines(root = repoRoot(), env = process.env) {
+  const override = env["WGF_TEST_ENGINES"];
+  if (override) {
+    const listed = override
+      .split(",")
+      .map((engine) => engine.trim())
+      .filter(Boolean);
+    const unknown = listed.filter((engine) => !ALL_ENGINES.includes(engine));
+    if (unknown.length > 0)
+      throw new Error(`WGF_TEST_ENGINES: unknown engine ${unknown.join(", ")}`);
+    return listed;
+  }
+  const raw = parse(readFileSync(resolve(root, "game.config.yaml"), "utf8"));
+  if (raw?.game?.id === "example-game") return [...ALL_ENGINES];
+  return [raw?.engine?.type];
+}
+
 /** The config file a run reads: WGF_GAME_CONFIG when set (as vite.config.ts), else the root's. */
 export function gameConfigPath(root = repoRoot(), env = process.env) {
   return resolve(root, env["WGF_GAME_CONFIG"] || "game.config.yaml");

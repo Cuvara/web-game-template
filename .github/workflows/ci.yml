@@ -95,6 +95,9 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
         if: hashFiles('examples/wgf-golden-shared/README.md') != ''
+        with:
+          # golden-check runs each port's e2e, SDK browser and verify suites.
+          install-browsers: "true"
 
       - name: golden-check
         if: hashFiles('examples/wgf-golden-shared/README.md') != ''

@@ -1,0 +1,26 @@
+{
+  "comment": "How the golden-run port of this example is assembled onto a repository created from the template: each overlay directory is copied onto the repository root in order (a later one wins, README.md excepted), then each `copy` entry is taken from this example and written to `to` with its `replace` pairs applied, then `engine_dependencies` are added to the root package.json at the versions this example pins. Template-owned: scripts/verify/golden-check.mjs assembles and tests it in CI, and the Factory's golden-run replay developer reads the same file.",
+  "example": "neon-drift-arena",
+  "engine": "threejs",
+  "overlays": ["examples/wgf-golden-shared", "examples/neon-drift-arena/wgf-golden"],
+  "copy": [
+    {
+      "from": "src/game/simulation.ts",
+      "to": "src/game/simulation.ts"
+    },
+    {
+      "from": "src/game/arena-view.ts",
+      "to": "src/rendering/threejs/arena-view.ts",
+      "replace": [["from \"./simulation.js\"", "from \"../../game/simulation.js\""]]
+    },
+    {
+      "from": "src/input.ts",
+      "to": "src/input/steering.ts"
+    },
+    {
+      "from": "tests/unit/simulation.test.ts",
+      "to": "tests/unit/neon-drift-arena-simulation.test.ts"
+    }
+  ],
+  "engine_dependencies": ["three", "@types/three"]
+}

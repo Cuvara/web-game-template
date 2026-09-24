@@ -89,7 +89,8 @@ function portalSdkMatchers(): ((url: URL) => boolean)[] {
 }
 
 function readGameConfigPlatforms(): GameConfigPlatform[] {
-  const path = resolve(ROOT, process.env["WGF_GAME_CONFIG"] ?? "game.config.yaml");
+  // `||`, not `??`: an empty WGF_GAME_CONFIG means unset, as in scripts/_shared.mjs.
+  const path = resolve(ROOT, process.env["WGF_GAME_CONFIG"] || "game.config.yaml");
   const config = parse(readFileSync(path, "utf8")) as { platforms?: GameConfigPlatform[] };
   return config.platforms ?? [];
 }

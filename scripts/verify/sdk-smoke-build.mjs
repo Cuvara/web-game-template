@@ -15,11 +15,13 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse, stringify } from "yaml";
+import { testedEngines } from "../_shared.mjs";
 
 const root = resolve(import.meta.dirname, "..", "..");
 const out = resolve(root, "build", "sdk-smoke");
 
-export const ENGINES = ["pixijs", "threejs"];
+// Both engines in the template itself; the game's own engine in a game repository.
+export const ENGINES = testedEngines(root);
 export const PLATFORMS = [
   { id: "generic-web", profile: "generic-web@1.0.0", ad_kinds: [] },
   { id: "yandex", profile: "yandex@1.0.0", ad_kinds: ["interstitial", "rewarded"] },

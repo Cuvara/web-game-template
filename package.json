@@ -1,7 +1,7 @@
 {
   "name": "web-game-template",
   "version": "1.1.0",
-  "description": "Web Game Factory \u2014 reusable game template",
+  "description": "Web Game Factory — reusable game template",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -43,6 +43,7 @@
     "test:sdk:matrix": "playwright test -c playwright.sdk-matrix.config.ts",
     "sdk:prepare": "node scripts/sdk/prepare-integration.mjs",
     "sdk:check": "node scripts/sdk/check-integration.mjs",
+    "golden:check": "node scripts/verify/golden-check.mjs",
     "facts": "node scripts/verify/collect-facts.mjs",
     "assert": "node scripts/verify/evaluate-assertions.mjs",
     "audit:crazygames": "node scripts/crazygames-audit.mjs",
