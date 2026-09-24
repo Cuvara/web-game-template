@@ -332,6 +332,193 @@ describe("PokiPlatform", () => {
     });
   });
 
+  describe("when an ad starts only after the deadline", () => {
+    // Poki's onStart can arrive after the adapter's deadline already resolved the call and
+    // the game resumed. That ad is on screen with sound, so it is announced — and it must be
+    // closed again, or foreground stays false and bindPlatform keeps the game paused and muted.
+
+    function lateStartSdk(kind: "commercialBreak" | "rewardedBreak") {
+      const { sdk, calls } = fakeSdk();
+      const late: { start: () => void; settle: (value?: boolean) => void; fail: () => void } = {
+        start: () => {},
+        settle: () => {},
+        fail: () => {},
+      };
+      const deferred = (onStart?: () => void) =>
+        new Promise<boolean>((resolve, reject) => {
+          calls.push(kind);
+          late.start = () => onStart?.();
+          late.settle = (value = true) => resolve(value);
+          late.fail = () => reject(new Error("late"));
+        });
+      if (kind === "rewardedBreak") sdk.rewardedBreak = deferred;
+      else sdk.commercialBreak = deferred;
+      return { sdk, late };
+    }
+
+    function record(platform: PokiPlatform) {
+      const seen: string[] = [];
+      platform.on("foreground:lost", () => seen.push("lost"));
+      platform.on("ad:start", ({ kind }) => seen.push(`start ${kind}`));
+      platform.on("ad:end", ({ kind }) => seen.push(`end ${kind}`));
+      platform.on("foreground:gained", () => seen.push("gained"));
+      platform.on("ad:late-reward", ({ kind }) => seen.push(`late-reward ${kind}`));
+      return seen;
+    }
+
+    const flush = async () => {
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    };
+
+    it("pairs a late commercial-break start with ad:end once Poki's promise settles", async () => {
+      const timers = manualTimers();
+      const { sdk, late } = lateStartSdk("commercialBreak");
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+      const seen = record(platform);
+
+      const showing = platform.showInterstitial();
+      timers.fireAll(); // the deadline wins before the ad starts
+      await expect(showing).resolves.toEqual({ shown: false, reason: "not-ready" });
+
+      late.start();
+      expect(platform.foreground).toBe(false);
+      late.settle();
+      await flush();
+      expect(seen).toEqual(["lost", "start interstitial", "end interstitial", "gained"]);
+      expect(platform.foreground).toBe(true);
+    });
+
+    it("owes a late-started rewarded break's confirmed reward once, as ad:late-reward", async () => {
+      const timers = manualTimers();
+      const { sdk, late } = lateStartSdk("rewardedBreak");
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+      const seen = record(platform);
+
+      const showing = platform.showRewarded();
+      timers.fireAll();
+      await expect(showing).resolves.toEqual({
+        shown: false,
+        rewarded: false,
+        reason: "not-ready",
+      });
+
+      late.start();
+      late.start(); // a duplicate callback must not announce a second ad
+      late.settle(true);
+      await flush();
+      timers.fireAll(); // the cap, if still armed, must not end the ad a second time
+      expect(seen).toEqual([
+        "lost",
+        "start rewarded",
+        "late-reward rewarded",
+        "end rewarded",
+        "gained",
+      ]);
+      expect(platform.foreground).toBe(true);
+      expect(platform.usage.adsShown.rewarded).toBe(1);
+    });
+
+    it("never rewards a late-started rewarded break Poki reports as not completed", async () => {
+      for (const outcome of ["false", "reject"] as const) {
+        const timers = manualTimers();
+        const { sdk, late } = lateStartSdk("rewardedBreak");
+        const platform = platformWith(sdk, timers);
+        await platform.initialize();
+        await platform.signalReady();
+        const seen = record(platform);
+
+        const showing = platform.showRewarded();
+        timers.fireAll();
+        await showing;
+        late.start();
+        if (outcome === "false") late.settle(false);
+        else late.fail();
+        await flush();
+        expect(seen).toEqual(["lost", "start rewarded", "end rewarded", "gained"]);
+        expect(platform.foreground).toBe(true);
+        expect(platform.usage.adsShown.rewarded).toBe(0);
+      }
+    });
+
+    it("hands the foreground back after a cap when a late-started break never settles", async () => {
+      const timers = manualTimers();
+      const { sdk, late } = lateStartSdk("commercialBreak");
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+      const seen = record(platform);
+
+      const showing = platform.showInterstitial();
+      timers.fireAll();
+      await showing;
+      late.start();
+      expect(platform.foreground).toBe(false);
+
+      timers.fireAll(); // the late-ad cap
+      expect(seen).toEqual(["lost", "start interstitial", "end interstitial", "gained"]);
+      expect(platform.foreground).toBe(true);
+
+      // Poki's promise finally settling afterwards must not end the ad a second time.
+      late.settle();
+      await flush();
+      expect(seen).toHaveLength(4);
+    });
+
+    it("refuses another break as busy while a late-started ad is still on screen", async () => {
+      const timers = manualTimers();
+      const { sdk, late } = lateStartSdk("commercialBreak");
+      const platform = platformWith(sdk, timers);
+      await platform.initialize();
+      await platform.signalReady();
+
+      const showing = platform.showInterstitial();
+      timers.fireAll();
+      await showing;
+      late.start();
+      await expect(platform.showRewarded()).resolves.toEqual({
+        shown: false,
+        rewarded: false,
+        reason: "busy",
+      });
+
+      late.settle();
+      await flush();
+      sdk.rewardedBreak = fakeSdk().sdk.rewardedBreak;
+      await expect(platform.showRewarded()).resolves.toEqual({ shown: true, rewarded: true });
+    });
+  });
+
+  describe("deadline timers", () => {
+    it("clears the init and ad-break deadlines once the SDK answers in time", async () => {
+      const armed = new Set<number>();
+      let next = 0;
+      const { sdk } = fakeSdk();
+      const platform = new PokiPlatform({
+        namespace: "test",
+        storage: new MemoryStorageBackend(),
+        loadSdk: () => Promise.resolve(sdk),
+        setTimeout: () => {
+          armed.add(++next);
+          return next;
+        },
+        clearTimeout: (handle) => void armed.delete(handle as number),
+        onRejected: () => {},
+      });
+      await platform.initialize();
+      await platform.signalReady();
+      expect(armed.size).toBe(0);
+
+      await platform.showInterstitial();
+      await platform.showRewarded();
+      expect(next).toBe(3);
+      expect(armed.size).toBe(0);
+    });
+  });
+
   describe("with an ad blocker", () => {
     it("stays playable when the SDK script is blocked", async () => {
       const platform = platformWith(null);

@@ -512,6 +512,91 @@ describe("YandexPlatform ads", () => {
   });
 });
 
+describe("YandexPlatform ads that open and never close", () => {
+  // The portal pauses the game (game_api_pause) and opens the ad; if onClose/onError and
+  // game_api_resume are both lost, nothing used to hand the game back. The cap does.
+
+  async function openAndLose(kind: "interstitial" | "rewarded") {
+    const timers = new ManualTimers();
+    const fake = fakeSdk();
+    let callbacks: YandexRewardedCallbacks | undefined;
+    const script = (c: YandexRewardedCallbacks) => {
+      callbacks = c;
+      fake.fire("game_api_pause");
+      c.onOpen?.();
+    };
+    if (kind === "rewarded") fake.setRewarded(script);
+    else fake.setFullscreen(script);
+    const platform = platformWith(fake, timers);
+    await platform.initialize();
+    const seen: string[] = [];
+    platform.on("ad:start", () => seen.push("start"));
+    platform.on("ad:end", () => seen.push("end"));
+    platform.on("foreground:lost", () => seen.push("lost"));
+    platform.on("foreground:gained", () => seen.push("gained"));
+    platform.on("ad:late-reward", () => seen.push("late-reward"));
+    const result = kind === "rewarded" ? platform.showRewarded() : platform.showInterstitial();
+    return { timers, fake, platform, seen, result, callbacks: () => callbacks! };
+  }
+
+  it("resolves an open interstitial unshown after the cap and hands the game back", async () => {
+    const { timers, platform, seen, result, fake } = await openAndLose("interstitial");
+    timers.advance(60_000); // far past the open timeout, which an open ad no longer uses
+    expect(seen).toEqual(["lost", "start"]);
+    timers.advance(120_000);
+    await expect(result).resolves.toEqual({ shown: false, reason: "error" });
+    expect(seen).toEqual(["lost", "start", "end", "gained"]);
+    expect(platform.foreground).toBe(true);
+
+    // The slot is free again, and the portal's own resume arriving late changes nothing.
+    fake.fire("game_api_resume");
+    expect(seen).toHaveLength(4);
+    fake.setFullscreen((c) => {
+      c.onOpen?.();
+      c.onClose?.(true);
+    });
+    timers.advance(180_000); // past the local interval the capped ad counted toward
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
+  });
+
+  it("never rewards at the cap; a later onRewarded + onClose pays once as ad:late-reward", async () => {
+    const { timers, platform, seen, result, callbacks } = await openAndLose("rewarded");
+    timers.advance(180_000);
+    await expect(result).resolves.toEqual({ shown: false, rewarded: false, reason: "error" });
+    expect(platform.foreground).toBe(true);
+
+    callbacks().onRewarded?.();
+    callbacks().onClose?.(true);
+    callbacks().onClose?.(true);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    callbacks().onError?.(new Error("late"));
+    warn.mockRestore();
+    expect(seen).toEqual(["lost", "start", "end", "gained", "late-reward"]);
+  });
+
+  it("caps an ad that opened only after the open timeout", async () => {
+    const timers = new ManualTimers();
+    const fake = fakeSdk();
+    let late: YandexAdCallbacks | undefined;
+    fake.setFullscreen((c) => (late = c));
+    const platform = platformWith(fake, timers);
+    await platform.initialize();
+    const seen: string[] = [];
+    platform.on("ad:start", () => seen.push("start"));
+    platform.on("ad:end", () => seen.push("end"));
+
+    const result = platform.showInterstitial();
+    timers.advance(8_000);
+    await expect(result).resolves.toEqual({ shown: false, reason: "not-ready" });
+    fake.fire("game_api_pause");
+    late!.onOpen?.();
+    expect(platform.foreground).toBe(false);
+    timers.advance(180_000);
+    expect(seen).toEqual(["start", "end"]);
+    expect(platform.foreground).toBe(true);
+  });
+});
+
 describe("YandexStorage", () => {
   it("writes the whole data object with flush, coalescing inside the rate limit", async () => {
     const timers = new ManualTimers();
