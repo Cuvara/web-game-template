@@ -54,16 +54,16 @@ Playwright-drivable without reading pixels.
 
 `src/main.ts` installs a read-only/drive probe on `window.__game`:
 
-| Member | Purpose |
-| --- | --- |
-| `score`, `best`, `state`, `phase`, `playerX` | Current run state (getters; reading advances nothing). |
-| `play()` | Start a run from the menu. |
-| `tick(dt)` | Advance the simulation by `dt` ms (fixed-step; routes through the scene update). |
-| `steer(dir)` | Steer: `-1` left, `+1` right, `0` coast. |
-| `spawnObstacleAt(x, z, halfWidth?)` | Place an obstacle deterministically (no RNG) — used to script a collision or a near miss. |
-| `restart()` | Restart after game over (interstitial via the abstraction, then a fresh run). |
-| `revive()` | Offer the rewarded revive; resolves `true` only when the portal confirms a reward. |
-| `snapshot()` | A plain, cloneable view of the whole run. |
+| Member                                       | Purpose                                                                                   |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `score`, `best`, `state`, `phase`, `playerX` | Current run state (getters; reading advances nothing).                                    |
+| `play()`                                     | Start a run from the menu.                                                                |
+| `tick(dt)`                                   | Advance the simulation by `dt` ms (fixed-step; routes through the scene update).          |
+| `steer(dir)`                                 | Steer: `-1` left, `+1` right, `0` coast.                                                  |
+| `spawnObstacleAt(x, z, halfWidth?)`          | Place an obstacle deterministically (no RNG) — used to script a collision or a near miss. |
+| `restart()`                                  | Restart after game over (interstitial via the abstraction, then a fresh run).             |
+| `revive()`                                   | Offer the rewarded revive; resolves `true` only when the portal confirms a reward.        |
+| `snapshot()`                                 | A plain, cloneable view of the whole run.                                                 |
 
 ## Layout
 

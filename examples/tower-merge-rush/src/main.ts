@@ -209,11 +209,7 @@ async function main(): Promise<void> {
  * goes through the App (and thus the same rules and platform wiring the player hits), so the
  * hooks can never reach a state real play could not.
  */
-function installGameHooks(
-  app: App,
-  game: Game,
-  platform: ReturnType<typeof createPlatform>,
-): void {
+function installGameHooks(app: App, game: Game, platform: ReturnType<typeof createPlatform>): void {
   (window as unknown as { __game: unknown }).__game = {
     get state() {
       return app.merge.state;
