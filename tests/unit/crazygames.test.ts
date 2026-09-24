@@ -527,3 +527,126 @@ describe("CrazyGamesPlatform — settings, data, user", () => {
     await expect(embedded.platform.getUser()).resolves.toBeNull();
   });
 });
+
+describe("CrazyGamesPlatform — an init that does not answer", () => {
+  function stalledInit() {
+    const fake = fakeSdk();
+    let finishInit: () => void = () => {};
+    vi.mocked(fake.sdk.init).mockImplementation(() => {
+      fake.calls.push("init");
+      return new Promise<void>((resolve) => (finishInit = resolve));
+    });
+    const platform = new CrazyGamesPlatform({
+      namespace: "stalled",
+      loadSdk: () => Promise.resolve(fake.sdk),
+      initTimeoutMs: 20,
+      adStartTimeoutMs: 50,
+    });
+    return { ...fake, platform, finishInit: () => finishInit() };
+  }
+
+  it("boots without the SDK once the init deadline passes", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { platform, calls } = stalledInit();
+    await expect(platform.initialize()).resolves.toBeUndefined();
+    expect(platform.mode).toBe("unavailable");
+    expect(platform.adAvailability("rewarded")).toBe("disabled");
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
+    await platform.storage.set("k", "v");
+    await expect(platform.storage.get("k")).resolves.toBe("v");
+    expect(calls).toEqual(["init"]);
+    warn.mockRestore();
+  });
+
+  it("switches ads and gameplay reports on when init finishes late, keeping local saves", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { platform, calls, data, finishInit } = stalledInit();
+    await platform.initialize();
+    await platform.storage.set("progress", "3");
+    await platform.signalReady();
+    platform.gameplayStart();
+
+    finishInit();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(platform.mode).toBe("sdk");
+    expect(calls).toEqual(["init", "loadingStart", "loadingStop", "gameplayStart"]);
+    // Reads keep answering from where the game already loaded its save.
+    await expect(platform.storage.get("progress")).resolves.toBe("3");
+    expect(data.size).toBe(0);
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
+    warn.mockRestore();
+  });
+});
+
+describe("CrazyGamesPlatform — an ad that never reports its end", () => {
+  async function capped(kind: "interstitial" | "rewarded") {
+    const fake = fakeSdk({ ad: { kind: "never" } });
+    const platform = new CrazyGamesPlatform({
+      namespace: "capped",
+      loadSdk: () => Promise.resolve(fake.sdk),
+      adStartTimeoutMs: 20,
+      adMaxDurationMs: 40,
+    });
+    await platform.initialize();
+    const seen: string[] = [];
+    platform.on("foreground:lost", () => seen.push("lost"));
+    platform.on("ad:start", () => seen.push("start"));
+    platform.on("ad:end", () => seen.push("end"));
+    platform.on("foreground:gained", () => seen.push("gained"));
+    platform.on("ad:late-reward", () => seen.push("late-reward"));
+    const showing = kind === "rewarded" ? platform.showRewarded() : platform.showInterstitial();
+    fake.pendingAd()?.adStarted?.();
+    return { platform, seen, showing, pending: fake.pendingAd };
+  }
+
+  it("resolves a started interstitial unshown after the cap and hands the foreground back", async () => {
+    const { platform, seen, showing, pending } = await capped("interstitial");
+    // Well past the 20 ms start watchdog: once started, only the cap may end it.
+    await expect(showing).resolves.toEqual({ shown: false, reason: "error" });
+    expect(seen).toEqual(["lost", "start", "gained", "end"]);
+    expect(platform.foreground).toBe(true);
+
+    pending()?.adFinished?.();
+    pending()?.adError?.({ code: "other", message: "late" });
+    expect(seen).toHaveLength(4);
+    expect(platform.usage.adsShown.interstitial).toBe(0);
+  });
+
+  it("does not reward at the cap, and owes a later adFinished once as ad:late-reward", async () => {
+    const { platform, seen, showing, pending } = await capped("rewarded");
+    await expect(showing).resolves.toEqual({ shown: false, rewarded: false, reason: "error" });
+    expect(platform.foreground).toBe(true);
+
+    pending()?.adFinished?.();
+    pending()?.adFinished?.();
+    expect(seen).toEqual(["lost", "start", "gained", "end", "late-reward"]);
+    expect(platform.usage.adsShown.rewarded).toBe(1);
+  });
+
+  it("caps an ad that started after the watchdog and then never ended", async () => {
+    const fake = fakeSdk({ ad: { kind: "never" } });
+    const platform = new CrazyGamesPlatform({
+      namespace: "late-capped",
+      loadSdk: () => Promise.resolve(fake.sdk),
+      adStartTimeoutMs: 10,
+      adMaxDurationMs: 30,
+    });
+    await platform.initialize();
+    const seen: string[] = [];
+    platform.on("ad:start", () => seen.push("start"));
+    platform.on("ad:end", () => seen.push("end"));
+    await platform.showInterstitial();
+
+    fake.pendingAd()?.adStarted?.();
+    expect(platform.foreground).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(seen).toEqual(["start", "end"]);
+    expect(platform.foreground).toBe(true);
+    fake.pendingAd()?.adFinished?.();
+    expect(seen).toEqual(["start", "end"]);
+  });
+});

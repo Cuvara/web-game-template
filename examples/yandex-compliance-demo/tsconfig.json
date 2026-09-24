@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  // The demo boots through the template's own src/core, whose virtual modules are declared
+  // in src/types.
+  "include": ["src", "tests", "*.config.ts", "../../src/types"],
+  "references": [
+    { "path": "../../packages/game-core" },
+    { "path": "../../packages/platform-sdk" },
+    { "path": "../../packages/pixi-framework" }
+  ]
+}

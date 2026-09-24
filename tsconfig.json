@@ -5,17 +5,10 @@
     "rootDir": ".",
     "types": ["vite/client"]
   },
-  "include": [
-    "src",
-    "tests",
-    "scripts/build",
-    "examples/*/src",
-    "examples/*/tests",
-    "examples/*/*.config.ts",
-    "*.config.ts",
-    "vitest.workspace.ts"
-  ],
-  "exclude": ["node_modules", "dist", "examples/*/dist", "examples/wgf-golden-shared"],
+  // Template sources only. Each example is type-checked against its own tsconfig.json by
+  // scripts/typecheck-examples.mjs, so a checkout without examples/ still type-checks.
+  "include": ["src", "tests", "scripts/build", "*.config.ts", "vitest.workspace.ts"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "./packages/game-core" },
     { "path": "./packages/platform-sdk" },

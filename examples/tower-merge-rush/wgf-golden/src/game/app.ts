@@ -5,8 +5,9 @@
 //
 //   - every platform call goes through the GameIntegration seam (src/game/integration.ts):
 //     gameplayStart/Stop, rewarded, interstitial, save/load. The example called
-//     platform.showRewarded / withAdBreak directly; the seam's default implementation now
-//     does that, and the Factory's `sdk` step rewires it without this file changing.
+//     platform.showRewarded / withAdBreak directly; the template's PlatformGameIntegration
+//     (handed in as GameContext.integration) now does that, at the moments the Factory's
+//     integration plan assigns each placement id.
 //   - the scene publishes its id and a step counter to #hud (the template's probe contract);
 //   - the personal best is persisted through the seam, and audio cues are triggered.
 //

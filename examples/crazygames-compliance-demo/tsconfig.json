@@ -2,10 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "rootDir": ".",
     "types": ["vite/client"]
   },
-  "include": ["src", "vite.config.ts"],
+  // tests/ is here, not in the root tsconfig: the e2e spec shares the template's
+  // tests/crazygames fixtures, which is why there is no rootDir.
+  "include": ["src", "tests", "vite.config.ts"],
   "references": [
     { "path": "../../packages/game-core" },
     { "path": "../../packages/platform-sdk" },
