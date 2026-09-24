@@ -39,6 +39,7 @@ interface MockConfig {
   readyDelayMs?: number;
   lateMs?: number;
   adMs?: number;
+  cooldownMs?: number;
 }
 
 async function boot(page: Page, query: string, mock: MockConfig | "block" = {}): Promise<Boot> {
@@ -173,12 +174,37 @@ for (const engine of ENGINES) {
 test.describe("gamemonetize ad errors and callbacks (pixijs)", () => {
   const Q = `engine=pixijs&gameId=${GAME_ID}`;
 
-  test("ad error: resolves unshown and the game resumes unmuted", async ({ page }) => {
-    await boot(page, Q, { ad: "error" });
-    expect(await gm(page, "interstitial")).toEqual({ shown: false, reason: "error" });
+  // The live SDK cancels a failed ad and raises SDK_GAME_START, with or without a pause.
+  test("ad error before it showed: unshown, the game resumes unmuted", async ({ page }) => {
+    await boot(page, Q, { ad: "ad-error" });
+    expect(await gm(page, "interstitial")).toEqual({ shown: false, reason: "not-ready" });
     expect(await events(page)).toEqual([]);
     expect(await state(page)).toMatchObject({ paused: false, audioMuted: false });
     expect(await advances(page)).toBe(true);
+  });
+
+  test("ad error while on screen: the ad bracket closes, the game resumes", async ({ page }) => {
+    await boot(page, Q, { ad: "ad-error-after-start" });
+    expect(await gm(page, "interstitial")).toEqual({ shown: true });
+    expect(await events(page)).toEqual(AD_PAIR);
+    expect(await state(page)).toMatchObject({ paused: false, audioMuted: false });
+  });
+
+  test("SDK_ERROR during a request: resolves as error, nothing held", async ({ page }) => {
+    await boot(page, Q, { ad: "sdk-error" });
+    expect(await gm(page, "interstitial")).toEqual({ shown: false, reason: "error" });
+    await page.waitForTimeout(200);
+    expect(await events(page)).toEqual([]);
+    expect(await state(page)).toMatchObject({ paused: false, audioMuted: false });
+  });
+
+  test("premature call the SDK refuses (cooldown): unshown, game resumes", async ({ page }) => {
+    await boot(page, Q, { cooldownMs: 30_000 });
+    expect(await gm(page, "interstitial")).toEqual({ shown: true });
+    expect(await gm(page, "interstitial")).toEqual({ shown: false, reason: "not-ready" });
+    expect(await mockCalls(page)).toContain("too-soon");
+    expect(await events(page)).toEqual(AD_PAIR);
+    expect(await state(page)).toMatchObject({ paused: false, audioMuted: false });
   });
 
   test("ad unavailable (SDK_GAME_START without a pause): unshown, nothing muted", async ({

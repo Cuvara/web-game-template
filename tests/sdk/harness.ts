@@ -450,7 +450,8 @@ const GAMEMONETIZE_AD: Record<AdScript, GmAdScript> = {
   play: "play",
   "no-fill": "no-fill",
   "closed-early": "play",
-  error: "error",
+  // How the live SDK reports a failed ad: cancelled, SDK_GAME_START without a pause.
+  error: "ad-error",
   "stall-open": "stall",
 };
 

@@ -91,6 +91,13 @@ export function buildIntegration(
     // GameMonetize's SDK needs the title's Game ID; without one no ad can play and the
     // portal's "Verify Game" fails. The id itself is never written to the artifacts.
     if (entry.id === "gamemonetize") {
+      // "Now you must call sdk.showBanner() at the appropriate time in your game to show
+      // ads" — GameMonetize's integration step 2. A title with no interstitial never does.
+      if (!adKinds.includes("interstitial")) {
+        problems.push(
+          'gamemonetize: the title declares no "interstitial" ads; GameMonetize requires sdk.showBanner() calls',
+        );
+      }
       const why = sdk.gameMonetizeGameIdProblem(gameMonetizeGameId || entry.game_id);
       if (why) {
         problems.push(

@@ -29,6 +29,19 @@ whatever was here at the ref its tech plan pinned.
   and an opt-in live SDK-load probe (PASS; ads, Verify Game and activation BLOCKED).
 - `docs/platforms/gamemonetize.md`.
 
+### Fixed — GameMonetize audit against the live SDK (2026-09-24)
+
+- The ad-start deadline is 25 s, past the SDK's own 12 s + 8 s cancel; at 10 s a slow but
+  real ad was treated as late.
+- The script loader refuses at once, and leaves the other `SDK_OPTIONS` alone, when other code
+  has already loaded the SDK (one instance that reads its options once); it used to overwrite
+  them and wait out the 5 s init deadline for events that could not arrive.
+- `pnpm sdk:prepare` fails a GameMonetize title that declares no interstitial:
+  `sdk.showBanner()` calls are mandatory.
+- The mock reports ad failures the way the live SDK does (`SDK_GAME_START`, no `SDK_ERROR`)
+  and models its cooldown on premature calls; `SDK_ERROR` during an ad stays covered as a
+  defensive case.
+
 ### Changed
 
 - Conformance and contract harnesses state whether a portal's SDK takes gameplay/loading

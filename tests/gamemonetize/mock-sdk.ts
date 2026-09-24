@@ -32,9 +32,15 @@ export type GmAdScript =
   | "play" // SDK_GAME_PAUSE, then SDK_GAME_START
   | "async-play" // the same, each in a later microtask
   | "no-fill" // SDK_GAME_START without a pause: nothing to show
-  | "error" // SDK_ERROR, then SDK_GAME_START (the real SDK's "no worries, resume")
-  | "error-after-start" // SDK_GAME_PAUSE, SDK_ERROR, SDK_GAME_START
-  | "silent" // no answer at all: a premature call the SDK rejected quietly
+  // How the live sdk.js reports a failed ad: it cancels the request (AD_CANCELED, "no
+  // worries, start / resume the game") and raises SDK_GAME_START, with or without a pause.
+  | "ad-error" // SDK_GAME_START without a pause: failed before it showed
+  | "ad-error-after-start" // SDK_GAME_PAUSE, then SDK_GAME_START: failed while on screen
+  // SDK_ERROR during an ad: the documentation allows it, the live SDK raises it only when
+  // its start-up fails. Kept so the adapter's defensive handling is covered.
+  | "sdk-error" // SDK_ERROR, then SDK_GAME_START
+  | "sdk-error-after-start" // SDK_GAME_PAUSE, SDK_ERROR, SDK_GAME_START
+  | "silent" // no answer at all (the SDK's pre-request fetch blocked)
   | "stall" // SDK_GAME_PAUSE and nothing after: SDK_GAME_START is lost
   | "duplicate" // SDK_GAME_PAUSE twice, SDK_GAME_START twice
   | "late" // SDK_GAME_PAUSE after `lateMs`, SDK_GAME_START `adMs` later
@@ -44,6 +50,9 @@ export interface MockTimers {
   setTimeout(handler: () => void, ms: number): unknown;
 }
 
+// The live SDK refuses a showBanner() "requested too soon after the previous advertisement
+// was finished" — 30s off GameMonetize's own domains — answering SDK_GAME_START alone.
+
 export interface GameMonetizeMockOptions {
   readonly sdk?: GmSdkMode;
   readonly ad?: GmAdScript;
@@ -51,6 +60,12 @@ export interface GameMonetizeMockOptions {
   readonly readyDelayMs?: number;
   readonly lateMs?: number;
   readonly adMs?: number;
+  /**
+   * Refuse a showBanner() within this long of the previous ad ending, as the live SDK does.
+   * Needs `now`. Off by default, so scenarios stay independent.
+   */
+  readonly cooldownMs?: number;
+  readonly now?: () => number;
 }
 
 export interface GameMonetizeMock {
@@ -71,14 +86,30 @@ export function createGameMonetizeMock(options: GameMonetizeMockOptions): GameMo
   let received: GameMonetizeSdkOptions | null = null;
   const emit = (name: string): void => received?.onEvent({ name });
   const later = (ms: number, run: () => void): void => void options.timers.setTimeout(run, ms);
+  let lastAdEnded: number | null = null;
+  const endAd = (): void => {
+    lastAdEnded = options.now?.() ?? null;
+    emit("SDK_GAME_START");
+  };
 
   const sdk: GameMonetizeSdk = {
     showBanner() {
       calls.push("showBanner");
+      const now = options.now?.();
+      if (
+        options.cooldownMs !== undefined &&
+        now !== undefined &&
+        lastAdEnded !== null &&
+        now - lastAdEnded < options.cooldownMs
+      ) {
+        calls.push("too-soon");
+        emit("SDK_GAME_START");
+        return;
+      }
       switch (ad) {
         case "play":
           emit("SDK_GAME_PAUSE");
-          emit("SDK_GAME_START");
+          endAd();
           return;
         case "async-play":
           queueMicrotask(() => {
@@ -89,14 +120,21 @@ export function createGameMonetizeMock(options: GameMonetizeMockOptions): GameMo
         case "no-fill":
           emit("SDK_GAME_START");
           return;
-        case "error":
+        case "ad-error":
+          emit("SDK_GAME_START");
+          return;
+        case "ad-error-after-start":
+          emit("SDK_GAME_PAUSE");
+          endAd();
+          return;
+        case "sdk-error":
           emit("SDK_ERROR");
           emit("SDK_GAME_START");
           return;
-        case "error-after-start":
+        case "sdk-error-after-start":
           emit("SDK_GAME_PAUSE");
           emit("SDK_ERROR");
-          emit("SDK_GAME_START");
+          endAd();
           return;
         case "silent":
           return;
@@ -143,7 +181,7 @@ export function createGameMonetizeMock(options: GameMonetizeMockOptions): GameMo
 
 /**
  * The browser form. Configure before the page loads with
- * `window.__gmMock = { sdk, ad, readyDelayMs, lateMs, adMs }` (same vocabulary as above,
+ * `window.__gmMock = { sdk, ad, readyDelayMs, lateMs, adMs, cooldownMs }` (same vocabulary as above,
  * "loader-throws" excepted — block the route for "missing"). Records to window.__gmCalls
  * and window.__gmEvents; window.__gmEmit(name) raises any event by hand.
  */
@@ -163,14 +201,29 @@ export const MOCK_SDK_SOURCE = String.raw`
   };
   window.__gmEmit = emit;
   window.__gmSetAd = (ad) => (config.ad = ad);
+  let lastAdEnded = null;
+  const endAd = () => {
+    lastAdEnded = performance.now();
+    emit("SDK_GAME_START");
+  };
   window.sdk = {
     showBanner() {
       calls.push("showBanner");
       const ad = config.ad;
       if (ad === "throw") throw new Error("showBanner failed (mock)");
+      if (
+        config.cooldownMs !== undefined &&
+        lastAdEnded !== null &&
+        performance.now() - lastAdEnded < config.cooldownMs
+      ) {
+        calls.push("too-soon");
+        return setTimeout(() => emit("SDK_GAME_START"), 0);
+      }
       if (ad === "silent") return;
-      if (ad === "no-fill") return setTimeout(() => emit("SDK_GAME_START"), 50);
-      if (ad === "error") {
+      if (ad === "no-fill" || ad === "ad-error") {
+        return setTimeout(() => emit("SDK_GAME_START"), 50);
+      }
+      if (ad === "sdk-error") {
         return setTimeout(() => {
           emit("SDK_ERROR");
           emit("SDK_GAME_START");
@@ -180,12 +233,12 @@ export const MOCK_SDK_SOURCE = String.raw`
       setTimeout(() => {
         emit("SDK_GAME_PAUSE");
         if (ad === "duplicate") emit("SDK_GAME_PAUSE");
-        if (ad === "error-after-start") emit("SDK_ERROR");
+        if (ad === "sdk-error-after-start") emit("SDK_ERROR");
         if (ad === "stall") return;
         setTimeout(() => {
-          emit("SDK_GAME_START");
+          endAd();
           if (ad === "duplicate") emit("SDK_GAME_START");
-        }, config.adMs);
+        }, ad === "ad-error-after-start" ? 50 : config.adMs);
       }, start);
     },
   };

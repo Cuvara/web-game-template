@@ -26,6 +26,12 @@
 // despite its name, the portal's full-screen (video) advertisement — the SDK pauses the game
 // around it — so it is the adapter's interstitial. There is no banner in the game's control.
 //
+// How the live SDK behaves where the documentation is silent (sdk.js read 2026-09-24, only
+// to size timeouts and choose test scenarios — no call here comes from it): a failed or
+// cancelled ad, and a call "requested too soon after the previous advertisement", raise
+// SDK_GAME_START with no SDK_GAME_PAUSE; SDK_ERROR is raised only when start-up fails; an
+// ad request is cancelled by the SDK after 12s (+8s once loaded).
+//
 // What the adapter guarantees, whatever the SDK does:
 //
 //   - one ad request at a time; a second one while an ad is pending or on screen is "busy".
@@ -144,15 +150,14 @@ export function loadGameMonetizeSdk(
   url: string = GAMEMONETIZE_SDK_URL,
 ): Promise<GameMonetizeSdk | null> {
   if (typeof document === "undefined") return Promise.resolve(null);
-  (window as unknown as GameMonetizeWindow).SDK_OPTIONS = options;
-  const loaded = sdkGlobal();
-  if (loaded) return Promise.resolve(loaded);
-  if (document.getElementById(GAMEMONETIZE_SCRIPT_ID)) {
-    // Someone else inserted the documented snippet (e.g. by hand in index.html). It read its
-    // own SDK_OPTIONS, not these, so its events would never reach this adapter. Refuse it
-    // rather than half-work: the build must let the adapter own the SDK.
+  if (sdkGlobal() || document.getElementById(GAMEMONETIZE_SCRIPT_ID)) {
+    // Someone else loaded the SDK — the documented snippet pasted into index.html, say. The
+    // SDK is a single instance that read its SDK_OPTIONS once, when it ran, so this adapter's
+    // onEvent can never be wired to it. Refuse at once rather than wait out the init deadline
+    // for events that cannot come, and leave the other SDK_OPTIONS untouched.
     return Promise.resolve(null);
   }
+  (window as unknown as GameMonetizeWindow).SDK_OPTIONS = options;
   return new Promise((resolve) => {
     const script = document.createElement("script");
     script.id = GAMEMONETIZE_SCRIPT_ID;
@@ -224,10 +229,13 @@ export type GameMonetizeSdkState = "not-configured" | "loading" | "ready" | "err
 
 // The game's own loading runs after this; players leave slow loads.
 const DEFAULT_INIT_TIMEOUT_MS = 5_000;
-// Enough for the SDK's ad auction on a slow connection. An ad that opens later is still
-// handled: it arrives as an ad the portal started by itself.
-const DEFAULT_AD_START_TIMEOUT_MS = 10_000;
-// GameMonetize's own ad overlay counts down from 31 seconds. 60s is past any real ad.
+// Past the SDK's own safety net, so its answer normally arrives first: the live sdk.js
+// (inspected 2026-09-24) cancels an ad request that has not loaded within 12s, and one that
+// loaded but has not started within 8s more, and cancelling raises SDK_GAME_START. The
+// deadline only fires when the SDK says nothing at all — e.g. its own pre-request fetch was
+// blocked. An ad that opens later still is handled as an ad the portal started by itself.
+const DEFAULT_AD_START_TIMEOUT_MS = 25_000;
+// GameMonetize's fallback ad overlay closes itself at 31 seconds. 60s is past any real ad.
 const DEFAULT_AD_TIMEOUT_MS = 60_000;
 
 const defaultTimers: Timers = {
@@ -380,8 +388,11 @@ export class GameMonetizePlatform implements Platform {
           this.#state = "error";
           this.#markReady?.();
         }
-        // An error before the ad started ends the request. After it started, the ad is on
-        // screen: wait for SDK_GAME_START (or the deadline) to hand the foreground back.
+        // The live SDK raises SDK_ERROR only when its own start-up fails; a failed ad ends
+        // with SDK_GAME_START instead. The documentation does not restrict it, though, so an
+        // SDK_ERROR during a request is handled: before the ad started it ends the request;
+        // after, the ad is on screen, so SDK_GAME_START (or the deadline) hands back the
+        // foreground.
         if (this.#pending && !this.#pending.started)
           this.#finish({ shown: false, reason: "error" });
         return;

@@ -297,6 +297,85 @@ describe("GameMonetize SDK boot", () => {
     expect(platform.sdkState).toBe("unavailable");
   });
 
+  describe("the default script loader", () => {
+    interface FakeScript {
+      id?: string;
+      src?: string;
+      async?: boolean;
+      onload?: () => void;
+      onerror?: () => void;
+    }
+    function fakeDom(existing: { script?: boolean; sdk?: boolean } = {}) {
+      const inserted: FakeScript[] = [];
+      const win: Record<string, unknown> = {};
+      if (existing.sdk) win["sdk"] = { showBanner: () => undefined };
+      Object.assign(globalThis, {
+        window: win,
+        document: {
+          getElementById: (id: string) =>
+            existing.script && id === "gamemonetize-sdk" ? { id } : null,
+          createElement: () => ({}) as FakeScript,
+          getElementsByTagName: () => [],
+          head: { appendChild: (script: FakeScript) => inserted.push(script) },
+        },
+      });
+      return { inserted, win };
+    }
+    const platformWithDefaultLoader = (timers: ManualTimers) =>
+      new GameMonetizePlatform({
+        namespace: "t",
+        gameId: GAME_ID,
+        timers,
+        storage: new MemoryStorageBackend(),
+      });
+
+    it("sets SDK_OPTIONS before inserting the documented script once, then follows its events", async () => {
+      const { inserted, win } = fakeDom();
+      const timers = new ManualTimers();
+      const platform = platformWithDefaultLoader(timers);
+      const init = platform.initialize();
+      expect(inserted).toHaveLength(1);
+      expect(inserted[0]).toMatchObject({
+        id: "gamemonetize-sdk",
+        src: "https://api.gamemonetize.com/sdk.js",
+      });
+      const options = win["SDK_OPTIONS"] as { gameId: string; onEvent(e: { name: string }): void };
+      expect(options.gameId).toBe(GAME_ID);
+      // The SDK runs: it defines window.sdk, loads, and reports ready through onEvent.
+      win["sdk"] = { showBanner: () => options.onEvent({ name: "SDK_GAME_START" }) };
+      inserted[0]!.onload!();
+      options.onEvent({ name: "SDK_READY" });
+      await init;
+      expect(platform.sdkState).toBe("ready");
+      await expect(platform.showInterstitial()).resolves.toEqual({
+        shown: false,
+        reason: "not-ready",
+      });
+    });
+
+    it("a blocked script leaves the SDK unavailable at once", async () => {
+      const { inserted } = fakeDom();
+      const platform = platformWithDefaultLoader(new ManualTimers());
+      const init = platform.initialize();
+      inserted[0]!.onerror!();
+      await init;
+      expect(platform.sdkState).toBe("unavailable");
+    });
+
+    it.each([
+      ["a script tag someone else inserted", { script: true }],
+      ["an SDK already running", { sdk: true }],
+    ])("refuses %s without waiting or touching its SDK_OPTIONS", async (_, existing) => {
+      const { inserted, win } = fakeDom(existing);
+      win["SDK_OPTIONS"] = { gameId: "theirs" };
+      const platform = platformWithDefaultLoader(new ManualTimers());
+      await platform.initialize(); // resolves without the init deadline firing
+      expect(platform.sdkState).toBe("unavailable");
+      expect(inserted).toEqual([]);
+      expect(win["SDK_OPTIONS"]).toEqual({ gameId: "theirs" });
+    });
+  });
+
   it("ignores events GameMonetize does not document", async () => {
     const { platform, mock, events } = await booted();
     mock.emit("SDK_GAME_DATA_READY");
@@ -343,17 +422,60 @@ describe("GameMonetize interstitial", () => {
     expect(platform.usage.adsShown.interstitial).toBe(0);
   });
 
-  it("ad error before it starts resolves as error, and the trailing SDK_GAME_START is ignored", async () => {
-    const { platform, events } = await booted({ ad: "error" });
-    await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "error" });
+  // The live SDK reports a failed ad by cancelling it, which raises SDK_GAME_START.
+  it("ad error before it showed (SDK_GAME_START alone): unshown, nothing held", async () => {
+    const { platform, events } = await booted({ ad: "ad-error" });
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
     expect(events).toEqual([]);
     expect(platform.foreground).toBe(true);
   });
 
-  it("ad error after it started: the bracket still closes on SDK_GAME_START", async () => {
-    const { platform, events } = await booted({ ad: "error-after-start" });
+  it("ad error while on screen: the bracket closes on SDK_GAME_START", async () => {
+    const { platform, events } = await booted({ ad: "ad-error-after-start" });
     await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
     expect(events).toEqual(AD_PAIR);
+  });
+
+  it("SDK_ERROR during a request (allowed by the docs) ends it as error; the trailing SDK_GAME_START is ignored", async () => {
+    const { platform, events } = await booted({ ad: "sdk-error" });
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "error" });
+    expect(events).toEqual([]);
+    expect(platform.foreground).toBe(true);
+    expect(platform.sdkState).toBe("ready");
+  });
+
+  it("SDK_ERROR while an ad is on screen: the bracket still closes on SDK_GAME_START", async () => {
+    const { platform, events } = await booted({ ad: "sdk-error-after-start" });
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
+    expect(events).toEqual(AD_PAIR);
+  });
+
+  it("a call the SDK refuses as too soon after the last ad resolves unshown; later ones play", async () => {
+    const timers = new ManualTimers();
+    const mock = createGameMonetizeMock({ timers, cooldownMs: 30_000, now: () => timers.now });
+    const platform = new GameMonetizePlatform({
+      namespace: "gm-test",
+      gameId: GAME_ID,
+      loadSdk: mock.loadSdk,
+      timers,
+      storage: new MemoryStorageBackend(),
+    });
+    const events: string[] = [];
+    platform.on("ad:start", () => events.push("ad:start"));
+    await platform.initialize();
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
+    expect(mock.calls).toContain("too-soon");
+    expect(events).toEqual(["ad:start"]);
+    timers.advance(30_000);
+    await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
+    expect(events).toEqual(["ad:start", "ad:start"]);
   });
 
   it("showBanner throwing resolves as error, and the next request still works", async () => {
@@ -367,7 +489,13 @@ describe("GameMonetize interstitial", () => {
     const { platform, mock, timers, events } = await booted({ ad: "silent" });
     const first = platform.showInterstitial();
     await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "busy" });
-    timers.advance(10_000);
+    // The default outlasts the SDK's own 12s + 8s cancel, so its answer normally comes first.
+    let settled = false;
+    void first.then(() => (settled = true));
+    timers.advance(24_999);
+    await flush();
+    expect(settled).toBe(false);
+    timers.advance(1);
     await expect(first).resolves.toEqual({ shown: false, reason: "not-ready" });
     expect(events).toEqual([]);
     expect(timers.pending).toBe(0);
@@ -402,9 +530,9 @@ describe("GameMonetize interstitial", () => {
   });
 
   it("callback arrives late: the request gave up, the late ad holds the screen until it ends", async () => {
-    const { platform, timers, events } = await booted({ ad: "late", lateMs: 15_000, adMs: 1_000 });
+    const { platform, timers, events } = await booted({ ad: "late", lateMs: 30_000, adMs: 1_000 });
     const request = platform.showInterstitial();
-    timers.advance(10_000);
+    timers.advance(25_000);
     await expect(request).resolves.toEqual({ shown: false, reason: "not-ready" });
     timers.advance(5_000);
     // The ad opened after all: the portal holds the screen, and no second ad may start.
@@ -414,6 +542,16 @@ describe("GameMonetize interstitial", () => {
     timers.advance(1_000);
     expect(platform.foreground).toBe(true);
     expect(events).toEqual(["foreground:lost", "foreground:gained"]);
+  });
+
+  it("a slow ad inside the SDK's own 20s window still belongs to the request", async () => {
+    const { platform, timers, events } = await booted({ ad: "late", lateMs: 19_000, adMs: 5_000 });
+    const request = platform.showInterstitial();
+    timers.advance(19_000);
+    expect(platform.foreground).toBe(false);
+    timers.advance(5_000);
+    await expect(request).resolves.toEqual({ shown: true });
+    expect(events).toEqual(AD_PAIR);
   });
 
   it("a second request while one is on screen is busy; repeated requests after it each run", async () => {
@@ -525,7 +663,7 @@ describe("GameMonetize pause and resume", () => {
     binding.dispose();
   });
 
-  it.each(["error", "no-fill", "throw"] as const)(
+  it.each(["ad-error", "sdk-error", "no-fill", "throw"] as const)(
     "resume after a failed ad (%s): gameplay restored, nothing muted",
     async (ad) => {
       const { platform } = await booted({ ad });

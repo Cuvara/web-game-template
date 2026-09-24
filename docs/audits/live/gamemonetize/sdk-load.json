@@ -10,8 +10,8 @@
   "gameIdSource": "placeholder",
   "eventsObserved": ["SDK_READY"],
   "initOutcome": "SDK_READY",
-  "at": "2026-09-24T07:40:07.153Z",
-  "buildSha": "1f5dee2",
+  "at": "2026-09-24T09:02:07.224Z",
+  "buildSha": "5981eef",
   "sdkLoadStatus": "PASS",
   "blocked": {
     "ads": "showBanner fill and SDK_GAME_PAUSE/SDK_GAME_START around a real ad need a real Game ID and GameMonetize's ad server; not requested here",

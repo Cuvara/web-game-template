@@ -85,6 +85,18 @@ describe("prepare-integration", () => {
     expect(fromConfig.problems.filter((p: string) => p.includes("game_id"))).toEqual([]);
     const fromEnv = buildIntegration(withId({}), sdk, { now, gameMonetizeGameId: placeholderId });
     expect(fromEnv.problems.filter((p: string) => p.includes("game_id"))).toEqual([]);
+    // GameMonetize's integration requires showBanner() calls: no interstitial is a problem.
+    const noAds = buildIntegration(
+      {
+        ...config(["gamemonetize"], []),
+        platforms: [{ ...withId({}).platforms[0], game_id: placeholderId }],
+      },
+      sdk,
+      { now },
+    );
+    expect(noAds.problems).toEqual([
+      'gamemonetize: the title declares no "interstitial" ads; GameMonetize requires sdk.showBanner() calls',
+    ]);
     // The id is configuration, not an artifact: neither file repeats it.
     expect(JSON.stringify([fromEnv.integration, fromEnv.report])).not.toContain(placeholderId);
   });
