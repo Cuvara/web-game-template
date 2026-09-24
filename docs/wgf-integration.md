@@ -112,6 +112,7 @@ fails CI.
 | Yandex | `adapters/yandex.ts` | Full: loading, interstitial, rewarded (exactly-once + `ad:late-reward`), pause/resume, cloud storage, locale |
 | CrazyGames | `adapters/crazygames/` | Full: ads with late-reward, local cooldown optimization, storage + fallback migration |
 | Poki | `adapters/poki.ts` | Full: breaks with a timeout so the game cannot deadlock; mute/pause via `withAdBreak` |
+| GameDistribution | `adapters/gamedistribution/` | Interstitial + rewarded (`SDK_REWARDED_WATCH_COMPLETE` only, exactly once, `ad:late-reward`), `SDK_GAME_PAUSE`/`START` as foreground, ad deadlines so the game cannot deadlock; requires `platforms[].game_id`; self-hosted wrapper packaging. See [platforms/gamedistribution.md](platforms/gamedistribution.md) |
 | GameVui | *(none — by design)* | No public SDK exists; a GameVui build uses the `generic-web` adapter (local storage, no ads). `createPlatform("gamevui")` throws — the build never selects it |
 
 ## What crosses the boundary out

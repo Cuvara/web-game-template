@@ -8,7 +8,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const ENGINES = ["pixijs", "threejs"] as const;
-const PORTALS = ["yandex", "crazygames", "poki", "gamevui"] as const;
+const PORTALS = ["yandex", "crazygames", "poki", "gamevui", "gamedistribution"] as const;
+// Portals whose SDK takes loading-finished and gameplay calls. GameDistribution's has none.
+const FORWARDS_LIFECYCLE = new Set<string>(["yandex", "crazygames", "poki"]);
 
 interface MatrixState {
   paused: boolean;
@@ -66,19 +68,22 @@ for (const engine of ENGINES) {
       }) => {
         const errors = await boot(page, `engine=${engine}&portal=${portal}`);
         const hasSdk = portal !== "gamevui";
+        const forwards = FORWARDS_LIFECYCLE.has(portal);
 
         await expect(page.locator("#hud")).toHaveAttribute("data-engine", engine);
         await expect(page.locator("#game canvas")).toBeVisible();
         await expect.poll(() => steps(page), { timeout: 5_000 }).toBeGreaterThan(0);
 
         // Loading reported, gameplay not yet: it waits for the player.
-        expect(await calls(page)).toEqual(hasSdk ? expect.arrayContaining(["init", "ready"]) : []);
+        expect(await calls(page)).toEqual(
+          forwards ? expect.arrayContaining(["init", "ready"]) : hasSdk ? ["init"] : [],
+        );
         expect(await calls(page)).not.toContain("gameplayStart");
 
         await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });
         await expect.poll(async () => (await state(page)).gameplayActive).toBe(true);
         expect((await calls(page)).filter((c) => c === "gameplayStart")).toHaveLength(
-          hasSdk ? 1 : 0,
+          forwards ? 1 : 0,
         );
 
         const interstitial = await run<{ shown: boolean }>(page, "interstitial");
@@ -154,3 +159,43 @@ test("crazygames: the portal's muteAudio setting wins", async ({ page }) => {
   await run(page, "setPortalMute", false);
   await expect(page.locator("#hud")).toHaveAttribute("data-audio-muted", "false");
 });
+
+// GameDistribution: SDK_GAME_PAUSE / SDK_GAME_START are the portal's only pause signal, and
+// they also arrive outside the game's own ads (the pre-roll splash). "Invoke a method to pause
+// AND mute your game within the SDK_GAME_PAUSE event."
+for (const engine of ENGINES) {
+  test(`${engine} × gamedistribution: SDK_GAME_PAUSE holds the game and its sound until SDK_GAME_START`, async ({
+    page,
+  }) => {
+    const errors = await boot(page, `engine=${engine}&portal=gamedistribution`);
+    await run(page, "sdkEvent", "SDK_GAME_PAUSE");
+    await run(page, "sdkEvent", "SDK_GAME_PAUSE");
+    expect(await state(page)).toMatchObject({ paused: true, audioMuted: true, foreground: false });
+    const frozen = await steps(page);
+    await page.waitForTimeout(300);
+    expect(await steps(page)).toBe(frozen);
+    await run(page, "sdkEvent", "SDK_GAME_START");
+    await run(page, "sdkEvent", "SDK_GAME_START");
+    expect(await state(page)).toMatchObject({ paused: false, audioMuted: false, foreground: true });
+    await expect.poll(() => steps(page)).toBeGreaterThan(frozen);
+    expect(errors).toEqual([]);
+  });
+
+  test(`${engine} × gamedistribution: duplicate events and a stray reward grant once, and the game plays on`, async ({
+    page,
+  }) => {
+    const errors = await boot(page, `engine=${engine}&portal=gamedistribution`);
+    await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });
+    await run(page, "setAd", "duplicate");
+    expect(await run(page, "rewarded")).toEqual({ shown: true, rewarded: true });
+    await run(page, "setAd", "reward-after-end");
+    expect(await run(page, "rewarded")).toEqual({ shown: true, rewarded: false });
+    await page.waitForTimeout(100);
+    expect(await run(page, "lateRewards")).toEqual([]);
+    await run(page, "setAd", "too-soon");
+    expect(await run(page, "interstitial")).toEqual({ shown: false, reason: "too-soon" });
+    const after = await state(page);
+    expect(after).toMatchObject({ paused: false, gameplayActive: true, foreground: true });
+    expect(errors).toEqual([]);
+  });
+}

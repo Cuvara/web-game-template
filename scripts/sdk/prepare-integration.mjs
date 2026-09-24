@@ -35,6 +35,7 @@ function sdkSources(sdk) {
     yandex: { source: sdk.YANDEX_SDK_URL, loaded: "runtime" },
     poki: { source: sdk.POKI_SDK_URL, loaded: "runtime" },
     crazygames: { source: sdk.CRAZYGAMES_SDK_URL, loaded: "html-head" },
+    gamedistribution: { source: sdk.GAMEDISTRIBUTION_SDK_URL, loaded: "runtime" },
   };
 }
 
@@ -81,7 +82,10 @@ export function buildIntegration(
   const problems = [];
 
   const platforms = gameConfig.platforms.map((entry) => {
-    const platform = sdk.createPlatform(entry.id, { namespace: gameConfig.game.id });
+    const platform = sdk.createPlatform(entry.id, {
+      namespace: gameConfig.game.id,
+      ...(entry.game_id ? { gamedistribution: { gameId: entry.game_id } } : {}),
+    });
     const source = sources[entry.id] ?? { source: null, loaded: "none" };
     const unserved = adKinds.filter((kind) => !platform.capabilities.ads.includes(kind));
     for (const kind of unserved) {

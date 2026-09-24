@@ -25,6 +25,14 @@ export const PLATFORMS = [
   { id: "yandex", profile: "yandex@1.0.0", ad_kinds: ["interstitial", "rewarded"] },
   { id: "poki", profile: "poki@1.0.0", ad_kinds: ["interstitial", "rewarded"] },
   { id: "crazygames", profile: "crazygames@1.0.0", ad_kinds: ["interstitial", "rewarded"] },
+  // A Game ID shaped like a real one and belonging to no title (tests/gamedistribution/
+  // fake-sdk.ts TEST_GD_GAME_ID). The browser smoke serves a mock SDK, so it is never sent.
+  {
+    id: "gamedistribution",
+    profile: "gamedistribution@1.0.0",
+    ad_kinds: ["interstitial", "rewarded"],
+    entry: { game_id: "0123456789abcdef0123456789abcdef" },
+  },
 ];
 
 // The game imports the @wgf/* packages from their dist, as `pnpm build` does.
@@ -40,7 +48,9 @@ for (const engine of ENGINES) {
     const config = {
       ...base,
       engine: { ...base.engine, type: engine },
-      platforms: [{ id: platform.id, profile: platform.profile, role: "required" }],
+      platforms: [
+        { id: platform.id, profile: platform.profile, role: "required", ...platform.entry },
+      ],
       monetization: { ...base.monetization, ad_kinds: platform.ad_kinds },
     };
     const configPath = resolve(out, `${name}.game.config.yaml`);

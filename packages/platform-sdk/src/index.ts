@@ -30,6 +30,30 @@ export {
 } from "./adapters/generic-web.js";
 export { GAMEVUI_CAPABILITIES, GameVuiPlatform } from "./adapters/gamevui.js";
 export {
+  GAMEDISTRIBUTION_CAPABILITIES,
+  GameDistributionPlatform,
+  type GameDistributionConfig,
+  type GameDistributionPlatformOptions,
+  type GameDistributionSdkState,
+} from "./adapters/gamedistribution/platform.js";
+export {
+  GAMEDISTRIBUTION_GAME_ID,
+  GAMEDISTRIBUTION_PLACEHOLDER_GAME_ID,
+  GAMEDISTRIBUTION_SCRIPT_ID,
+  GAMEDISTRIBUTION_SDK_URL,
+  isReferrerUrl,
+  loadGameDistributionSdk,
+  readHosting,
+  type GameDistributionAdType,
+  type GameDistributionEvent,
+  type GameDistributionEventName,
+  type GameDistributionHosting,
+  type GameDistributionOptions,
+  type GameDistributionReferrerState,
+  type GameDistributionSdk,
+  type GameDistributionSdkLoader,
+} from "./adapters/gamedistribution/sdk.js";
+export {
   CRAZYGAMES_CAPABILITIES,
   CrazyGamesPlatform,
   type CrazyGamesMode,

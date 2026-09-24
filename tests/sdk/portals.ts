@@ -13,6 +13,7 @@
 
 import {
   CrazyGamesPlatform,
+  GameDistributionPlatform,
   GameVuiPlatform,
   MemoryStorageBackend,
   PokiPlatform,
@@ -27,9 +28,15 @@ import {
   type YandexRewardedCallbacks,
   type YandexSdk,
 } from "@wgf/platform-sdk";
+import {
+  FakeGdSdk,
+  TEST_GD_GAME_ID,
+  fakeLoader,
+  type GdAdScript,
+} from "../gamedistribution/fake-sdk.js";
 
-/** The four portals the SDK module targets. */
-export const PORTALS = ["yandex", "crazygames", "poki", "gamevui"] as const;
+/** The portals the SDK module targets. */
+export const PORTALS = ["yandex", "crazygames", "poki", "gamevui", "gamedistribution"] as const;
 export type Portal = (typeof PORTALS)[number];
 
 /**
@@ -54,6 +61,12 @@ export interface PortalHarness {
   readonly calls: string[];
   /** Whether this portal has an SDK at all. False for GameVui. */
   readonly hasSdk: boolean;
+  /**
+   * Whether the SDK takes loading-finished and gameplay start/stop calls ("ready",
+   * "gameplayStart", "gameplayStop"). False for GameVui (no SDK) and GameDistribution (its
+   * SDK has no such calls; the adapter tracks them locally).
+   */
+  readonly forwardsLifecycle: boolean;
   /** Script the next ad requests. */
   setAd(outcome: AdOutcome): void;
   /** The portal takes / returns the foreground by itself, where it can. */
@@ -61,6 +74,8 @@ export interface PortalHarness {
   portalResume?(): void;
   /** Change the portal's mute setting, where it has one. */
   setPortalMute?(muted: boolean): void;
+  /** Raise a raw portal SDK event by name (GameDistribution's onEvent), where it has one. */
+  sdkEvent?(name: string): void;
 }
 
 export interface HarnessOptions {
@@ -149,6 +164,7 @@ function yandex(options: HarnessOptions): PortalHarness {
     platform,
     calls,
     hasSdk: true,
+    forwardsLifecycle: true,
     setAd: (outcome) => (ad = outcome),
     portalPause: () => fire("game_api_pause"),
     portalResume: () => fire("game_api_resume"),
@@ -222,6 +238,7 @@ function crazygames(options: HarnessOptions): PortalHarness {
     platform,
     calls,
     hasSdk: true,
+    forwardsLifecycle: true,
     setAd: (outcome) => (ad = outcome),
     setPortalMute: (muted) => {
       settings = { ...settings, muteAudio: muted };
@@ -267,7 +284,13 @@ function poki(options: HarnessOptions): PortalHarness {
     // Never let the init deadline race the mock.
     setTimeout: () => 0,
   });
-  return { platform, calls, hasSdk: true, setAd: (outcome) => (ad = outcome) };
+  return {
+    platform,
+    calls,
+    hasSdk: true,
+    forwardsLifecycle: true,
+    setAd: (outcome) => (ad = outcome),
+  };
 }
 
 // -- GameVui -----------------------------------------------------------------------------
@@ -279,7 +302,47 @@ function gamevui(): PortalHarness {
     namespace: "matrix",
     storage: new MemoryStorageBackend(),
   });
-  return { platform, calls: [], hasSdk: false, setAd: () => {} };
+  return { platform, calls: [], hasSdk: false, forwardsLifecycle: false, setAd: () => {} };
+}
+
+// -- GameDistribution --------------------------------------------------------------------
+
+function gamedistribution(options: HarnessOptions): PortalHarness {
+  // The deterministic fake from tests/gamedistribution/fake-sdk.ts. The SDK has showAd and
+  // preloadAd and nothing for loading or gameplay, so only "init" and ad calls are logged.
+  const calls: string[] = [];
+  const sdk = new FakeGdSdk({ ad: options.ad ?? "complete" });
+  const showAd = sdk.showAd.bind(sdk);
+  sdk.showAd = (type = "interstitial") => {
+    calls.push(`ad:${type}`);
+    return showAd(type);
+  };
+  const load = fakeLoader(
+    sdk,
+    options.sdk === "missing" ? "unavailable" : options.sdk === "init-fails" ? "error" : "ready",
+  );
+  const platform = new GameDistributionPlatform({
+    namespace: "matrix",
+    gameId: TEST_GD_GAME_ID,
+    storage: new MemoryStorageBackend(),
+    timers: new HeldTimers(),
+    loadSdk: (gdOptions) => {
+      calls.push("init");
+      return load(gdOptions);
+    },
+  });
+  return {
+    platform,
+    calls,
+    hasSdk: true,
+    forwardsLifecycle: false,
+    // Also takes the fake's own scripts ("duplicate", "reward-after-end", ...) by name.
+    setAd: (outcome) => (sdk.ad = outcome as GdAdScript),
+    sdkEvent: (name) => sdk.emit(name),
+    // SDK_GAME_PAUSE / SDK_GAME_START also arrive outside the game's ads (the pre-roll).
+    portalPause: () => sdk.emit("SDK_GAME_PAUSE"),
+    portalResume: () => sdk.emit("SDK_GAME_START"),
+  };
 }
 
 export function createHarness(portal: Portal, options: HarnessOptions = {}): PortalHarness {
@@ -292,5 +355,7 @@ export function createHarness(portal: Portal, options: HarnessOptions = {}): Por
       return poki(options);
     case "gamevui":
       return gamevui();
+    case "gamedistribution":
+      return gamedistribution(options);
   }
 }

@@ -13,7 +13,27 @@ export interface PlatformEntry {
   readonly id: string;
   readonly profile: string;
   readonly role: "required" | "optional";
+  /** gamedistribution only: the 32-hex Game ID from the developer panel. Public, not a secret. */
+  readonly game_id?: string;
+  /**
+   * gamedistribution only. `gamedistribution` (the default): the build is uploaded and
+   * GameDistribution hosts it. `self-hosted`: the game is served from `game_url`, and the
+   * GameDistribution submission is a wrapper page that frames it with
+   * `gd_sdk_referrer_url` (docs/platforms/gamedistribution.md).
+   */
+  readonly hosting?: GameDistributionHosting;
+  /** gamedistribution, self-hosted only: the https URL the game itself is served from. */
+  readonly game_url?: string;
 }
+
+export const GAMEDISTRIBUTION_HOSTING = ["gamedistribution", "self-hosted"] as const;
+export type GameDistributionHosting = (typeof GAMEDISTRIBUTION_HOSTING)[number];
+
+// Kept as literals rather than imported from @wgf/platform-sdk: this file runs under Node
+// before the packages are built. tests/unit/gamedistribution.test.ts asserts they agree.
+const GD_GAME_ID = /^[0-9a-f]{32}$/i;
+const GD_PLACEHOLDER_GAME_ID = "4f3d7d38d24b740c95da2b03dc3a2333";
+const GD_ONLY_FIELDS = ["game_id", "hosting", "game_url"] as const;
 
 export const AD_KINDS = ["interstitial", "rewarded", "banner"] as const;
 export type AdKind = (typeof AD_KINDS)[number];
@@ -88,6 +108,13 @@ export function validateGameConfig(raw: unknown): GameConfig {
     if (role !== "required" && role !== "optional") {
       fail(`${where}.role must be required or optional, got ${String(role)}`);
     }
+
+    if (id === "gamedistribution") validateGameDistribution(entry, where);
+    else {
+      for (const field of GD_ONLY_FIELDS) {
+        if (field in entry) fail(`${where}.${field} applies to gamedistribution only`);
+      }
+    }
   }
 
   const monetization = record(config["monetization"], "monetization");
@@ -110,4 +137,50 @@ export function validateGameConfig(raw: unknown): GameConfig {
   }
 
   return config as unknown as GameConfig;
+}
+
+/**
+ * GameDistribution has no default Game ID — without one the SDK reports "no revenue will be
+ * reported" — and self-hosting needs the URL the wrapper page frames. Both fail the build
+ * here rather than a submission later.
+ */
+function validateGameDistribution(entry: Record<string, unknown>, where: string): void {
+  const gameId = entry["game_id"];
+  if (typeof gameId !== "string" || !GD_GAME_ID.test(gameId)) {
+    fail(
+      `${where}.game_id must be the 32-hex Game ID from the GameDistribution developer ` +
+        `panel, got ${JSON.stringify(gameId ?? null)}`,
+    );
+  }
+  if (gameId.toLowerCase() === GD_PLACEHOLDER_GAME_ID) {
+    fail(`${where}.game_id is the SDK's built-in placeholder, which reports no revenue`);
+  }
+
+  const hosting = entry["hosting"] ?? "gamedistribution";
+  if (!GAMEDISTRIBUTION_HOSTING.includes(hosting as GameDistributionHosting)) {
+    fail(
+      `${where}.hosting must be one of ${GAMEDISTRIBUTION_HOSTING.join(", ")}, got ${String(hosting)}`,
+    );
+  }
+  const gameUrl = entry["game_url"];
+  if (hosting === "gamedistribution") {
+    if (gameUrl !== undefined) fail(`${where}.game_url applies to hosting: self-hosted only`);
+    return;
+  }
+  if (typeof gameUrl !== "string") fail(`${where}.game_url is required for hosting: self-hosted`);
+  let url: URL;
+  try {
+    url = new URL(gameUrl);
+  } catch {
+    fail(`${where}.game_url must be an absolute URL, got ${JSON.stringify(gameUrl)}`);
+  }
+  // Guidelines §3.1: "Games must be HTTPS ready".
+  if (url.protocol !== "https:") fail(`${where}.game_url must be https, got ${url.protocol}`);
+  // The wrapper page adds the referrer at run time, from where it is embedded. A value
+  // written into the config would claim every embed came from one page.
+  for (const key of url.searchParams.keys()) {
+    if (key.toLowerCase() === "gd_sdk_referrer_url") {
+      fail(`${where}.game_url must not carry gd_sdk_referrer_url; the wrapper page sets it`);
+    }
+  }
 }

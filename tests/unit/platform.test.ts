@@ -6,6 +6,7 @@ import {
   createPlatform,
   isPlatformId,
 } from "@wgf/platform-sdk";
+import { TEST_GD_GAME_ID } from "../gamedistribution/fake-sdk.js";
 
 describe("platform registry", () => {
   it("builds the generic-web platform", () => {
@@ -15,8 +16,10 @@ describe("platform registry", () => {
   });
 
   it("has an adapter for every id that has a profile", () => {
+    // GameDistribution cannot run without its Game ID; every other adapter ignores it.
+    const options = { namespace: "test", gamedistribution: { gameId: TEST_GD_GAME_ID } };
     for (const id of KNOWN_PLATFORM_IDS) {
-      expect(createPlatform(id, { namespace: "test" }).id).toBe(id);
+      expect(createPlatform(id, options).id).toBe(id);
     }
   });
 

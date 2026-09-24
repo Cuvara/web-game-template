@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "what": "template pixijs-gamedistribution build, real main.min.js, Chromium, 127.0.0.1:4180; adapter received the real SDK_READY and called the real gdsdk.preloadAd",
+  "platformId": "gamedistribution",
+  "gameLoopAdvancing": true,
+  "scriptTags": 1,
+  "sdk": {
+    "events": [
+      "SDK_READY"
+    ],
+    "calls": [
+      "preloadAd:rewarded"
+    ]
+  },
+  "gamePageErrors": [],
+  "sdkPageErrors": [],
+  "at": "2026-09-24T09:10:09.563Z",
+  "buildSha": "1f5dee2+uncommitted-gamedistribution",
+  "notObserved": "ads, pause/resume around an ad, reward — see sdk-load.json `blocked`"
+}

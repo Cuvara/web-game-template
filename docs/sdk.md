@@ -9,6 +9,7 @@ Game code (src/, examples/)
  ▼
 @wgf/platform-sdk — Platform (types.ts), created by createPlatform(id) from game.config.yaml
  ├── YandexPlatform       adapters/yandex.ts        /sdk.js, loaded at runtime
+ ├── GameDistributionPlatform adapters/gamedistribution/  main.min.js, loaded at runtime
  ├── CrazyGamesPlatform   adapters/crazygames/      HTML5 SDK v3, <script> in <head>
  ├── PokiPlatform         adapters/poki.ts          poki-sdk.js v2, loaded at runtime
  ├── GameVuiPlatform      adapters/gamevui.ts       no SDK exists — local saves, no ads
@@ -41,8 +42,8 @@ A new portal is a new adapter implementing this, a profile in the Factory, and a
 | Conformance          | Every platform over its mocked SDK: SDK unavailable, init failure, ad unavailable, closed early, reward callback, pause/resume, storage, not configured, a real `Game` bound to each ([platforms/sdk-conformance.md](platforms/sdk-conformance.md)) | `pnpm test:sdk`                                              |
 | Game-side scenarios  | The same portals from the game's side: `withAdBreak`, portal mute, `adAvailability`, loading once; plus one regression test per audit finding                                                                                                       | `tests/unit/sdk-contract.test.ts`, `sdk-audit-fixes.test.ts` |
 | Per-adapter detail   | Call order, timeouts, late ads, retries                                                                                                                                                                                                             | `tests/unit/{yandex,poki,crazygames}.test.ts`                |
-| Browser matrix       | PixiJS and Three.js games × all four portal adapters, real renderer, loop and `bindPlatform`, desktop and mobile Chromium                                                                                                                           | `pnpm test:sdk:matrix`                                       |
-| Template build smoke | The template game itself built per platform (generic-web, Yandex, Poki) × engine                                                                                                                                                                    | `pnpm test:sdk:browser`                                      |
+| Browser matrix       | PixiJS and Three.js games × every portal adapter, real renderer, loop and `bindPlatform`, desktop and mobile Chromium                                                                                                                               | `pnpm test:sdk:matrix`                                       |
+| Template build smoke | The template game itself built per platform (generic-web, Yandex, Poki, CrazyGames, GameDistribution) × engine                                                                                                                                      | `pnpm test:sdk:browser`                                      |
 | Release boundary     | Integration artifacts are prepared, never published; no SDK code can upload                                                                                                                                                                         | `tests/unit/sdk-integration.test.ts`                         |
 
 Mocks implement only the documented SDK surface. They prove the adapter uses that surface
@@ -144,6 +145,17 @@ Known limitations:
 - `openExternalLink`, `measure`, `shareableURL`, `movePill` and User Accounts are not
   exposed; `getUser()` is null.
 - Real fill, `onStart` timing under real blockers, and the Inspector's checks need Poki.
+
+### GameDistribution — PASS, with known limitations (2026-09-24)
+
+Audited against GD-HTML5 1.43.58 (README, wiki, `index_iframe.html`) and the Developer
+Guidelines; full audit, lifecycle mapping and self-hosting in
+[platforms/gamedistribution.md](platforms/gamedistribution.md). `showAd` interstitial and
+rewarded, reward only on `SDK_REWARDED_WATCH_COMPLETE`, `SDK_GAME_PAUSE`/`SDK_GAME_START` as
+the foreground, no loading or gameplay API. The Game ID is required per title
+(`platforms[].game_id`). `GD_SDK_REFERRER_URL` is a query parameter set by a self-hosted
+wrapper page, never by the game. Live: the real SDK loads and raises `SDK_READY`, and the
+template build talks to it; ads are BLOCKED without a registered title.
 
 ### GameVui — KNOWN LIMITATION: no SDK exists
 

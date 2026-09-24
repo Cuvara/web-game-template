@@ -63,6 +63,13 @@ export const PLATFORMS: Record<string, PlatformDescriptor> = {
     methods: ["init", "gameLoadingFinished", "commercialBreak", "rewardedBreak", "gameplayStart", "gameplayStop"],
     portalServed: false,
   },
+  gamedistribution: {
+    platform: "gamedistribution",
+    url: "https://html5.api.gamedistribution.com/main.min.js",
+    globalName: "gdsdk",
+    methods: ["showAd", "preloadAd"],
+    portalServed: false,
+  },
 };
 
 /**

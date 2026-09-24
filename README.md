@@ -102,13 +102,14 @@ not publish ([docs/platforms/gamevui/](docs/platforms/gamevui/platform-contract.
 Game code calls `@wgf/platform-sdk`. Each platform has a profile in the Factory and an adapter
 here.
 
-| Platform     | Profile         | Adapter                                           | Upload automated          |
-| ------------ | --------------- | ------------------------------------------------- | ------------------------- |
-| Generic Web  | ✅              | ✅                                                | n/a — self-hosted         |
-| Yandex Games | ✅              | ✅                                                | no — no public API        |
-| Poki         | ✅              | ✅                                                | yes — `@poki/cli`         |
-| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                   | no — no public API        |
-| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves | no — email / contact form |
+| Platform     | Profile         | Adapter                                                | Upload automated          |
+| ------------ | --------------- | ------------------------------------------------------ | ------------------------- |
+| Generic Web  | ✅              | ✅                                                     | n/a — self-hosted         |
+| Yandex Games | ✅              | ✅                                                     | no — no public API        |
+| Poki         | ✅              | ✅                                                     | yes — `@poki/cli`         |
+| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                        | no — no public API        |
+| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves      | no — email / contact form |
+| GameDist.    | draft           | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md` | no — developer panel      |
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)
@@ -174,5 +175,6 @@ Foundation and pipelines implemented and exercised on real runners.
 | Portal adapter — poki, with `examples/poki-compliance-demo`                  | done  |
 | CrazyGames adapter, compliance demo, build audit, `crazygames.yml`           | done  |
 | GameVui no-SDK adapter (no portal SDK exists; see `docs/sdk.md`)             | done  |
+| GameDistribution adapter and self-hosted wrapper                             | done  |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty |
 | `scripts/build`, `scripts/campaign`                                          | empty |

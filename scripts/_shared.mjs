@@ -41,8 +41,15 @@ export function isEntryPoint(metaUrl) {
   return entry !== undefined && metaUrl === pathToFileURL(entry).href;
 }
 
+/**
+ * game.config.yaml — or, when WGF_GAME_CONFIG is set, the config it names, the same override
+ * vite.config.ts honours. A build made against another config (one per platform in the SDK
+ * smoke and the GameDistribution release check) is then packaged and measured against that
+ * same config rather than against the scaffold's. Unset in a normal run.
+ */
 export function readGameConfig(root = repoRoot()) {
-  return parse(readFileSync(resolve(root, "game.config.yaml"), "utf8"));
+  const path = process.env["WGF_GAME_CONFIG"] ?? "game.config.yaml";
+  return parse(readFileSync(resolve(root, path), "utf8"));
 }
 
 /**

@@ -6,6 +6,7 @@
 // back to the plan it came from.
 
 import rawConfig from "virtual:game-config";
+import type { CreatePlatformOptions } from "@wgf/platform-sdk";
 import type { GameConfig, PlatformEntry } from "./game-config.js";
 
 export const config = rawConfig as GameConfig;
@@ -16,4 +17,12 @@ export function primaryPlatform(): PlatformEntry {
     config.platforms.find((candidate) => candidate.role === "required") ?? config.platforms[0];
   if (!entry) throw new Error("game.config.yaml declares no platforms");
   return entry;
+}
+
+/** What createPlatform needs for `entry`: the storage namespace, plus any per-portal settings. */
+export function platformOptions(entry: PlatformEntry): CreatePlatformOptions {
+  return {
+    namespace: config.game.id,
+    ...(entry.game_id ? { gamedistribution: { gameId: entry.game_id } } : {}),
+  };
 }

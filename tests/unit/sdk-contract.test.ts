@@ -15,6 +15,7 @@ import { Game, ManualScheduler } from "@wgf/game-core";
 import { KNOWN_PLATFORM_IDS, createPlatform, type AdKind, type Platform } from "@wgf/platform-sdk";
 import { validateGameConfig } from "../../src/core/game-config.js";
 import { bindPlatform, withAdBreak } from "../../src/platform/bind.js";
+import { TEST_GD_GAME_ID } from "../gamedistribution/fake-sdk.js";
 import { PORTALS, createHarness, type PortalHarness } from "../sdk/portals.js";
 
 let visibility: "visible" | "hidden" = "visible";
@@ -54,7 +55,7 @@ describe.each(PORTALS)("%s", (portal) => {
       await harness.platform.signalReady();
       await harness.platform.signalReady();
       expect(count(harness.calls, "init")).toBe(harness.hasSdk ? 1 : 0);
-      expect(count(harness.calls, "ready")).toBe(harness.hasSdk ? 1 : 0);
+      expect(count(harness.calls, "ready")).toBe(harness.forwardsLifecycle ? 1 : 0);
       expect(harness.platform.usage.signalReadyCalls).toBe(2);
     });
 
@@ -68,15 +69,21 @@ describe.each(PORTALS)("%s", (portal) => {
 
   describe("game start", () => {
     it("forwards gameplay transitions, not repeats", async () => {
-      const { platform, calls, hasSdk } = await booted(createHarness(portal));
+      const { platform, calls, forwardsLifecycle } = await booted(createHarness(portal));
       platform.gameplayStart();
       platform.gameplayStart();
       expect(platform.gameplayActive).toBe(true);
       platform.gameplayStop();
       platform.gameplayStop();
       expect(platform.gameplayActive).toBe(false);
-      expect(count(calls, "gameplayStart")).toBe(hasSdk ? 1 : 0);
-      expect(count(calls, "gameplayStop")).toBe(hasSdk ? 1 : 0);
+      expect(count(calls, "gameplayStart")).toBe(forwardsLifecycle ? 1 : 0);
+      expect(count(calls, "gameplayStop")).toBe(forwardsLifecycle ? 1 : 0);
+      // With no SDK call to forward to, the transitions are still tracked: release
+      // validation reads them off usage.
+      if (!forwardsLifecycle) {
+        expect(platform.usage.gameplayStartCalls).toBe(1);
+        expect(platform.usage.gameplayStopCalls).toBe(1);
+      }
     });
   });
 
@@ -250,7 +257,13 @@ describe("platform not configured", () => {
   });
 
   it("has an adapter for every id with a profile", () => {
-    for (const id of KNOWN_PLATFORM_IDS) expect(createPlatform(id, { namespace: "t" }).id).toBe(id);
+    // GameDistribution cannot run without its Game ID; every other adapter ignores it.
+    const options = { namespace: "t", gamedistribution: { gameId: TEST_GD_GAME_ID } };
+    for (const id of KNOWN_PLATFORM_IDS) expect(createPlatform(id, options).id).toBe(id);
+  });
+
+  it("refuses a GameDistribution platform with no Game ID, loudly", () => {
+    expect(() => createPlatform("gamedistribution", { namespace: "t" })).toThrow(/Game ID/);
   });
 
   it("refuses a game config that names no platform", () => {
