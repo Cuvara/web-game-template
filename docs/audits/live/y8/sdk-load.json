@@ -1,0 +1,35 @@
+{
+  "platform": "y8",
+  "url": "https://cdn.y8.com/minimal-sdk/2-0/y8.min.js",
+  "globalName": "y8",
+  "scriptLoaded": true,
+  "error": null,
+  "globalPresent": true,
+  "methodsFound": ["sdk", "emitReadyEvent"],
+  "methodsMissing": [],
+  "initOutcome": "not-attempted",
+  "initDetail": null,
+  "at": "2026-09-24T07:42:43.226Z",
+  "buildSha": "1f5dee2",
+  "readyEventOnEmit": true,
+  "sdkSingleton": true,
+  "instanceMethodsFound": [
+    "init",
+    "onAuth",
+    "getUser",
+    "showAd",
+    "saveData",
+    "loadData",
+    "removeData",
+    "getPlatformLocale"
+  ],
+  "instanceMethodsMissing": [],
+  "sdkLoadStatus": "PASS",
+  "blocked": {
+    "init": "needs a real App ID (never committed); init off a registered origin is not attempted",
+    "ads": "needs a real Game ID and a game in review/live on Y8 (test creatives are served only then)",
+    "reward": "needs Y8's ad system to fill a rewarded break",
+    "storage": "Cloud Storage needs a signed-in Y8 account",
+    "auth": "auto sign-in only happens on the game's own Y8 page"
+  }
+}

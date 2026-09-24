@@ -9,6 +9,7 @@
 import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";
 import availableLocales from "virtual:locales";
+import platformConfig from "virtual:platform-config";
 import { config, primaryPlatform } from "./core/config.js";
 import { loadLocale } from "./core/i18n.js";
 import { installProbe } from "./core/probe.js";
@@ -26,7 +27,10 @@ async function main(): Promise<void> {
   const container = element("game");
   const hud = element("hud");
 
-  const platform = createPlatform(primaryPlatform().id, { namespace: config.game.id });
+  const platform = createPlatform(primaryPlatform().id, {
+    namespace: config.game.id,
+    y8: platformConfig.y8,
+  });
   await platform.initialize();
   platform.reportLoadingProgress(0.2);
 

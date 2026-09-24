@@ -8,6 +8,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 intended for Web Game Factory to consume by tag; a game created from the template inherits
 whatever was here at the ref its tech plan pinned.
 
+## [Unreleased]
+
+### Added
+
+- **Y8 adapter** (`createPlatform("y8")`, `packages/platform-sdk/src/adapters/y8/`), written
+  from <https://docs.y8.com/> as read on 2026-09-24. Loads the CDN script with the documented
+  `y8sdk.ready` / `emitReadyEvent()` race handling; interstitial (`next`) and rewarded
+  (`reward`) ads that pause and mute only once an ad actually starts, reward only on
+  `adViewed`, and never resolve or reward twice; Cloud Storage for signed-in players, local
+  saves for guests, `storage:changed` on sign-in/out. App ID / Game ID come from
+  `WGF_Y8_APP_ID` / `WGF_Y8_GAME_ID` at build time (`virtual:platform-config`), never from a
+  committed file; missing settings run the game without the SDK. A title gains it by
+  targeting `y8@1.0.0`; `config/platforms/y8.yaml` is a proposed profile (the Factory has
+  none yet). Live: the real script's load and surface PASS; ads, rewards, auth and storage
+  are BLOCKED pending a real App ID / Game ID. See `docs/platforms/y8.md`.
+- `tests/y8/mock-y8-sdk.js`, one deterministic Y8 mock shared by the unit, conformance,
+  matrix and real-bundle browser suites.
+
 ## [1.0.0] — 2026-09-23
 
 First stable production baseline for Web Game Factory. Both renderers, the SDK contract and

@@ -25,6 +25,22 @@ export const PLATFORMS = [
   { id: "yandex", profile: "yandex@1.0.0", ad_kinds: ["interstitial", "rewarded"] },
   { id: "poki", profile: "poki@1.0.0", ad_kinds: ["interstitial", "rewarded"] },
   { id: "crazygames", profile: "crazygames@1.0.0", ad_kinds: ["interstitial", "rewarded"] },
+  // Placeholder IDs, not credentials: the browser test serves a mock in place of the CDN
+  // script, so they never reach Y8. They make the build inject the documented <script async>.
+  {
+    id: "y8",
+    profile: "y8@1.0.0",
+    ad_kinds: ["interstitial", "rewarded"],
+    env: { WGF_Y8_APP_ID: "wgf-smoke-app", WGF_Y8_GAME_ID: "wgf-smoke-game" },
+  },
+  // The same target built with no Y8 settings at all: the game must still boot.
+  {
+    id: "y8",
+    name: "y8-unconfigured",
+    profile: "y8@1.0.0",
+    ad_kinds: ["interstitial", "rewarded"],
+    env: { WGF_Y8_APP_ID: "", WGF_Y8_GAME_ID: "" },
+  },
 ];
 
 // The game imports the @wgf/* packages from their dist, as `pnpm build` does.
@@ -36,7 +52,7 @@ mkdirSync(out, { recursive: true });
 
 for (const engine of ENGINES) {
   for (const platform of PLATFORMS) {
-    const name = `${engine}-${platform.id}`;
+    const name = `${engine}-${platform.name ?? platform.id}`;
     const config = {
       ...base,
       engine: { ...base.engine, type: engine },
@@ -63,7 +79,7 @@ for (const engine of ENGINES) {
       {
         cwd: root,
         stdio: "inherit",
-        env: { ...process.env, WGF_GAME_CONFIG: configPath },
+        env: { ...process.env, ...(platform.env ?? {}), WGF_GAME_CONFIG: configPath },
       },
     );
     console.log(`built ${name}`);

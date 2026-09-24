@@ -19,6 +19,7 @@ import {
   GenericWebPlatform,
   MemoryStorageBackend,
   PokiPlatform,
+  Y8Platform,
   YandexPlatform,
   YandexStorage,
   type CrazyGamesSdk,
@@ -30,6 +31,7 @@ import {
   type YandexRewardedCallbacks,
   type YandexSdk,
 } from "@wgf/platform-sdk";
+import { createY8Mock, type Y8AdScript } from "../y8/mock-y8-sdk.js";
 
 /** How the portal answers the next ad request. */
 export type AdScript =
@@ -74,6 +76,11 @@ export interface Harness {
   readonly cloudStorage: boolean;
   /** Whether a portal SDK is loaded at all, so unavailable/init-failure apply. */
   readonly hasSdk: boolean;
+  /**
+   * Whether the portal SDK has gameplay start/stop calls to forward to. Defaults to hasSdk;
+   * false for Y8, whose SDK has none, so reports stay local.
+   */
+  readonly gameplayApi?: boolean;
   create(sdk?: SdkScript): Promise<HarnessInstance>;
 }
 
@@ -427,10 +434,61 @@ const crazygames: Harness = {
   },
 };
 
+// -- Y8 -----------------------------------------------------------------------------------
+// The deterministic mock in tests/y8/mock-y8-sdk.js: y8.sdk(), the y8sdk.ready event, init,
+// onAuth, showAd with beforeAd/afterAd/beforeReward/adViewed/adDismissed/adBreakDone and the
+// documented breakStatus values, Cloud Storage. A signed-in player, so saves reach the cloud.
+// https://docs.y8.com/sdk/intro/ · /sdk/advertising/ · /sdk/cloud-storage/
+
+const Y8_SCRIPTS: Record<AdScript, Y8AdScript> = {
+  play: "viewed",
+  "no-fill": "noAdPreloaded",
+  "closed-early": "dismissed",
+  error: "error",
+  "stall-open": "stall",
+};
+
+const y8: Harness = {
+  id: "y8",
+  adapter: "implemented",
+  ads: ["interstitial", "rewarded"],
+  // No portal-level pause is raised at the game; the adapter takes the foreground itself
+  // around an ad that actually starts (beforeAd), as the Poki and CrazyGames adapters do.
+  portalPauses: false,
+  cloudStorage: true,
+  hasSdk: true,
+  gameplayApi: false,
+  async create(script: SdkScript = "ok") {
+    const mock = createY8Mock(new EventTarget(), {
+      defer: () => {},
+      init: script === "init-fails" ? "rejects" : "ok",
+      user: { pid: "conformance", nickname: "Conformance" },
+    });
+    const timers = new ManualTimers();
+    const platform = new Y8Platform({
+      namespace: "conformance",
+      config: { appId: "conformance-app", gameId: "conformance-game" },
+      guestStorage: new MemoryStorageBackend(),
+      loadSdk: () =>
+        script === "unavailable"
+          ? Promise.reject(new Error("cdn.y8.com blocked"))
+          : Promise.resolve(mock.sdk),
+      timers,
+    });
+    return {
+      platform,
+      calls: mock.calls,
+      setAd: (next) => mock.setAd(Y8_SCRIPTS[next]),
+      advance: (ms) => timers.advance(ms),
+    };
+  },
+};
+
 export const HARNESSES: readonly Harness[] = [
   genericWeb("generic-web"),
   yandex,
   poki,
   crazygames,
   gamevui,
+  y8,
 ];

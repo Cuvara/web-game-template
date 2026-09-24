@@ -16,6 +16,7 @@ import {
   GameVuiPlatform,
   MemoryStorageBackend,
   PokiPlatform,
+  Y8Platform,
   YandexPlatform,
   YandexStorage,
   type CrazyGamesAdCallbacks,
@@ -26,10 +27,12 @@ import {
   type YaGamesGlobal,
   type YandexRewardedCallbacks,
   type YandexSdk,
+  type Y8Sdk,
 } from "@wgf/platform-sdk";
+import { createY8Mock } from "../y8/mock-y8-sdk.js";
 
-/** The four portals the SDK module targets. */
-export const PORTALS = ["yandex", "crazygames", "poki", "gamevui"] as const;
+/** The portals the SDK module targets. */
+export const PORTALS = ["yandex", "crazygames", "poki", "gamevui", "y8"] as const;
 export type Portal = (typeof PORTALS)[number];
 
 /**
@@ -54,6 +57,11 @@ export interface PortalHarness {
   readonly calls: string[];
   /** Whether this portal has an SDK at all. False for GameVui. */
   readonly hasSdk: boolean;
+  /**
+   * Whether the SDK has loading-finished and gameplay start/stop calls to forward to.
+   * Defaults to hasSdk. False for Y8, whose SDK has neither: the calls are only counted.
+   */
+  readonly forwardsLifecycle?: boolean;
   /** Script the next ad requests. */
   setAd(outcome: AdOutcome): void;
   /** The portal takes / returns the foreground by itself, where it can. */
@@ -282,6 +290,52 @@ function gamevui(): PortalHarness {
   return { platform, calls: [], hasSdk: false, setAd: () => {} };
 }
 
+// -- Y8 ----------------------------------------------------------------------------------
+
+function y8(options: HarnessOptions): PortalHarness {
+  const calls: string[] = [];
+  const scripts = {
+    complete: "viewed",
+    "no-fill": "noAdPreloaded",
+    "closed-early": "dismissed",
+  } as const;
+  // The deterministic mock from tests/y8/, installed on a private EventTarget rather than
+  // window so nothing else on the page can see it. A signed-in player: saves go to the cloud.
+  const mock = createY8Mock(new EventTarget(), {
+    init: options.sdk === "init-fails" ? "rejects" : "ok",
+    user: { pid: "matrix", nickname: "Matrix" },
+    ad: scripts[options.ad ?? "complete"],
+  });
+  // Y8 has no loading or gameplay API, so only init and ads have neutral names to record.
+  const sdk: Y8Sdk = {
+    ...mock.sdk,
+    init: (appConfig, adConfig) => {
+      calls.push("init");
+      return mock.sdk.init(appConfig, adConfig);
+    },
+    showAd: (o) => {
+      calls.push(o.type === "reward" ? "ad:rewarded" : "ad:interstitial");
+      return mock.sdk.showAd(o);
+    },
+  };
+  const platform = new Y8Platform({
+    namespace: "matrix",
+    config: { appId: "matrix-app", gameId: "matrix-game" },
+    guestStorage: new MemoryStorageBackend(),
+    loadSdk: () =>
+      options.sdk === "missing"
+        ? Promise.reject(new Error("cdn.y8.com blocked (mock)"))
+        : Promise.resolve(sdk),
+  });
+  return {
+    platform,
+    calls,
+    hasSdk: true,
+    forwardsLifecycle: false,
+    setAd: (outcome) => mock.setAd(scripts[outcome]),
+  };
+}
+
 export function createHarness(portal: Portal, options: HarnessOptions = {}): PortalHarness {
   switch (portal) {
     case "yandex":
@@ -292,5 +346,7 @@ export function createHarness(portal: Portal, options: HarnessOptions = {}): Por
       return poki(options);
     case "gamevui":
       return gamevui();
+    case "y8":
+      return y8(options);
   }
 }

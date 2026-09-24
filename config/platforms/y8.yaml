@@ -1,0 +1,63 @@
+# Platform profile — Y8 (PROPOSED)
+#
+# Not vendored from the Factory: core/reference/platforms/ has no Y8 profile yet, so this file
+# is not listed in pinned.json and carries no content hash. It is written here, in the
+# Factory's platform-profile schema, so a title can pin `y8@1.0.0` and release validation
+# (scripts/verify/evaluate-assertions.mjs) has rules to judge it by. Upstreaming it to
+# core/reference/platforms/y8.yaml is a Factory change; until then treat it as a proposal.
+#
+# Every figure below comes from https://docs.y8.com/ as read on 2026-09-24. Where the docs
+# say nothing — audience, bundle size, review time, metadata — the field is left out or null
+# rather than guessed. docs/platforms/y8.md has the audit.
+
+id: y8
+name: Y8
+version: 1.0.0
+status: unverified
+docs: https://docs.y8.com/
+
+capabilities:
+  # https://docs.y8.com/sdk/advertising/ — interstitials and rewarded ads. No banner is documented.
+  ads: [interstitial, rewarded]
+  iap: false
+  # https://docs.y8.com/sdk/cloud-storage/ — signed-in players only.
+  cloud_saves: true
+  # The platform offers both; the template's Platform contract does not expose them yet.
+  leaderboards: true
+  achievements: true
+  # https://docs.y8.com/best-practices/ — "Let guests play".
+  auth: optional
+  # https://docs.y8.com/sdk/analytics/ — plays counted on init.
+  analytics: platform-provided
+
+requirements:
+  # The docs require no locale. getPlatformLocale() reports the site's language.
+  locales_required: []
+  max_bundle_mb: null
+  # No loading or game-ready API exists in the SDK.
+  loading_api: none
+
+ads:
+  # "By default Y8 allows one roughly every 180 seconds, configurable per game." The SDK
+  # enforces it and reports frequencyCapped; the adapter does not count locally.
+  interstitial_min_interval_s: 180
+  rewarded_available: true
+  banner_available: false
+  notes: >
+    Pause and mute inside beforeAd, resume inside afterAd — a skipped or capped break fires
+    neither. Rewarded ads are never capped but restart the interstitial interval. Never
+    request the preroll placement; the platform runs it itself.
+
+review:
+  # "While your game is in review, the platform serves Google's test creatives" — review
+  # exists; its length is not documented.
+  process: manual
+  common_rejections: []
+
+assertions:
+  - id: y8_sdk_present
+    check: { left: package.platform_sdk, op: eq, right: y8 }
+    severity: blocking
+    rationale: >
+      The Y8 SDK is loaded from https://cdn.y8.com/minimal-sdk/2-0/y8.min.js at runtime;
+      a build for Y8 without it earns nothing and counts no plays.

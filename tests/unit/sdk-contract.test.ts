@@ -54,7 +54,8 @@ describe.each(PORTALS)("%s", (portal) => {
       await harness.platform.signalReady();
       await harness.platform.signalReady();
       expect(count(harness.calls, "init")).toBe(harness.hasSdk ? 1 : 0);
-      expect(count(harness.calls, "ready")).toBe(harness.hasSdk ? 1 : 0);
+      const forwards = harness.forwardsLifecycle ?? harness.hasSdk;
+      expect(count(harness.calls, "ready")).toBe(forwards ? 1 : 0);
       expect(harness.platform.usage.signalReadyCalls).toBe(2);
     });
 
@@ -68,15 +69,22 @@ describe.each(PORTALS)("%s", (portal) => {
 
   describe("game start", () => {
     it("forwards gameplay transitions, not repeats", async () => {
-      const { platform, calls, hasSdk } = await booted(createHarness(portal));
+      const harness = await booted(createHarness(portal));
+      const { platform, calls } = harness;
+      const forwards = harness.forwardsLifecycle ?? harness.hasSdk;
       platform.gameplayStart();
       platform.gameplayStart();
       expect(platform.gameplayActive).toBe(true);
       platform.gameplayStop();
       platform.gameplayStop();
       expect(platform.gameplayActive).toBe(false);
-      expect(count(calls, "gameplayStart")).toBe(hasSdk ? 1 : 0);
-      expect(count(calls, "gameplayStop")).toBe(hasSdk ? 1 : 0);
+      expect(count(calls, "gameplayStart")).toBe(forwards ? 1 : 0);
+      expect(count(calls, "gameplayStop")).toBe(forwards ? 1 : 0);
+      if (!forwards) {
+        // Nothing to forward to: the transitions are only counted, once each.
+        expect(platform.usage.gameplayStartCalls).toBe(1);
+        expect(platform.usage.gameplayStopCalls).toBe(1);
+      }
     });
   });
 

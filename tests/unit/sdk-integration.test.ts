@@ -50,6 +50,23 @@ describe("prepare-integration", () => {
     expect(integration.publishing).toMatch(/not performed/);
   });
 
+  it("describes the Y8 adapter and its CDN script, and claims nothing live", () => {
+    const { integration, report } = buildIntegration(
+      config(["y8"], ["interstitial", "rewarded"]),
+      sdk,
+      { commitSha: "abc", now },
+    );
+    expect(integration.platforms[0]).toMatchObject({
+      adapter: "Y8Platform",
+      sdk: { source: sdk.Y8_SDK_URL, loaded: "html-head" },
+      unserved_ad_kinds: [],
+    });
+    expect(report.platforms[0].status).toBe("partial");
+    expect(report.platforms[0].features.map((f: { status: string }) => f.status)).not.toContain(
+      "working",
+    );
+  });
+
   it("flags a declared ad kind an adapter cannot show", () => {
     const { problems } = buildIntegration(
       config(["poki", "gamevui"], ["rewarded", "banner"]),

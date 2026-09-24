@@ -89,6 +89,34 @@ export type {
   YandexRewardedCallbacks,
   YandexSdk,
 } from "./adapters/yandex-sdk.js";
+export {
+  Y8_CAPABILITIES,
+  Y8Platform,
+  type Y8Mode,
+  type Y8Options,
+  type Y8Timers,
+} from "./adapters/y8/platform.js";
+export { validateY8Config, type Y8Config, type Y8ConfigResult } from "./adapters/y8/config.js";
+export { Y8Storage, Y8StorageError, Y8_VALUE_LIMIT_BYTES } from "./adapters/y8/storage.js";
+export {
+  Y8_READY_EVENT,
+  Y8_SAVE_REJECTED,
+  Y8_SDK_URL,
+  describeY8Error,
+  loadY8Sdk,
+  type LoadY8Options,
+  type Y8AdConfig,
+  type Y8AppConfig,
+  type Y8BreakInfo,
+  type Y8BreakStatus,
+  type Y8Error,
+  type Y8Global,
+  type Y8LoaderEnvironment,
+  type Y8Placement,
+  type Y8Sdk,
+  type Y8ShowAdOptions,
+  type Y8User,
+} from "./adapters/y8/sdk.js";
 export { PlatformEmitter } from "./emitter.js";
 export {
   KNOWN_PLATFORM_IDS,

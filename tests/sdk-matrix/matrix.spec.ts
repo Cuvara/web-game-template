@@ -8,7 +8,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const ENGINES = ["pixijs", "threejs"] as const;
-const PORTALS = ["yandex", "crazygames", "poki", "gamevui"] as const;
+const PORTALS = ["yandex", "crazygames", "poki", "gamevui", "y8"] as const;
+/** Portals whose SDK has loading-finished and gameplay calls. Y8's has neither. */
+const FORWARDS_LIFECYCLE: readonly string[] = ["yandex", "crazygames", "poki"];
 
 interface MatrixState {
   paused: boolean;
@@ -66,19 +68,22 @@ for (const engine of ENGINES) {
       }) => {
         const errors = await boot(page, `engine=${engine}&portal=${portal}`);
         const hasSdk = portal !== "gamevui";
+        const forwards = FORWARDS_LIFECYCLE.includes(portal);
 
         await expect(page.locator("#hud")).toHaveAttribute("data-engine", engine);
         await expect(page.locator("#game canvas")).toBeVisible();
         await expect.poll(() => steps(page), { timeout: 5_000 }).toBeGreaterThan(0);
 
         // Loading reported, gameplay not yet: it waits for the player.
-        expect(await calls(page)).toEqual(hasSdk ? expect.arrayContaining(["init", "ready"]) : []);
+        expect(await calls(page)).toEqual(
+          forwards ? expect.arrayContaining(["init", "ready"]) : hasSdk ? ["init"] : [],
+        );
         expect(await calls(page)).not.toContain("gameplayStart");
 
         await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });
         await expect.poll(async () => (await state(page)).gameplayActive).toBe(true);
         expect((await calls(page)).filter((c) => c === "gameplayStart")).toHaveLength(
-          hasSdk ? 1 : 0,
+          forwards ? 1 : 0,
         );
 
         const interstitial = await run<{ shown: boolean }>(page, "interstitial");
@@ -154,3 +159,49 @@ test("crazygames: the portal's muteAudio setting wins", async ({ page }) => {
   await run(page, "setPortalMute", false);
   await expect(page.locator("#hud")).toHaveAttribute("data-audio-muted", "false");
 });
+
+for (const engine of ["pixijs", "threejs"] as const) {
+  test(`${engine} × y8: a break that shows nothing never pauses or mutes the game`, async ({
+    page,
+  }) => {
+    const errors = await boot(page, `engine=${engine}&portal=y8&ad=no-fill`);
+    await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });
+    await expect.poll(async () => (await state(page)).gameplayActive).toBe(true);
+    const result = await page.evaluate(() =>
+      (
+        window as unknown as { __matrix: { interstitial(): Promise<unknown> } }
+      ).__matrix.interstitial(),
+    );
+    expect(result).toEqual({ shown: false, reason: "not-ready" });
+    // No beforeAd, so the adapter never took the foreground or raised ad:start.
+    expect(await state(page)).toMatchObject({
+      paused: false,
+      gameplayActive: true,
+      audioMuted: false,
+      foreground: true,
+    });
+    const before = await steps(page);
+    await expect.poll(() => steps(page)).toBeGreaterThan(before);
+    expect(errors).toEqual([]);
+  });
+
+  test(`${engine} × y8: each watched rewarded ad rewards once and leaves the game running`, async ({
+    page,
+  }) => {
+    await boot(page, `engine=${engine}&portal=y8`);
+    await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });
+    const results = await page.evaluate(async () => {
+      const m = (
+        window as unknown as {
+          __matrix: { rewarded(): Promise<{ rewarded: boolean }>; state(): { paused: boolean } };
+        }
+      ).__matrix;
+      const out = [await m.rewarded(), await m.rewarded()];
+      return { out, paused: m.state().paused };
+    });
+    expect(results.out.map((r) => r.rewarded)).toEqual([true, true]);
+    expect(results.paused).toBe(false);
+    const usage = await run<{ adsShown: { rewarded: number } }>(page, "usage");
+    expect(usage.adsShown.rewarded).toBe(2);
+  });
+}
