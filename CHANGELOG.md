@@ -10,6 +10,58 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### 2.0.0-contract — Factory ↔ template contract 2
+
+The Factory ↔ template API is now written down and versioned:
+[docs/factory-contract.md](docs/factory-contract.md), contract number in `package.json`
+`wgf.template.contract` (`2`), template version in `wgf.template.version`. `package.json`
+`version` is unchanged until the release is cut. A title gains all of this by re-pinning; a
+game written against contract 1 needs its game code moved into `createGame` (below).
+
+#### Changed — breaking for games
+
+- **One entry point.** A game implements `createGame(context: GameContext): Promise<GameHandle>`
+  in `src/game/index.ts`. `src/main.ts` is template-owned and boots through `bootPlatform`,
+  installs `PlatformGameplay` with `INTEGRATION_PLAN`, and hands the game a wired
+  `GameContext`; games no longer build `BootScene` in `main.ts`.
+- **The Factory no longer patches the template.** `src/platform/gameplay.ts`,
+  `game-integration.ts`, `src/game/{context,integration}.ts` ship with the template; the
+  Factory `sdk` step regenerates `src/platform/integration-plan.ts` only. `pnpm sdk:check`
+  fails (exit 1, JSON report) when the boot wiring is gone.
+- **One build per platform.** `pnpm build:platforms` writes `build/platforms/<id>/dist/`,
+  `build.json` and `index.json` (with the Factory-compatible `dist_digest`). Each bundle
+  carries only its target's adapter and only its engine. `pnpm build` builds one target:
+  `WGF_TARGET_PLATFORM`, else the first required entry.
+- **Portal ids fail the build.** A y8 build without `app_id`, or a gamemonetize /
+  gamedistribution build without `game_id`, fails. `platforms[].app_id` / `game_id` may live
+  in `game.config.yaml` or come from `WGF_Y8_APP_ID`, `WGF_Y8_GAME_ID`,
+  `WGF_GAMEMONETIZE_GAME_ID`. `WGF_ALLOW_UNCONFIGURED_PORTAL=1` is the test-only escape
+  hatch (`portal_configured: false`, never releasable).
+- **Release packages each platform's own build.** `release:package` refuses a build that is
+  missing, stale against `HEAD`, unconfigured or edited since it was built; zips are
+  deterministic; `packages.json` records `content_digest` and `dist_digest`.
+  `release:manifest` never overwrites a manifest with different content and records
+  `template`.
+
+#### Added
+
+- `package.platform_sdk` is measured from the shipped files
+  (`packages/platform-sdk/sdk-signatures.json`); runtime facts per platform
+  (`build/runtime-facts/<id>.json`).
+- `window.__wgf__` probe gains `target`, `steps()`, `scene()`, `paused()`, `moments()`;
+  `#hud[data-scene|data-steps|data-engine|data-platform]` are published by `main.ts` for any
+  game. Inherited game-agnostic e2e specs carry `@aspect` tags.
+- `pnpm golden:check` assembles the Factory's golden ports (`examples/*/wgf-golden.port.json`)
+  and runs the inherited suites on them.
+- `AGENTS.md` and `CLAUDE.md`: the developer contract for coding agents in a game repository.
+
+#### Fixed — docs
+
+- `docs/development.md` no longer tells games to edit `packages/`; the platform docs, release
+  and production-build docs describe per-platform builds and packaging; the adapter table
+  lists all eight platforms; Y8, GameDistribution and GameMonetize have Factory core profiles
+  at `1.0.0` (marked unverified there).
+
 ## [1.1.0] — 2026-09-24
 
 Three new portal adapters: Y8, GameDistribution and GameMonetize (PRs #9, #17, #18). All eight

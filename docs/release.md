@@ -8,11 +8,17 @@ A release is a numbered shipment of a title — `r1`, `r2`, and so on — and a 
 ```
 release/<release-id>/
   manifest.json            — the immutable record
-  <platform>.zip           — one package per targeted platform
+  <platform>.zip           — one package per targeted platform, from its own build
   checksums.txt
-  packages.json            — sizes and checksums, input to the manifest
+  packages.json            — checksum, content_digest, dist_digest and build info per package
   publications/<id>.json   — one per platform, carrying its assertion results
 ```
+
+Each `<platform>.zip` is made from `build/platforms/<platform>/dist` (`pnpm build:platforms`),
+never from `dist/`: every platform's build bundles only its own adapter. `release:package`
+refuses a build that is missing, stale against `HEAD`, built with
+`WGF_ALLOW_UNCONFIGURED_PORTAL=1`, or edited since it was built. Schemas and every refusal:
+[factory-contract.md §8](factory-contract.md#8-release).
 
 Not committed. A release is recorded by its GitHub Release assets and its workflow artifact;
 committing generated files back to the branch invites someone to edit one.
@@ -32,7 +38,8 @@ rebuilding from a tag and hoping the result matches.
 git tag v1.2.0 && git push origin v1.2.0
 ```
 
-`release.yml` then runs CI, runs the verify suite, builds, packages per platform, evaluates
+`release.yml` then runs CI, runs the verify suite, builds every platform
+(`pnpm build:platforms`), measures each build, packages per platform, evaluates
 each platform's assertions, writes the manifest and publications, and opens a **draft**
 GitHub Release. A draft because publishing the GitHub Release is itself a publication, and
 publication is gate G6.
@@ -40,11 +47,12 @@ publication is gate G6.
 By hand, the same sequence is:
 
 ```bash
-pnpm build
-pnpm test:verify                                   # measure runtime facts
-pnpm facts  --platform generic-web                 # merge static + runtime facts
-pnpm assert --platform generic-web --out build/assertions/generic-web.json
-pnpm release:package  --release r1
+pnpm build:platforms                               # build/platforms/<id>/dist per platform
+pnpm test:verify                                   # build/runtime-facts/<id>.json per platform
+pnpm release:package  --release r1                 # refuses stale or unconfigured builds
+# for each platform id in game.config.yaml:
+pnpm facts  --platform <id>                        # merge static + runtime facts
+pnpm assert --platform <id> --out build/assertions/<id>.json
 pnpm release:manifest --release r1 --version 1.2.0 --state rc
 pnpm publish:prepare  --release r1
 ```

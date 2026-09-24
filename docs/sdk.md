@@ -1,19 +1,25 @@
 # Platform SDK
 
 How a game reaches a portal, what each adapter was checked against, and what is still
-unverified. Code: `packages/platform-sdk`. Wiring into the game: `src/platform/bind.ts`.
+unverified. Code: `packages/platform-sdk`. Wiring into the game: `src/platform/gameplay.ts`
+(`PlatformGameplay`, `bootPlatform`) and `src/platform/bind.ts` (pause, mute, first input).
 
 ```text
-Game code (src/, examples/)
- │   calls only the Platform contract — never window.YaGames / CrazyGames / PokiSDK / y8
+Game code (src/game/, examples/)
+ │   calls GameIntegration / PlatformGameplay — never window.YaGames / CrazyGames / PokiSDK / y8
  ▼
-@wgf/platform-sdk — Platform (types.ts), created by createPlatform(id) from game.config.yaml
+src/platform/ — PlatformGameplay + INTEGRATION_PLAN, bindPlatform (template-owned)
+ ▼
+@wgf/platform-sdk — Platform (types.ts). A build carries ONE adapter: the target's,
+ │   via virtual:target-platform → @wgf/platform-sdk/adapters/<id>. createPlatform(id) is the
+ │   registry of all of them, for tests and tools only.
  ├── YandexPlatform       adapters/yandex.ts        /sdk.js, loaded at runtime
  ├── GameDistributionPlatform adapters/gamedistribution/  main.min.js, loaded at runtime
  ├── CrazyGamesPlatform   adapters/crazygames/      HTML5 SDK v3, <script> in <head>
  ├── PokiPlatform         adapters/poki.ts          poki-sdk.js v2, loaded at runtime
  ├── GameVuiPlatform      adapters/gamevui.ts       no SDK exists — local saves, no ads
  ├── Y8Platform           adapters/y8/              cdn.y8.com 2-0, <script async> in <head>
+ ├── GameMonetizePlatform adapters/gamemonetize.ts  api.gamemonetize.com sdk.js, loaded at runtime
  └── GenericWebPlatform   adapters/generic-web.ts   self-hosted, no portal
 ```
 
@@ -33,8 +39,13 @@ One interface for every portal (`packages/platform-sdk/src/types.ts`):
 | Analytics          | Portal-provided where the profile says so; no adapter sends events of its own                                                                                                                                                            |
 | Locale, user       | `language`, `environment`, `getUser()`                                                                                                                                                                                                   |
 
-A new portal is a new adapter implementing this, a profile in the Factory, and an entry in
+A new portal is a new adapter implementing this, a profile in the Factory, and the wiring
+listed in [development.md](development.md#adding-a-platform) — including an entry in
 `tests/sdk/portals.ts` so it runs through the same scenarios as the others.
+
+Game code never sees this interface. It calls `GameIntegration` / `PlatformGameplay` with the
+design's placement ids ([factory-contract.md §6](factory-contract.md#6-boot-and-game-api)),
+and those decide what each moment means on the running platform.
 
 ## Verification
 
@@ -44,7 +55,7 @@ A new portal is a new adapter implementing this, a profile in the Factory, and a
 | Game-side scenarios  | The same portals from the game's side: `withAdBreak`, portal mute, `adAvailability`, loading once; plus one regression test per audit finding                                                                                                       | `tests/unit/sdk-contract.test.ts`, `sdk-audit-fixes.test.ts` |
 | Per-adapter detail   | Call order, timeouts, late ads, retries                                                                                                                                                                                                             | `tests/unit/{yandex,poki,crazygames}.test.ts`                |
 | Browser matrix       | PixiJS and Three.js games × every portal adapter, real renderer, loop and `bindPlatform`, desktop and mobile Chromium                                                                                                                               | `pnpm test:sdk:matrix`                                       |
-| Template build smoke | The template game itself built per platform (generic-web, Yandex, Poki, CrazyGames, GameDistribution) × engine                                                                                                                                      | `pnpm test:sdk:browser`                                      |
+| Template build smoke | The template game itself built per platform (generic-web, Yandex, Poki, CrazyGames, Y8, GameDistribution, GameMonetize) × engine                                                                                                                    | `pnpm test:sdk:browser`                                      |
 | Release boundary     | Integration artifacts are prepared, never published; no SDK code can upload                                                                                                                                                                         | `tests/unit/sdk-integration.test.ts`                         |
 
 Mocks implement only the documented SDK surface. They prove the adapter uses that surface
@@ -179,8 +190,8 @@ Audited against every page of <https://docs.y8.com/>; details, the configuration
 way (listener first, then `emitReadyEvent()`); the game pauses and mutes only on `beforeAd`,
 so a skipped or capped break never pauses it; rewards only on `adViewed`; watchdogs bound a
 break that never answers, never ends, or ends without `adBreakDone`; Cloud Storage for
-signed-in players and local saves for guests. The Factory has no Y8 profile yet;
-`config/platforms/y8.yaml` is a proposal.
+signed-in players and local saves for guests. The Factory has a core profile `y8@1.0.0`,
+marked `status: unverified`.
 
 ### GameMonetize — implemented 2026-09-24, interstitial only
 

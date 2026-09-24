@@ -2,15 +2,18 @@
 
 ## The split that matters
 
-| Location     | Owned by     | A game may          |
-| ------------ | ------------ | ------------------- |
-| `packages/*` | the template | use it, not edit it |
-| `src/*`      | the game     | fill it in          |
+| Location                                                                                                               | Owned by     | A game may          |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------- |
+| `packages/*`, `scripts/`, build and test configs                                                                       | the template | use it, not edit it |
+| `src/main.ts`, `src/core/`, `src/platform/*` (but the plan), `src/game/{context,integration}.ts`, `create-renderer.ts` | the template | use it, not edit it |
+| `src/platform/integration-plan.ts`, `game.config.yaml`, `config/platforms/`                                            | the Factory  | read it             |
+| `src/game/index.ts` (`createGame`) and the rest of `src/`                                                              | the game     | fill it in          |
 
 The tech plan is required to say, for every system, what is generic, what is game-specific
 and what is platform-specific. This tree is that answer made physical. Reimplementing in
 `src/` something `packages/` already provides is the most common scaffolding mistake, and
-the split is what makes it visible in review.
+the split is what makes it visible in review. The full list, and what the Factory enforces:
+[factory-contract.md §1](factory-contract.md#1-ownership).
 
 ## Packages
 
@@ -45,18 +48,25 @@ Time spent paused is discarded rather than accumulated. `Game.elapsedMs` is simu
 ## The renderer seam
 
 `engine.type` in `game.config.yaml` picks the engine. `src/rendering/create-renderer.ts`
-imports the chosen framework dynamically, so only that engine is bundled — bundling both
-would put an unused megabyte into every build against caps as low as the 50 MB in the Factory's
-GameVui profile (unverified — see [platforms/gamevui](platforms/gamevui/platform-contract.md)).
+imports the chosen framework dynamically, and the build defines `import.meta.env.WGF_ENGINE`
+so Rollup drops the other engine entirely — bundling both would put an unused megabyte into
+every build against caps as low as the 50 MB in the Factory's GameVui profile (unverified —
+see [platforms/gamevui](platforms/gamevui/platform-contract.md)).
 
-Game code holds a `Renderer`. It does not import `pixi.js` or `three` outside
-`src/rendering/{pixijs,threejs}/`.
+Game code holds a `Renderer` (`context.renderer`, already initialised on `#game`). It does
+not import `pixi.js` or `three` outside `src/rendering/{pixijs,threejs}/`.
 
 ## The platform seam
 
-Game code calls `@wgf/platform-sdk`, never a portal SDK. That rule is what lets one build
-target several portals, and release validation checks it: every platform profile carries a
-`package.platform_sdk` assertion.
+Game code calls `GameIntegration` (`context.integration`) or `PlatformGameplay`
+(`context.gameplay`) with the design's placement ids — never a `Platform` method, never a
+portal SDK. `PlatformGameplay` (`src/platform/gameplay.ts`) looks the moment up in the
+Factory-generated `INTEGRATION_PLAN` and drives `@wgf/platform-sdk`'s `Platform`. That rule is
+what lets one game ship to several portals, and release validation checks it: every platform
+profile carries a `package.platform_sdk` assertion, measured by scanning the shipped files.
+
+Each build targets one platform and bundles only its adapter (`virtual:target-platform` →
+`src/platform/target.ts`); `pnpm build:platforms` makes one build per `platforms[]` entry.
 
 `PlatformCapabilities` is a field-for-field counterpart of the profile's `capabilities` and
 the ad parts of `requirements`. `AdPolicy` enforces the profile's rules locally — an
@@ -69,22 +79,30 @@ break gameplay. Never grant a reward on `shown` alone; use `rewarded`.
 ## Configuration
 
 `game.config.yaml` is written by the Factory at scaffolding from the tech plan approved at
-G3, and is not hand-edited. The Vite plugin in `vite.config.ts` parses and validates it at
-build time and exposes it as `virtual:game-config`; `src/core/config.ts` is the only module
-that reads it.
+G3, and is not hand-edited. The Vite plugin (`scripts/build/game-config-plugin.ts`, used by
+`vite.config.ts`) validates it with `src/core/game-config.ts` at build time and exposes it as
+`virtual:game-config`; `src/core/config.ts` is the only app module that reads it. The Node
+scripts load the same validator (`scripts/_shared.mjs`), so build and tooling cannot disagree.
 
 Validation is strict about `platforms`: pinned objects `{id, profile, role}`, never bare
-strings, with `profile` matching `<platform-id>@<version>`. An unpinned platform detaches
-the build from the compliance rules that were in force when it was approved.
+strings, with `profile` matching `<platform-id>@<version>`, plus the per-portal ids
+(`game_id`, `app_id`) where a portal needs them. An unpinned platform detaches the build from
+the compliance rules that were in force when it was approved.
 
 ## Boot order
 
 Portals whose profile sets `loading_api: required` list "does not report loading progress"
-as a rejection cause, so the order in `src/main.ts` is part of the contract:
+as a rejection cause, so the order in `src/main.ts` is part of the contract, and no game edit
+can reorder it — the game runs inside step 4:
 
-1. `createPlatform` → `initialize()`
-2. `reportLoadingProgress()` while the renderer and assets load
-3. `signalReady()`
-4. `game.start()`
-5. `gameplayStart()` on the player's first input, not at load — Poki's rule, and the right
+1. `bootPlatform` → the target's adapter → `initialize()` (a failing adapter degrades to an
+   SDK-free one instead of a blank page)
+2. `reportLoadingProgress()` 0.2 → strings → 0.4 → `createRenderer()` → 0.6 → `renderer.init`
+3. `new Game()`, `bindPlatform`, `installGameplay(new PlatformGameplay(…))`
+4. `createGame(context)` — the game's own loading maps to 0.6–0.8
+5. 1.0 → `signalReady()` → `game.start()`
+6. `gameplayStart()` on the player's first input, not at load — Poki's rule, and the right
    one everywhere: idle page views are not play time
+7. the verify probe (`window.__wgf__`) and `#hud[data-ready="true"]`
+
+`pnpm sdk:check` fails when this wiring is gone.
