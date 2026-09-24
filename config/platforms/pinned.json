@@ -3,7 +3,7 @@
     "Platform profiles vendored from the Factory, at the exact version game.config.yaml pins.",
     "",
     "A game repository does not contain the Factory, and release validation must judge a build",
-    "by the rules that were in force when its plan was approved — validating against the latest",
+    "by the rules that were in force when its plan was approved \u2014 validating against the latest",
     "profile instead of the pinned one is named as a failure mode in the Factory's",
     "platform-validation stage. Vendoring makes the game repository self-contained and the",
     "validation reproducible.",
@@ -16,10 +16,22 @@
   "source_path": "core/reference/platforms",
   "profiles": [
     {
+      "id": "gamedistribution",
+      "version": "1.0.0",
+      "file": "gamedistribution.yaml",
+      "content_hash": "sha256:c9ddc8e0fdadfac4a56a36184f47e958595a2bec573273e9d7e71cadc02e54cf"
+    },
+    {
       "id": "generic-web",
       "version": "1.0.0",
       "file": "generic-web.yaml",
       "content_hash": "sha256:d33a9fd7fced439e503cf769036fefa3a0824c3c51cc862786630d807cf80f00"
+    },
+    {
+      "id": "y8",
+      "version": "1.0.0",
+      "file": "y8.yaml",
+      "content_hash": "sha256:5a35a10f4f264f0c5bebbc2a21ddf8905e93e4c0bc286acd6b33e4f26574da0b"
     }
   ]
 }

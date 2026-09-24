@@ -1,14 +1,15 @@
-# Platform profile — Y8 (PROPOSED)
+# Platform profile — Y8
 #
-# Not vendored from the Factory: core/reference/platforms/ has no Y8 profile yet, so this file
-# is not listed in pinned.json and carries no content hash. It is written here, in the
-# Factory's platform-profile schema, so a title can pin `y8@1.0.0` and release validation
-# (scripts/verify/evaluate-assertions.mjs) has rules to judge it by. Upstreaming it to
-# core/reference/platforms/y8.yaml is a Factory change; until then treat it as a proposal.
+# See yandex.yaml for how profiles are consumed. Upstreamed from web-game-template's draft
+# (config/platforms/y8.yaml, docs/platforms/y8.md). Every figure comes from
+# https://docs.y8.com/ as read on 2026-09-24; where the docs say nothing — audience, bundle
+# size, review time, metadata — the field is left out rather than guessed. Unverified: no
+# figure here has been confirmed by a live submission.
 #
-# Every figure below comes from https://docs.y8.com/ as read on 2026-09-24. Where the docs
-# say nothing — audience, bundle size, review time, metadata — the field is left out or null
-# rather than guessed. docs/platforms/y8.md has the audit.
+# Portal ids. game.config.yaml platforms[] carries them per title (tech_plan
+# repo_params.game_config.platforms[]): `app_id` (the Developer Portal's App ID) is required
+# at build — without it the template never loads the SDK — and `game_id` (for ads) is
+# optional. Both may instead come from WGF_Y8_APP_ID / WGF_Y8_GAME_ID at build time.
 
 id: y8
 name: Y8
@@ -17,7 +18,8 @@ status: unverified
 docs: https://docs.y8.com/
 
 capabilities:
-  # https://docs.y8.com/sdk/advertising/ — interstitials and rewarded ads. No banner is documented.
+  # https://docs.y8.com/sdk/advertising/ — interstitials and rewarded ads. No banner is
+  # documented.
   ads: [interstitial, rewarded]
   iap: false
   # https://docs.y8.com/sdk/cloud-storage/ — signed-in players only.
@@ -55,9 +57,19 @@ review:
   common_rejections: []
 
 assertions:
+  # package.platform_sdk is derived from the built artifact (the portal SDK signatures it
+  # ships), so it names the one portal the build targets.
   - id: y8_sdk_present
     check: { left: package.platform_sdk, op: eq, right: y8 }
     severity: blocking
     rationale: >
       The Y8 SDK is loaded from https://cdn.y8.com/minimal-sdk/2-0/y8.min.js at runtime;
       a build for Y8 without it earns nothing and counts no plays.
+
+scoring_hints:
+  platform_fit_favours:
+    - Casual titles that let guests play without signing in.
+    - Designs with natural breaks for interstitials and an optional rewarded offer.
+  platform_fit_penalizes:
+    - IAP-dependent monetization — none is documented.
+    - Designs that need a loading or game-ready signal from the portal.

@@ -8,6 +8,7 @@
 // (app_id, game_id), with WGF_Y8_APP_ID / WGF_Y8_GAME_ID overriding them, and a Y8 build
 // without an App ID now fails instead of warning (WGF_ALLOW_UNCONFIGURED_PORTAL=1 excepted).
 
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -119,7 +120,7 @@ describe("the Vite plugin for a Y8 build", () => {
   });
 });
 
-describe("the proposed Y8 profile", () => {
+describe("the vendored Y8 profile", () => {
   const profile = parse(read("config/platforms/y8.yaml")) as {
     id: string;
     status: string;
@@ -142,10 +143,15 @@ describe("the proposed Y8 profile", () => {
     );
   });
 
-  it("is not passed off as vendored from the Factory", () => {
+  // The Factory now publishes y8@1.0.0 in core/reference/platforms/, so this is a vendored
+  // copy like any other: pinned.json records its version and the hash of its exact bytes.
+  it("is vendored from the Factory, pinned by content hash", () => {
     const pinned = JSON.parse(read("config/platforms/pinned.json")) as {
-      profiles: { id: string }[];
+      profiles: { id: string; version: string; file: string; content_hash: string }[];
     };
-    expect(pinned.profiles.map((p) => p.id)).not.toContain("y8");
+    const entry = pinned.profiles.find((p) => p.id === "y8");
+    expect(entry).toMatchObject({ version: "1.0.0", file: "y8.yaml" });
+    const bytes = readFileSync(resolve(root, "config/platforms/y8.yaml"));
+    expect(entry?.content_hash).toBe(`sha256:${createHash("sha256").update(bytes).digest("hex")}`);
   });
 });

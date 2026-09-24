@@ -1,27 +1,27 @@
-# Platform profile — GameDistribution (DRAFT, template-side)
+# Platform profile — GameDistribution
 #
-# NOT a vendored Factory profile. The Factory's core/reference/platforms/ has no
-# gamedistribution.yaml yet, so nothing can pin one and config/platforms/pinned.json does not
-# list this file. It is the template's proposal for that profile, written from the official
-# sources on 2026-09-24, so scripts/verify/evaluate-assertions.mjs can already judge a
-# GameDistribution build. Upstream it to the Factory unchanged; once the Factory publishes
-# gamedistribution@1.0.0, the vendored copy replaces this file.
-#
-# Sources (docs/platforms/gamedistribution.md has the audit):
+# See yandex.yaml for how profiles are consumed. Upstreamed from web-game-template's draft
+# (config/platforms/gamedistribution.yaml, docs/platforms/gamedistribution.md), written from
+# the official sources on 2026-09-24:
 #   SDK      https://github.com/GameDistribution/GD-HTML5 (README, wiki) at 4873abe, 1.43.58
 #   Rules    https://static.gamedistribution.com/developer/developers-guidelines.html
+# Figures the sources do not give — audience, bundle size, review time — are left out rather
+# than guessed. Unverified: no figure here has been confirmed by a live submission.
 #
-# Figures the sources do not give are left null rather than guessed.
+# Portal id. game.config.yaml platforms[] carries `game_id` (32 lowercase hex, from the
+# developer panel) per title, via tech_plan repo_params.game_config.platforms[]. The template
+# build fails without it, so the Factory's init refuses a gamedistribution entry that lacks
+# one.
+#
+# Hosting. §3.1: "We do not permit external hosting of games, except for Real Multiplayer
+# games." When GameDistribution agrees to it, the submission is a wrapper page that frames
+# the game with gd_sdk_referrer_url (README, "Implementation self-hosted games").
 
 id: gamedistribution
 name: GameDistribution
 version: 1.0.0
-status: draft
+status: unverified
 docs: https://github.com/GameDistribution/GD-HTML5/wiki
-
-audience:
-  primary_regions: []
-  device_mix: { mobile: null, desktop: null }
 
 capabilities:
   # Pre-roll and mid-roll interstitials are mandatory (Guidelines §2); rewarded is optional
@@ -50,12 +50,6 @@ requirements:
   https_only: true
   # §6: no outgoing links of any kind.
   no_external_links: true
-  # Per title, from the developer panel; game.config.yaml platforms[].game_id.
-  game_id: required
-  # §3.1: "We do not permit external hosting of games, except for Real Multiplayer games."
-  # When GameDistribution agrees to it, the submission is a wrapper page that frames the
-  # game with gd_sdk_referrer_url (README, "Implementation self-hosted games").
-  hosting: [gamedistribution, self-hosted]
 
 ads:
   # The SDK enforces the mid-roll interval itself ("we regulate the ad-interval through the
@@ -79,7 +73,6 @@ metadata_requirements:
 
 review:
   process: manual
-  typical_days: [null, null]
   common_rejections:
     - No pre-roll or mid-roll, or an SDK integration never activated from the developer panel.
     - Audio audible, or gameplay running, during an advertisement.
@@ -88,6 +81,8 @@ review:
     - Default language other than English.
 
 assertions:
+  # package.platform_sdk is derived from the built artifact (the portal SDK signatures it
+  # ships), so it names the one portal the build targets.
   - id: gamedistribution_sdk_present
     check: { left: package.platform_sdk, op: eq, right: gamedistribution }
     severity: blocking
