@@ -304,6 +304,10 @@ export class CrazyGamesPlatform implements Platform {
     // switched ads off (#adsDisabled). It is NOT the SDK-unavailable case (script never
     // loaded / offline), which #requestAd reports as "not-ready" — see the `!sdk` branch.
     if (this.#mode === "disabled" || this.#adsDisabled) return "disabled";
+    // No SDK to ask (script blocked or offline): no offer can have an effect, so the game must
+    // hide it — "rewarded ad buttons without effect" is a listed rejection cause. The request
+    // itself still answers "not-ready" (see #requestAd); availability is only about the offer.
+    if (!this.#sdk) return "disabled";
     if (this.#adblock) return "adblock";
     return "available";
   }
@@ -336,6 +340,10 @@ export class CrazyGamesPlatform implements Platform {
     this.#usage.recordAdRequested(kind);
 
     const availability = this.adAvailability(kind);
+    // An SDK that never loaded is "not-ready", not "disabled": the portal did not turn ads off.
+    if (availability === "disabled" && this.#mode !== "disabled" && !this.#adsDisabled) {
+      return Promise.resolve({ shown: false, reason: "not-ready" });
+    }
     if (availability !== "available") return Promise.resolve(skipped(availability));
 
     const policy = this.#ads.check(kind);

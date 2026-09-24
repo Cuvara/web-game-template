@@ -407,7 +407,7 @@ describe("YandexPlatform ads", () => {
     await expect(platform.showRewarded()).resolves.toEqual({
       shown: false,
       rewarded: false,
-      reason: "busy",
+      reason: "not-ready",
     });
     warn.mockRestore();
   });

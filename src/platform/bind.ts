@@ -194,7 +194,8 @@ export function bindPlatform(
   // if gained has not arrived within foregroundRecoveryMs, re-check the portal itself, and if
   // it now reports the foreground back, lift "platform" as gained would have.
   const scheduleTimeout = options.setTimeout ?? ((h, ms) => globalThis.setTimeout(h, ms));
-  const cancelTimeout = options.clearTimeout ?? ((handle) => globalThis.clearTimeout(handle as never));
+  const cancelTimeout =
+    options.clearTimeout ?? ((handle) => globalThis.clearTimeout(handle as never));
   const recoveryMs = options.foregroundRecoveryMs ?? DEFAULT_FOREGROUND_RECOVERY_MS;
   let watchdog: unknown;
   const clearWatchdog = (): void => {
