@@ -15,7 +15,7 @@
     "*.config.ts",
     "vitest.workspace.ts"
   ],
-  "exclude": ["node_modules", "dist", "examples/*/dist"],
+  "exclude": ["node_modules", "dist", "examples/*/dist", "examples/wgf-golden-shared"],
   "references": [
     { "path": "./packages/game-core" },
     { "path": "./packages/platform-sdk" },
