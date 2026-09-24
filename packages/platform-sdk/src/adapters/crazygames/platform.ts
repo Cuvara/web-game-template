@@ -99,14 +99,31 @@ export interface CrazyGamesOptions {
   readonly loadSdk?: () => Promise<CrazyGamesSdk>;
   /**
    * An ad that has not started this long after being requested is given up on, so a lost
-   * callback cannot leave the game paused for good. Once `adStarted` fires there is no
-   * timeout: the ad owns the screen until the SDK says it is done.
+   * callback cannot leave the game paused for good.
    */
   readonly adStartTimeoutMs?: number;
+  /**
+   * How long an ad may stay on screen after `adStarted` before the call is given up on as
+   * unshown (and unrewarded) and the game gets the foreground back. Only a lost
+   * adFinished/adError ever reaches it: a real ad reports well inside it. Defaults to 180s.
+   */
+  readonly adMaxDurationMs?: number;
+  /**
+   * How long initialize() waits for `sdk.init()` before the game boots without the SDK.
+   * Defaults to 10s, as on Yandex.
+   */
+  readonly initTimeoutMs?: number;
   readonly now?: () => number;
 }
 
 const DEVICE_TYPES: readonly DeviceType[] = ["desktop", "tablet", "mobile"];
+
+// "It is important to await for the initialization" — but an init that never settles (a
+// half-loaded SDK, a stalled network request inside it) would otherwise hold boot forever.
+const DEFAULT_INIT_TIMEOUT_MS = 10_000;
+const DEFAULT_AD_START_TIMEOUT_MS = 30_000;
+// An ad that started but never reports adFinished/adError. Matches Y8's cap for the same case.
+const DEFAULT_AD_MAX_DURATION_MS = 180_000;
 
 export class CrazyGamesPlatform implements Platform {
   readonly id = "crazygames";
@@ -217,14 +234,51 @@ export class CrazyGamesPlatform implements Platform {
       sdk = await (this.#options.loadSdk ?? loadCrazyGamesSdk)();
       // "It is important to await for the initialization ... the SDK is unusable until
       // initialized." The data module also preloads saves during init.
-      await sdk.init();
+      const initialized = sdk.init();
+      if (!(await this.#withinInitDeadline(initialized))) {
+        console.warn("CrazyGames SDK init did not finish in time; continuing without it");
+        this.#mode = "unavailable";
+        // A late init still makes the SDK usable, as on Poki and GameMonetize: ads, gameplay
+        // reports and settings switch on. A late rejection changes nothing.
+        const late = sdk;
+        initialized.then(
+          () => this.#attach(late, true),
+          () => {},
+        );
+        return;
+      }
     } catch (error) {
       // The game must stay playable when an ad blocker stops the SDK loading.
       console.warn("CrazyGames SDK unavailable; continuing without it", error);
       this.#mode = "unavailable";
       return;
     }
+    this.#attach(sdk, false);
+  }
 
+  /** True when init settled inside the deadline; rethrows its rejection. */
+  async #withinInitDeadline(initialized: Promise<void>): Promise<boolean> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<false>((resolve) => {
+      timer = setTimeout(
+        () => resolve(false),
+        this.#options.initTimeoutMs ?? DEFAULT_INIT_TIMEOUT_MS,
+      );
+    });
+    try {
+      return await Promise.race([initialized.then(() => true as const), deadline]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * Switches the adapter onto an initialised SDK. `late` means the game already booted
+   * without it: its saves were read from the local fallback, so storage stays there for the
+   * rest of the session rather than changing what a read returns mid-game. The next boot,
+   * with the SDK in time, migrates those keys into the Data module.
+   */
+  #attach(sdk: CrazyGamesSdk, late: boolean): void {
     this.#sdkEnvironment = sdk.environment;
     if (sdk.environment === "disabled") {
       this.#mode = "disabled";
@@ -233,8 +287,10 @@ export class CrazyGamesPlatform implements Platform {
 
     this.#sdk = sdk;
     this.#mode = "sdk";
-    this.#storage = new CrazyGamesDataStorage(sdk, this.#fallbackStorage);
-    this.#migrateFallbackSaves(sdk);
+    if (!late) {
+      this.#storage = new CrazyGamesDataStorage(sdk, this.#fallbackStorage);
+      this.#migrateFallbackSaves(sdk);
+    }
     this.#environment = readEnvironment(sdk);
     this.#language = readLanguage(sdk);
     this.#applySettings(sdk.game.settings);
@@ -244,6 +300,8 @@ export class CrazyGamesPlatform implements Platform {
     this.#safely(() => sdk.game.loadingStart());
     // The game may have finished loading while init was still in flight.
     if (this.#readySignalled) this.#stopLoading();
+    // Or, after a late init, already be playing: the portal hears the session it missed.
+    if (late && this.#inGameplay) this.#safely(() => sdk.game.gameplayStart());
 
     // Detection takes a moment and is not needed to boot; the first rewarded offer is
     // seconds of gameplay away. Not awaited.
@@ -367,10 +425,17 @@ export class CrazyGamesPlatform implements Platform {
       let started = false;
       let settled = false;
 
+      // Set when the on-screen cap ended an ad that had started: its ad:end is already out,
+      // so a later adFinished may only settle the reward (once), never end it again.
+      let capped = false;
+      let cappedRewarded = false;
+      let maxDuration: ReturnType<typeof setTimeout> | undefined;
+
       const finish = (result: AdResult): void => {
         if (settled) return;
         settled = true;
         clearTimeout(watchdog);
+        clearTimeout(maxDuration);
         this.#adInProgress = false;
         if (started) this.#endAd(kind);
         resolve(result);
@@ -378,7 +443,16 @@ export class CrazyGamesPlatform implements Platform {
 
       const watchdog = setTimeout(() => {
         if (!started) finish({ shown: false, reason: "error" });
-      }, this.#options.adStartTimeoutMs ?? 30_000);
+      }, this.#options.adStartTimeoutMs ?? DEFAULT_AD_START_TIMEOUT_MS);
+
+      // A started ad whose adFinished/adError is lost would otherwise hold the game paused
+      // and muted for good. Past the cap the call resolves unshown and unrewarded — reward
+      // is only ever granted on the portal's own adFinished — and the foreground returns.
+      const capShown = (): void => {
+        if (settled) return;
+        capped = true;
+        finish({ shown: false, reason: "error" });
+      };
 
       // An ad that starts after the watchdog gave up still has sound. It gets its own
       // ad:start/ad:end pair so the game mutes for it, even though the request has resolved.
@@ -386,6 +460,7 @@ export class CrazyGamesPlatform implements Platform {
       // the reward is surfaced exactly once as `ad:late-reward` instead (types.ts:208-212).
       let lateStarted = false;
       let lateSettled = false;
+      let lateCap: ReturnType<typeof setTimeout> | undefined;
       const endLate = (): void => {
         // Exactly-once guard for the late path: `lateSettled` flips on the first late
         // adFinished/adError and blocks any duplicate SDK callback from emitting ad:end,
@@ -393,6 +468,7 @@ export class CrazyGamesPlatform implements Platform {
         if (!lateStarted || lateSettled) return;
         lateSettled = true;
         lateStarted = false;
+        clearTimeout(lateCap);
         this.#endAd(kind);
       };
 
@@ -417,9 +493,28 @@ export class CrazyGamesPlatform implements Platform {
             if (settled) lateStarted = true;
             else started = true;
             this.#startAd(kind);
-            if (!settled) hooks?.onStart?.();
+            const maxMs = this.#options.adMaxDurationMs ?? DEFAULT_AD_MAX_DURATION_MS;
+            // A late ad is bounded the same way: its ad:end must come, reported or not.
+            if (settled) {
+              lateCap = setTimeout(endLate, maxMs);
+              return;
+            }
+            clearTimeout(watchdog);
+            maxDuration = setTimeout(capShown, maxMs);
+            hooks?.onStart?.();
           },
           adFinished: () => {
+            // The cap already ended this ad and resolved rewarded:false. A rewarded ad that
+            // now reports finished was watched through: the reward is owed exactly once, as
+            // ad:late-reward, with no second ad:end.
+            if (capped) {
+              if (kind !== "rewarded" || cappedRewarded) return;
+              cappedRewarded = true;
+              this.#ads.record(kind);
+              this.#usage.recordAdShown(kind);
+              this.#events.emit("ad:late-reward", { kind });
+              return;
+            }
             // A late finish: reward (rewarded only) then end. A rewarded kind owes
             // ad:late-reward; an interstitial keeps the old behaviour of just ad:end.
             if (settled) return finishLate(kind === "rewarded");
@@ -428,7 +523,8 @@ export class CrazyGamesPlatform implements Platform {
             finish({ shown: true });
           },
           adError: (error) => {
-            // A late error never rewards — just close out the ad:start with ad:end.
+            // A late error never rewards — just close out the ad:start with ad:end (a capped
+            // ad already has its ad:end; endLate ignores it).
             if (settled) return endLate();
             finish({ shown: false, reason: this.#adErrorReason(error) });
           },
