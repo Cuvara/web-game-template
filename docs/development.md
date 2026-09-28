@@ -133,6 +133,41 @@ if (input.consumePressed("jump")) player.jump();
 - `dispose()` removes every listener and is safe to call twice — return it from
   `createGame`'s `GameHandle.dispose`.
 
+### Scaling
+
+A game is authored against one size and has to run from a 360x640 phone to a desktop
+window. `layoutViewport` from `@wgf/game-core` turns the design size and the current
+viewport into one scale, one world rectangle and the offsets to centre it.
+
+```ts
+const DESIGN = { design: { width: 1280, height: 720 } };
+
+const relayout = (size: ViewportSize): void => {
+  const layout = layoutViewport(DESIGN, size, readSafeAreaInsets(context.container));
+  view.apply(layout); // scale the root container, place the HUD in layout.safeArea
+};
+relayout(context.viewport());
+const offResize = context.onResize(relayout);
+```
+
+- It is a pure function, so the geometry at every screen shape a game claims to support is
+  unit-testable without a browser. `main.ts` already resizes the renderer and calls
+  `onResize`; this adds no lifecycle of its own.
+- `fit: "extend"` (the default) keeps the authored scale, never crops the design rectangle,
+  and grows the world on the axis with room to spare — Poki asks a game to "scale to cover
+  the full canvas" and Yandex 5.9 counts black bars against a submission. `minAspect` and
+  `maxAspect` bound how far it grows. `fit: "contain"` preserves the design aspect exactly
+  and leaves margins; the game must fill them with something that is not a black bar.
+- `toWorld(layout, x, y)` converts what `Input.pointer` reports — the same surface CSS
+  pixels — into world units, and `toCss` goes back for placing a DOM element over the world.
+  A press in a margin converts to a point outside the world rather than being clamped to an
+  edge the player never touched; `containsWorld` answers that.
+- `layout.safeArea` is the part of the world no notch or rounded corner covers, in world
+  units. A DOM HUD should use the CSS `env(safe-area-inset-*)` variables directly; this is
+  for a HUD drawn on the canvas, which has no other way to know.
+- A zero-sized container (`display: none`, or read before layout) yields a scale of 1 rather
+  than a division by zero; a design size that is not positive throws when it is passed.
+
 **A game never edits `packages/`, `scripts/`, `src/main.ts`, `src/core/`, the template-owned
 files in `src/platform/` and `src/game/`, the build and test configs, `game.config.yaml` or
 `package.json` scripts.** The Factory refuses such a change. If the template lacks something
