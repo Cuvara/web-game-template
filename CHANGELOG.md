@@ -10,6 +10,38 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Scaling foundation
+
+Three example games already solve this three incompatible ways, and all three re-derive the
+same primitives: guard the zero-sized container, divide to get a scale, centre the remainder,
+convert a pointer coordinate back. `layoutViewport` from `@wgf/game-core` is a pure function
+from a design size and a viewport to one scale, one world rectangle and the offsets that
+centre it. Additive — contract stays `2`, no new dependency, no lifecycle of its own
+(`main.ts` already owns resize), and the shipped bundle is byte-identical because the export
+is unused and tree-shaken.
+
+#### Added
+
+- **`layoutViewport(options, size, insets?)`** — pure, so a game's geometry at every screen
+  shape it claims to support is unit-testable without a browser.
+- **`fit: "extend"` is the default**, not letterboxing. Poki asks a game to "scale to cover
+  the full canvas", and Yandex 5.9 counts black bars against a submission while 1.6.2.1
+  requires the canvas to fill the frame — so `extend` keeps the authored scale, never crops
+  the design rectangle, and grows the world on the axis with room to spare, bounded by
+  `minAspect` / `maxAspect`. `fit: "contain"` is there for a playfield that genuinely cannot
+  change shape.
+- **`toWorld` / `toCss` / `containsWorld`** — `toWorld` converts exactly what `Input.pointer`
+  reports, so the input and scaling foundations meet without either knowing about the other.
+  A press in a margin converts to a point outside the world rather than being clamped to an
+  edge the player never touched.
+- **`readSafeAreaInsets(host)` and `layout.safeArea`** — `env(safe-area-inset-*)` can only be
+  used in a declaration, never read from script, so a canvas-drawn HUD has no way to see a
+  notch. This puts the values on a hidden probe's padding and reads them back, removing the
+  probe in a `finally` so a read that throws cannot leave a growing pile of hidden divs.
+  `safeArea` reports the uncovered region in world units.
+- Guards: a zero-sized container (`display: none`, or read before layout) yields a scale of 1
+  rather than a division by zero; a design size that is not positive throws when it is passed.
+
 ### Input foundation
 
 Every game rewrote the same layer — a held-key set, keydown/keyup on the window, pointer
