@@ -14,6 +14,9 @@ importers:
       '@wgf/game-core':
         specifier: workspace:*
         version: link:packages/game-core
+      '@wgf/phaser-framework':
+        specifier: workspace:*
+        version: link:packages/phaser-framework
       '@wgf/pixi-framework':
         specifier: workspace:*
         version: link:packages/pixi-framework
@@ -186,6 +189,15 @@ importers:
   packages/analytics-sdk: {}
 
   packages/game-core: {}
+
+  packages/phaser-framework:
+    dependencies:
+      '@wgf/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+      phaser:
+        specifier: ^3.90.0
+        version: 3.90.0
 
   packages/pixi-framework:
     dependencies:
@@ -1314,6 +1326,9 @@ packages:
   pathval@2.0.1:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
+
+  phaser@3.90.0:
+    resolution: {integrity: sha512-/cziz/5ZIn02uDkC9RzN8VF9x3Gs3XdFFf9nkiMEQT3p7hQlWuyjy4QWosU802qqno2YSLn2BfqwOKLv/sSVfQ==}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -2574,6 +2589,10 @@ snapshots:
   pathe@1.1.2: {}
 
   pathval@2.0.1: {}
+
+  phaser@3.90.0:
+    dependencies:
+      eventemitter3: 5.0.4
 
   picocolors@1.1.1: {}
 

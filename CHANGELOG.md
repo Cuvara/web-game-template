@@ -10,6 +10,34 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Phaser as a second 2D engine
+
+`engine.type` accepts `phaserjs`, implemented by `@wgf/phaser-framework` (Phaser 3.90.0).
+Additive — contract stays `2`, `pixijs` remains the 2D default and what an untouched scaffold
+carries, and no existing build changes. This is the framework increment only: the engine
+matrix suites (`ALL_ENGINES` in `scripts/_shared.mjs`, the SDK browser matrix) still cover
+`pixijs` and `threejs`, and the Factory does not yet offer `phaserjs` in a tech plan.
+
+#### Added
+
+- **`PhaserRenderer`** — a `Renderer` like the other two. Phaser's own `TimeStep` is stopped
+  the moment it boots and the renderer steps Phaser once per drawn frame from `render()`, so
+  `@wgf/game-core`'s fixed-timestep loop stays the only loop: the simulation and the drawing
+  cannot disagree about how much time passed, and `Game.pause()` still stops everything during
+  an ad break. `destroy()` performs one manual step after `game.destroy(true)`, because Phaser
+  defers its teardown to the next step and with the TimeStep stopped there would never be one.
+- **`src/rendering/phaserjs/`** — the only place a game may import `phaser`, matching the
+  existing `pixijs` and `threejs` slots.
+- **`pnpm build:engine <engine.type>`** — builds the template against one engine without
+  editing `game.config.yaml`, so an engine the committed config does not name is still proved
+  by the normal build and the unchanged e2e suite.
+
+#### Changed
+
+- `Renderer.kind` widens to `"pixijs" | "phaserjs" | "threejs"`, and `ENGINES` in
+  `src/core/game-config.ts` gains `phaserjs`. A game that pins an earlier ref is unaffected;
+  the enum only widens.
+
 ### Three.js game foundation (`wgf.template.version` 1.2.0)
 
 A 3D title had to write its own asset loading, animation wiring, disposal, lights and camera

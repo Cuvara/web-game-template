@@ -35,6 +35,6 @@ declare module "virtual:target-platform" {
 
 /** Build-time constants the same plugin defines. Undefined in a build made without it. */
 interface ImportMetaEnv {
-  readonly WGF_ENGINE?: "pixijs" | "threejs";
+  readonly WGF_ENGINE?: "pixijs" | "phaserjs" | "threejs";
   readonly WGF_TARGET_PLATFORM?: string;
 }

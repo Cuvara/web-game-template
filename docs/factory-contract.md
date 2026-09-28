@@ -10,19 +10,19 @@ disagree, the code wins and this page is the bug.
 
 ## 1. Ownership
 
-| Path                                                                                                                                                                       | Owner                | Who may write it                                                |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------------------------------------- |
-| `src/game/index.ts`                                                                                                                                                        | game                 | the developer (the one required entry)                          |
-| `src/game/**` (except `context.ts`, `integration.ts`), `src/{ui,audio,input,assets,analytics}/`, `src/rendering/{pixijs,threejs}/`, `public/`, `tests/unit/`, `tests/e2e/` | game                 | the developer                                                   |
-| `index.html`, `package.json` dependencies, `pnpm-lock.yaml`, `docs/development/`                                                                                           | game                 | the developer (package.json `scripts` must stay the template's) |
-| `game.config.yaml`                                                                                                                                                         | Factory              | Factory `init` (from `tech_plan.repo_params.game_config`)       |
-| `config/platforms/*.yaml`, `config/platforms/pinned.json`                                                                                                                  | Factory              | Factory `init` (profiles vendored at the pinned versions)       |
-| `src/platform/integration-plan.ts`                                                                                                                                         | Factory              | Factory `sdk` step — this file only, whole-file, data only      |
-| `docs/development/brief.md`, `brief.json`                                                                                                                                  | Factory              | Factory `develop` step                                          |
-| `docs/development/report.json`                                                                                                                                             | game                 | the developer (the development report the Factory checks)       |
-| `src/main.ts`, `src/core/`, `src/platform/{gameplay,game-integration,target,bind}.ts`, `src/game/{context,integration}.ts`, `src/rendering/create-renderer.ts`             | template             | nobody downstream — fix the template                            |
-| `packages/`, `scripts/`, `.github/`, `tests/{sdk,integration,verify,support,…}`, every `*.config.ts`, `tsconfig*.json`, `eslint.config.js`, `pnpm-workspace.yaml`          | template             | nobody downstream — fix the template                            |
-| `examples/`                                                                                                                                                                | template (reference) | nobody downstream; golden ports live here (§10)                 |
+| Path                                                                                                                                                                                | Owner                | Who may write it                                                |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------------------------------------- |
+| `src/game/index.ts`                                                                                                                                                                 | game                 | the developer (the one required entry)                          |
+| `src/game/**` (except `context.ts`, `integration.ts`), `src/{ui,audio,input,assets,analytics}/`, `src/rendering/{pixijs,phaserjs,threejs}/`, `public/`, `tests/unit/`, `tests/e2e/` | game                 | the developer                                                   |
+| `index.html`, `package.json` dependencies, `pnpm-lock.yaml`, `docs/development/`                                                                                                    | game                 | the developer (package.json `scripts` must stay the template's) |
+| `game.config.yaml`                                                                                                                                                                  | Factory              | Factory `init` (from `tech_plan.repo_params.game_config`)       |
+| `config/platforms/*.yaml`, `config/platforms/pinned.json`                                                                                                                           | Factory              | Factory `init` (profiles vendored at the pinned versions)       |
+| `src/platform/integration-plan.ts`                                                                                                                                                  | Factory              | Factory `sdk` step — this file only, whole-file, data only      |
+| `docs/development/brief.md`, `brief.json`                                                                                                                                           | Factory              | Factory `develop` step                                          |
+| `docs/development/report.json`                                                                                                                                                      | game                 | the developer (the development report the Factory checks)       |
+| `src/main.ts`, `src/core/`, `src/platform/{gameplay,game-integration,target,bind}.ts`, `src/game/{context,integration}.ts`, `src/rendering/create-renderer.ts`                      | template             | nobody downstream — fix the template                            |
+| `packages/`, `scripts/`, `.github/`, `tests/{sdk,integration,verify,support,…}`, every `*.config.ts`, `tsconfig*.json`, `eslint.config.js`, `pnpm-workspace.yaml`                   | template             | nobody downstream — fix the template                            |
+| `examples/`                                                                                                                                                                         | template (reference) | nobody downstream; golden ports live here (§10)                 |
 
 The Factory **never patches** a template-owned file. In contract 1 the `sdk` step rewrote
 `src/main.ts` and copied `src/platform/gameplay.ts` / `game-integration.ts` in; in contract 2
@@ -37,7 +37,7 @@ script that reads it.
 
 ```yaml
 game: { id: <slug>, name: <string>, version: <semver> }
-engine: { type: pixijs | threejs }
+engine: { type: pixijs | phaserjs | threejs }
 platforms:
   - id: <platform-id>
     profile: <platform-id>@<x.y.z>
@@ -129,7 +129,7 @@ build/platforms/index.json
   "platform": "<id>",
   "profile": "<id>@<x.y.z>",
   "role": "required | optional",
-  "engine": "pixijs | threejs",
+  "engine": "pixijs | phaserjs | threejs",
   "game_id": "<game.id>",          // the title id, NOT the portal game_id
   "game_version": "<game.version>",
   "commit_sha": "<40-hex> | null", // null outside a git checkout

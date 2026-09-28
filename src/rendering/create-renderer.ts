@@ -1,17 +1,18 @@
 // Engine selection.
 //
 // The engine is fixed at build time: scripts/build/game-config-plugin.ts defines
-// import.meta.env.WGF_ENGINE from game.config.yaml's engine.type. Both imports below are
-// dynamic and guarded by that constant, so Rollup drops the other engine's branch — and its
-// chunk — entirely. Bundling both would put an unused megabyte into every build, against caps
-// as low as the Factory GameVui profile's 50 MB (unverified: GameVui publishes no size limit).
+// import.meta.env.WGF_ENGINE from game.config.yaml's engine.type. Every import below is
+// dynamic and guarded by that constant, so Rollup drops the other engines' branches — and
+// their chunks — entirely. Bundling all of them would put unused megabytes into every build,
+// against caps as low as the Factory GameVui profile's 50 MB (unverified: GameVui publishes
+// no size limit).
 //
 // A bundle built without the plugin (the SDK matrix harness, tests/sdk-matrix/) has no
 // WGF_ENGINE and picks the engine from the argument at run time.
 
 import type { Renderer } from "@wgf/game-core";
 
-export type Engine = "pixijs" | "threejs";
+export type Engine = "pixijs" | "phaserjs" | "threejs";
 
 /**
  * The engine's renderer. `engine`, if passed, must be the one the build was made for — a
@@ -32,6 +33,13 @@ export async function createRenderer(engine?: Engine): Promise<Renderer> {
   ) {
     const { PixiRenderer } = await import("@wgf/pixi-framework");
     return new PixiRenderer();
+  }
+  if (
+    import.meta.env.WGF_ENGINE === "phaserjs" ||
+    (import.meta.env.WGF_ENGINE === undefined && engine === "phaserjs")
+  ) {
+    const { PhaserRenderer } = await import("@wgf/phaser-framework");
+    return new PhaserRenderer();
   }
   if (
     import.meta.env.WGF_ENGINE === "threejs" ||

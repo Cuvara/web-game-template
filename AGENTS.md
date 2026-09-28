@@ -10,7 +10,8 @@ One web game for HTML5 portals (Poki, CrazyGames, Yandex, GameDistribution, Game
 GameVui, self-hosted). The template supplies the loop, renderer, platform adapters, boot
 sequence, build, tests and release tooling. You write the game.
 
-- Engine: `engine.type` in `game.config.yaml` (`pixijs` or `threejs`). Use only that one.
+- Engine: `engine.type` in `game.config.yaml` (`pixijs`, `phaserjs` or `threejs`). Use only
+  that one.
 - Platforms: `platforms[]` in `game.config.yaml`. One build per platform; you never pick one
   in code.
 - If `docs/development/brief.md` exists, it is your assignment. Report back in
@@ -34,8 +35,8 @@ with the game's own scenes.
 
 - `src/game/**` except `context.ts` and `integration.ts`
 - `src/ui/`, `src/audio/`, `src/input/`, `src/assets/`, `src/analytics/`
-- `src/rendering/pixijs/` or `src/rendering/threejs/` — the only place `pixi.js` / `three`
-  may be imported
+- `src/rendering/pixijs/`, `src/rendering/phaserjs/` or `src/rendering/threejs/` — the only
+  place `pixi.js` / `phaser` / `three` may be imported
 - `public/` (assets, `public/locales/<lang>.json`), `index.html` (keep `#game` and `#hud`)
 - `tests/unit/`, `tests/e2e/`
 - `package.json` **dependencies** and `pnpm-lock.yaml` (engine libraries only)
