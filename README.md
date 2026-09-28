@@ -21,6 +21,8 @@ elevated shell on Windows.
   repository
 - [docs/architecture.md](docs/architecture.md) — how the pieces fit
 - [docs/development.md](docs/development.md) — working in it day to day
+- [docs/threejs.md](docs/threejs.md) — what a 3D game gets from the template, and the physics
+  decision
 - [docs/wgf-integration.md](docs/wgf-integration.md) — the Factory flow end to end
 - [docs/sdk.md](docs/sdk.md) — the platform SDK and each adapter's audit
 - [docs/production-build.md](docs/production-build.md) — per-platform builds and packages
@@ -67,11 +69,13 @@ mistake, and this split is what makes it visible in review. The exact list is in
 
 ```
 packages/
-  game-core         fixed-timestep loop, scenes, events, pause, the Renderer interface
+  game-core         fixed-timestep loop, scenes, events, pause, input, the Renderer interface
   platform-sdk      the platform abstraction, ad policy, storage, portal adapters
   analytics-sdk     one batched event vocabulary
-  pixi-framework    Renderer for engine.type: pixijs
-  three-framework   Renderer for engine.type: threejs
+  pixi-framework    Renderer for engine.type: pixijs, plus the 2D asset foundation
+  phaser-framework  Renderer for engine.type: phaserjs
+  three-framework   Renderer for engine.type: threejs, plus 3D infrastructure
+                    (assets, animation, disposal, lights, cameras) — docs/threejs.md
 
 src/
   main.ts           the boot sequence (template-owned); calls createGame(context)
