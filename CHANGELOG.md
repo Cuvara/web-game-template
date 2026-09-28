@@ -10,6 +10,30 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### 2D asset loading
+
+A 2D title had to write its own loading and progress arithmetic before it could draw anything,
+and a game that got the arithmetic wrong failed at portal submission rather than in CI.
+Additive — contract stays `2`, no game code changes, and 3D is untouched.
+
+#### Added
+
+- **`AssetManifest`** — what the game ships, declared as data in `src/assets/manifest.ts`
+  (game-owned) and grouped into bundles by when each is needed, so a build's payload is
+  reviewable without reading loader code.
+- **`AssetLoader`** from `@wgf/pixi-framework` — loads the named bundles through Pixi's own
+  `Assets` cache and reports combined progress in `[0,1]`, weighted by bundle size, never
+  decreasing, always ending at exactly 1. Hand `onProgress` straight to
+  `context.reportLoadingProgress`; profiles with `loading_api` reject a game that reports none
+  and `pnpm facts` counts the calls as `calls_loading_api`.
+- Manifest rules are checked when the loader is constructed: a duplicate alias, a repeated
+  bundle name or a missing `src` is a startup error naming the file, not a texture that
+  silently never appears.
+- `get()` / `texture()` throw and say which bundle to load rather than returning `undefined`,
+  and `texture()` refuses an alias the manifest declares as something other than an image. A
+  failed bundle names the bundle, its aliases and the backend's original message.
+- No new dependency: loading goes through the `pixi.js` the binding already carried.
+
 ### 2.0.0-contract — Factory ↔ template contract 2
 
 The Factory ↔ template API is now written down and versioned:

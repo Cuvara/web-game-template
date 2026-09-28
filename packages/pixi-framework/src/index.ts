@@ -7,6 +7,18 @@
 import type { Renderer, RendererOptions } from "@wgf/game-core";
 import { Application, type Container } from "pixi.js";
 
+export {
+  AssetLoader,
+  PixiAssetBackend,
+  assetKind,
+  type AssetBackend,
+  type AssetBundle,
+  type AssetEntry,
+  type AssetKind,
+  type AssetLoaderOptions,
+  type AssetManifest,
+} from "./assets.js";
+
 /**
  * Same cap as the Three.js renderer. A 2.75x phone screen costs nearly twice the fill of a
  * 2x one for no visible gain in a game, and fill rate is what low-end Android runs out of.

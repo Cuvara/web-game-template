@@ -60,6 +60,32 @@ Ads, gameplay start/stop, analytics and saves go through `context.integration`
 (`GameIntegration`) or `context.gameplay` (`PlatformGameplay`) — never a `Platform` method,
 never a portal SDK.
 
+### Assets (2D)
+
+Files go in `public/assets/`; what the game loads is declared in `src/assets/manifest.ts` as
+an `AssetManifest` and loaded by `AssetLoader` from `@wgf/pixi-framework`:
+
+```ts
+const assets = new AssetLoader({
+  manifest: MANIFEST,
+  onProgress: context.reportLoadingProgress,
+});
+await assets.load("boot");
+const hero = assets.texture("hero");
+```
+
+- `src` drops the `public/` prefix: `public/assets/hero.png` is `"assets/hero.png"`. Vite
+  writes relative URLs (`base: "./"`), which portals require.
+- Group bundles by when they are needed. Everything in the first `load()` sits in front of
+  the first frame, and `pnpm test:verify` measures time to interactive.
+- Pass `context.reportLoadingProgress` as `onProgress`. `main.ts` maps it into the portal's
+  loading bar; profiles with `loading_api` treat a missing call as a rejection cause, and
+  `pnpm facts` records it as `calls_loading_api`.
+- The manifest is validated when the loader is constructed — a duplicate alias or an empty
+  `src` is a startup error naming the file, not a texture that silently never appears.
+- Audio files are not an asset kind: Pixi's `Assets` does not decode audio. Load sounds in
+  `src/audio/`.
+
 **A game never edits `packages/`, `scripts/`, `src/main.ts`, `src/core/`, the template-owned
 files in `src/platform/` and `src/game/`, the build and test configs, `game.config.yaml` or
 `package.json` scripts.** The Factory refuses such a change. If the template lacks something

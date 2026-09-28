@@ -23,6 +23,9 @@ const alias = [
   packageAlias("game-core"),
   packageAlias("platform-sdk"),
   packageAlias("analytics-sdk"),
+  // The 2D framework's asset loader is unit-tested against a fake backend, so no WebGL
+  // context is needed and the node environment is enough.
+  packageAlias("pixi-framework"),
 ];
 
 export default defineWorkspace([
