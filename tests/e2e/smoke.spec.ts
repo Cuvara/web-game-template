@@ -11,6 +11,12 @@
 // @tags are the aspects the Factory's verification maps to Playwright specs.
 
 import { expect, test, type Page } from "@playwright/test";
+import { ENGINES } from "../../src/core/game-config.js";
+
+// Read from the one list rather than repeating it here. A second copy goes stale the moment
+// the template implements another engine, and it fails as "the engine is wrong" on a build
+// that is in fact correct.
+const ENGINE_PATTERN = new RegExp(`^(${ENGINES.join("|")})$`);
 
 async function boot(page: Page): Promise<string[]> {
   const errors: string[] = [];
@@ -26,7 +32,7 @@ const readSteps = async (page: Page): Promise<number> =>
 test("boots and reports loading through the platform @boot @loading", async ({ page }) => {
   const errors = await boot(page);
   const hud = page.locator("#hud");
-  await expect(hud).toHaveAttribute("data-engine", /^(pixijs|threejs)$/);
+  await expect(hud).toHaveAttribute("data-engine", ENGINE_PATTERN);
   await expect(hud).toHaveAttribute("data-platform", /.+/);
 
   const probe = await page.evaluate(() => {
