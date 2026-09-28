@@ -28,7 +28,14 @@ export default defineWorkspace([
       name: "unit",
       // .mjs as well as .ts: the build and release scripts under scripts/ are plain ESM,
       // and they are tested the same way everything else is.
-      include: ["tests/unit/**/*.test.{ts,mjs}", "examples/*/tests/unit/**/*.test.ts"],
+      // packages/*/tests/ as well: a binding whose own dependency cannot be imported under
+      // Node (Phaser touches `window` at import) is tested next to itself, where that
+      // dependency resolves and can be mocked.
+      include: [
+        "tests/unit/**/*.test.{ts,mjs}",
+        "examples/*/tests/unit/**/*.test.ts",
+        "packages/*/tests/**/*.test.ts",
+      ],
       environment: "node",
     },
   },
