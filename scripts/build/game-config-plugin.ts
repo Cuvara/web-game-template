@@ -98,6 +98,20 @@ export function shippedLocales(localesDir: string): string[] {
 export function gameConfigPlugin(options: GameConfigPluginOptions): Plugin {
   return {
     name: "wgf:game-config",
+    // The engine, as a build-time constant. src/rendering/create-renderer.ts compares
+    // against it directly so each branch is a literal comparison, which is what lets Rollup
+    // drop the engines this build does not use — and their chunks with them. Without it
+    // every build carries every engine the template implements, which is megabytes against
+    // caps as low as the Factory GameVui profile's 50 MB.
+    config() {
+      return {
+        define: {
+          "import.meta.env.WGF_ENGINE": JSON.stringify(
+            loadGameConfig(options.configPath).engine.type,
+          ),
+        },
+      };
+    },
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_VIRTUAL_ID;
       if (id === LOCALES_ID) return RESOLVED_LOCALES_ID;

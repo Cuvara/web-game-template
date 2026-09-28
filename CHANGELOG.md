@@ -10,6 +10,42 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-09-28
+
+Phaser as a second 2D engine. `engine.type` accepts `phaserjs` alongside `pixijs` and
+`threejs`; a title gains it by naming it in its tech plan. Nothing about an existing PixiJS or
+Three.js game changes — both build, boot and smoke exactly as before — and no game is obliged
+to move.
+
+### Added
+
+- **`@wgf/phaser-framework`** (`packages/phaser-framework/`, Phaser 3.90.0): `PhaserRenderer`
+  behind the existing `Renderer` seam. Phaser's own TimeStep is stopped the moment it boots
+  and the renderer steps Phaser once per drawn frame, so `@wgf/game-core` remains the only
+  loop: one `requestAnimationFrame`, one clock, and `Game.pause()` still stops everything
+  during an ad break. `destroy()` steps Phaser once after `game.destroy(true)` because Phaser
+  defers its teardown to the next step, which a stopped TimeStep would never deliver.
+  Gameplay that must be frame-rate independent belongs in game-core's fixed `update(stepMs)`;
+  Phaser scene `update(time, delta)` is for presentation.
+- `src/rendering/phaserjs/`, the game's own Phaser rendering code, alongside the existing
+  `pixijs/` and `threejs/` directories.
+- **`pnpm build:engine <engine.type>`** (`scripts/verify/engine-build.mjs`): builds against
+  the committed config with only `engine.type` changed, so an engine the config does not name
+  is still built and smoke-tested. `verify.yml` runs it for every other engine.
+- `tests/e2e/lifecycle.spec.ts`: the built game stops stepping and drawing while the tab is
+  hidden and resumes with it — the ad-break requirement every profile states, and the check
+  that an engine shipping its own loop has not kept it running.
+
+### Changed
+
+- `import.meta.env.WGF_ENGINE` is defined from `game.config.yaml` at build time
+  (`scripts/build/game-config-plugin.ts`), and `createRenderer` compares against it directly.
+  Rollup drops the engines a build does not use: a PixiJS build no longer carries the
+  Three.js chunk, and carries no Phaser. `createRenderer(engine)` still selects at run time in
+  a bundle built without the plugin (the SDK matrix harness), and refuses an engine the build
+  was not made for.
+- `Renderer.kind` accepts `"phaserjs"`.
+
 ## [1.1.0] — 2026-09-24
 
 Three new portal adapters: Y8, GameDistribution and GameMonetize (PRs #9, #17, #18). All eight

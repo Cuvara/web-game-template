@@ -1,6 +1,6 @@
 {
   "name": "web-game-template",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Web Game Factory \u2014 reusable game template",
   "private": true,
   "type": "module",
@@ -12,6 +12,7 @@
     "dev": "vite",
     "build": "pnpm -r --filter \"./packages/*\" build && vite build",
     "build:crazygames-demo": "pnpm -r --filter \"./packages/*\" build && pnpm --filter @wgf/example-crazygames-compliance-demo build",
+    "build:engine": "node scripts/verify/engine-build.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --force && tsc -b examples/crazygames-compliance-demo --force",
     "lint": "eslint .",
@@ -67,6 +68,7 @@
   "dependencies": {
     "@wgf/analytics-sdk": "workspace:*",
     "@wgf/game-core": "workspace:*",
+    "@wgf/phaser-framework": "workspace:*",
     "@wgf/pixi-framework": "workspace:*",
     "@wgf/platform-sdk": "workspace:*",
     "@wgf/three-framework": "workspace:*"

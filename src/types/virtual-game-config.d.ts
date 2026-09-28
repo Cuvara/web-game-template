@@ -15,6 +15,17 @@ declare module "virtual:locales" {
   export default locales;
 }
 
+/**
+ * Build-time constants the game-config plugin defines.
+ *
+ * WGF_ENGINE is game.config.yaml's engine.type. src/rendering/create-renderer.ts compares
+ * against it so the engines this build does not use are removed from the bundle. Optional:
+ * a bundle built without the plugin (tests/sdk-matrix/) has none and selects at run time.
+ */
+interface ImportMetaEnv {
+  readonly WGF_ENGINE?: "pixijs" | "phaserjs" | "threejs";
+}
+
 /** Per-title portal settings from the build environment. See readPlatformConfig. */
 declare module "virtual:platform-config" {
   const config: { readonly y8: unknown };

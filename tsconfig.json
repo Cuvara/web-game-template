@@ -21,6 +21,7 @@
     { "path": "./packages/platform-sdk" },
     { "path": "./packages/analytics-sdk" },
     { "path": "./packages/pixi-framework" },
+    { "path": "./packages/phaser-framework" },
     { "path": "./packages/three-framework" }
   ]
 }

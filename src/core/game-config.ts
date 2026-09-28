@@ -6,7 +6,10 @@
 //
 // Nothing here runs in the browser. The bundle receives the already-validated value.
 
-export const ENGINES = ["pixijs", "threejs"] as const;
+// Two 2D engines and one 3D one. pixijs is the 2D default and what an untouched scaffold
+// carries; phaserjs is the second 2D engine, chosen in the tech plan when the game wants
+// Phaser's scenes, input, tweens and physics. Adding one here is what makes it selectable.
+export const ENGINES = ["pixijs", "phaserjs", "threejs"] as const;
 export type EngineType = (typeof ENGINES)[number];
 
 export interface PlatformEntry {
