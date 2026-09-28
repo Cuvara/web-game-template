@@ -30,7 +30,11 @@ matrix suites (`ALL_ENGINES` in `scripts/_shared.mjs`, the SDK browser matrix) s
   existing `pixijs` and `threejs` slots.
 - **`pnpm build:engine <engine.type>`** — builds the template against one engine without
   editing `game.config.yaml`, so an engine the committed config does not name is still proved
-  by the normal build and the unchanged e2e suite.
+  by the normal build and the unchanged e2e suite. `verify.yml` runs it for every other engine
+  the template implements: an engine nothing builds is an engine that rots.
+- **`tests/e2e/lifecycle.spec.ts`** — asserts the built game stops stepping *and* drawing
+  while the tab is hidden and resumes with it. That is the portal's ad-break path, and it is
+  what catches a renderer that kept a loop of its own.
 
 #### Changed
 

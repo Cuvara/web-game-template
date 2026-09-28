@@ -60,6 +60,19 @@ jobs:
       - name: smoke
         run: pnpm test:e2e
 
+      # The committed game.config.yaml names one engine, so `pnpm build` above only ever
+      # proves that one. The template implements more, and an engine nothing builds is an
+      # engine that rots: this builds each of the others against the same config with only
+      # engine.type changed, and runs the same smoke suite against it. The last build left
+      # in dist/ is the config's own, so nothing after this step sees a substituted one.
+      - name: smoke — other engines
+        run: |
+          for engine in phaserjs threejs; do
+            pnpm build:engine "$engine"
+            pnpm test:e2e
+          done
+          pnpm build
+
       # The SDK browser matrix drives a real headless Chromium, so it lives here with the other
       # browser suites rather than in ci.yml. The script builds its own smoke bundle first
       # (scripts/verify/sdk-smoke-build.mjs) before running playwright.sdk.config.ts.
