@@ -10,6 +10,38 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Input foundation
+
+Every game rewrote the same layer — a held-key set, keydown/keyup on the window, pointer
+events on the canvas, a dispose list — and each one re-learned the two details that are only
+obvious after a portal rejection. `Input` from `@wgf/game-core` is engine-agnostic: no PixiJS,
+no Three.js, no Phaser. What an action _means_ stays game-owned; this reports which are held.
+Additive — contract stays `2`, no new dependency, no existing behaviour changes.
+
+#### Added
+
+- **`Input`** — named actions bound to `KeyboardEvent.code` values and/or the pointer.
+  `held()`, `axis(negative, positive)`, `consumePressed()`, `onPressed` / `onReleased`,
+  `clear()` and an idempotent `dispose()`.
+- **Physical keys, not characters.** Yandex 1.6.2.4 requires controls that survive a layout
+  change; `KeyA` is under A on QWERTY and under Q on AZERTY, which is what a WASD game means.
+- **`consumePressed(action)`** drains a one-shot press from the fixed `update()`, so a jump is
+  applied where the loop can reproduce it. `onPressed` fires from the browser event, between
+  frames — correct for menus, wrong for the simulation.
+- **Pause awareness** — pass `paused: () => game.paused` and gameplay actions stop firing
+  while an ad, a hidden tab or the pause menu holds the game. Input leaking through an ad
+  break is a listed rejection cause on more than one portal. The physical key stays tracked
+  underneath, so a control held across a break needs no fresh press; `whilePaused: true`
+  exempts the control that ends the pause.
+- **Page-scroll defaults cancelled** for space, the arrows and page up/down when an action
+  binds them (Yandex 1.10.2, Poki's HTML5 guide), overridable per binding.
+- **Pointer and touch through one path** — `{ down, x, y, fractionX, fractionY }` in the
+  surface's CSS pixels. Touch arrives as pointer events; there is no separate touch code.
+- **`bindElement(action, element)`** — an on-screen button as an extra press source, which is
+  how a keyboard game is played on a phone. Returns its own unsubscribe.
+- **Held keys dropped on blur.** A key held while focus leaves never gets its keyup, and the
+  player used to come back to a stuck control.
+
 ### Phaser as a second 2D engine
 
 `engine.type` accepts `phaserjs`, implemented by `@wgf/phaser-framework` (Phaser 3.90.0).
@@ -32,7 +64,7 @@ matrix suites (`ALL_ENGINES` in `scripts/_shared.mjs`, the SDK browser matrix) s
   editing `game.config.yaml`, so an engine the committed config does not name is still proved
   by the normal build and the unchanged e2e suite. `verify.yml` runs it for every other engine
   the template implements: an engine nothing builds is an engine that rots.
-- **`tests/e2e/lifecycle.spec.ts`** — asserts the built game stops stepping *and* drawing
+- **`tests/e2e/lifecycle.spec.ts`** — asserts the built game stops stepping _and_ drawing
   while the tab is hidden and resumes with it. That is the portal's ad-break path, and it is
   what catches a renderer that kept a loop of its own.
 

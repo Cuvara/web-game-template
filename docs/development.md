@@ -90,6 +90,49 @@ const hero = assets.texture("hero");
 - Audio files are not an asset kind: Pixi's `Assets` does not decode audio. Load sounds in
   `src/audio/`.
 
+### Input
+
+`Input` from `@wgf/game-core` maps keyboard and pointer to named actions. What an action
+means stays in `src/game/`; this layer only reports which are held.
+
+```ts
+const input = new Input({
+  surface: context.container,
+  paused: () => context.game.paused,
+  actions: {
+    left: { keys: ["ArrowLeft", "KeyA"] },
+    right: { keys: ["ArrowRight", "KeyD"] },
+    jump: { keys: ["Space"] },
+    pause: { keys: ["Escape", "KeyP"], whilePaused: true },
+    tap: { pointer: true },
+  },
+});
+
+// In the scene's update(), the fixed step:
+const direction = input.axis("left", "right");
+if (input.consumePressed("jump")) player.jump();
+```
+
+- Keys are `KeyboardEvent.code`, the physical key. Yandex 1.6.2.4 requires controls that
+  survive a layout change, and `KeyA` is the key under A on QWERTY and under Q on AZERTY.
+- Read one-shot controls with `consumePressed(action)` from `update()`. `onPressed(listener)`
+  fires from the browser event, between frames — right for menus, wrong for the simulation,
+  which may only advance in the fixed step.
+- `paused: () => game.paused` is the whole pause wiring. Actions then do not fire and
+  `held()` reports false while an ad, a hidden tab or the pause menu holds the game; the
+  physical key stays tracked, so a control held across an ad break needs no fresh press.
+  Give the control that ends the pause `whilePaused: true`.
+- Keys that scroll a page (space, the arrows, page up/down) have their default cancelled
+  when an action binds them — Yandex 1.10.2, and Poki's HTML5 guide for its iframe.
+  `preventDefault` on the binding overrides it either way.
+- `pointer` is `{ down, x, y, fractionX, fractionY }` in the surface's CSS pixels. Touch
+  arrives through the same pointer events; there is no separate touch path.
+- `bindElement(action, element)` makes an on-screen button a press source for an action —
+  the mobile control scheme for a keyboard game. It returns its own unsubscribe, and
+  `dispose()` removes it too.
+- `dispose()` removes every listener and is safe to call twice — return it from
+  `createGame`'s `GameHandle.dispose`.
+
 **A game never edits `packages/`, `scripts/`, `src/main.ts`, `src/core/`, the template-owned
 files in `src/platform/` and `src/game/`, the build and test configs, `game.config.yaml` or
 `package.json` scripts.** The Factory refuses such a change. If the template lacks something
