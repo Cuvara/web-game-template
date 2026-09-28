@@ -21,6 +21,8 @@ elevated shell on Windows.
   repository
 - [docs/architecture.md](docs/architecture.md) — how the pieces fit
 - [docs/development.md](docs/development.md) — working in it day to day
+- [docs/threejs.md](docs/threejs.md) — what a 3D game gets from the template, and the physics
+  decision
 - [docs/wgf-integration.md](docs/wgf-integration.md) — the Factory flow end to end
 - [docs/sdk.md](docs/sdk.md) — the platform SDK and each adapter's audit
 - [docs/production-build.md](docs/production-build.md) — per-platform builds and packages
@@ -71,7 +73,8 @@ packages/
   platform-sdk      the platform abstraction, ad policy, storage, portal adapters
   analytics-sdk     one batched event vocabulary
   pixi-framework    Renderer for engine.type: pixijs
-  three-framework   Renderer for engine.type: threejs
+  three-framework   Renderer for engine.type: threejs, plus 3D infrastructure
+                    (assets, animation, disposal, lights, cameras) — docs/threejs.md
 
 src/
   main.ts           the boot sequence (template-owned); calls createGame(context)

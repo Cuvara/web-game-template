@@ -10,6 +10,45 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Three.js game foundation (`wgf.template.version` 1.2.0)
+
+A 3D title had to write its own asset loading, animation wiring, disposal, lights and camera
+before it could write any gameplay: `@wgf/three-framework` was the renderer and nothing else.
+It now ships that infrastructure. Additive — contract stays `2`, no game code changes, and 2D
+is untouched. Documented in [docs/threejs.md](docs/threejs.md).
+
+#### Added
+
+- **`ThreeAssets`** — one cache for `.glb`/`.gltf` and textures, load progress in `[0,1]` for
+  `context.reportLoadingProgress`, `instantiate()` that clones skinned models correctly
+  (`SkeletonUtils`), and a `dispose()` that frees what was loaded. Draco, KTX2 and meshopt are
+  configured by path and imported dynamically; no decoder ships with the template.
+- **`AnimationController`** — `AnimationMixer` driven by the loop's fixed `update(stepMs)`,
+  with crossfade, one-shot clips and a `finished` callback.
+- **`disposeObject3D(root, { keep })`** — frees geometry, materials, material textures and
+  skeletons once each, so a restart does not leak the level onto the GPU.
+- **`addDefaultLights(scene, options)`** — key plus hemisphere fill, optional shadow camera.
+- **Camera rigs** — `FollowCamera` (third person, frame-rate-independent damping),
+  `FirstPersonRig` (pointer lock; the game supplies the movement intent, not the rig),
+  `OrbitRig` (damped, no pan, distance-limited).
+- **`asThreeRenderer(context.renderer)`** — the narrowing every 3D game wrote by hand, with an
+  error that names `engine.type` in `game.config.yaml`.
+- **Renderer settings** — `setMaxPixelRatio`, `setShadows`, `setBackground`, `configureCamera`,
+  and `webgl` / `contextLost` accessors.
+- `docs/threejs.md`, including the Rapier recipe for a tech plan with
+  `architecture.physics: rapier` (a **game** dependency; the template ships no physics).
+
+#### Fixed
+
+- The Three.js renderer re-applies its pixel-ratio cap on every resize. Moving the window to a
+  screen with a different device pixel ratio previously kept the drawing buffer at the ratio
+  the page loaded with.
+- `ThreeRenderer.destroy()` disposes the scene graph, not just the `WebGLRenderer`, and forces
+  the context loss. Geometries, materials and textures used to survive a teardown.
+- A lost WebGL context (backgrounded mobile tab, GPU reset) is now recoverable: the renderer
+  prevents the default, pauses drawing, and resumes on `webglcontextrestored`. It previously
+  left the canvas black for the rest of the session.
+
 ### 2.0.0-contract — Factory ↔ template contract 2
 
 The Factory ↔ template API is now written down and versioned:

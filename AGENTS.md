@@ -10,7 +10,9 @@ One web game for HTML5 portals (Poki, CrazyGames, Yandex, GameDistribution, Game
 GameVui, self-hosted). The template supplies the loop, renderer, platform adapters, boot
 sequence, build, tests and release tooling. You write the game.
 
-- Engine: `engine.type` in `game.config.yaml` (`pixijs` or `threejs`). Use only that one.
+- Engine: `engine.type` in `game.config.yaml` (`pixijs` or `threejs`). Use only that one. For
+  `threejs`, read [docs/threejs.md](docs/threejs.md) before writing 3D code: the template
+  already ships asset loading, animation, disposal, lights and camera rigs.
 - Platforms: `platforms[]` in `game.config.yaml`. One build per platform; you never pick one
   in code.
 - If `docs/development/brief.md` exists, it is your assignment. Report back in

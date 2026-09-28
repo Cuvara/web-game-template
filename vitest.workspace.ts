@@ -23,6 +23,9 @@ const alias = [
   packageAlias("game-core"),
   packageAlias("platform-sdk"),
   packageAlias("analytics-sdk"),
+  // The Three.js infrastructure is tested headlessly (dispose, animation, assets, cameras):
+  // three's math, scene graph and AnimationMixer need no WebGL context.
+  packageAlias("three-framework"),
 ];
 
 export default defineWorkspace([

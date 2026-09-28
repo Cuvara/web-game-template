@@ -56,6 +56,10 @@ the game's own scenes.
 | `public/`                                           | assets and `public/locales/<lang>.json`                  |
 | `tests/unit/`, `tests/e2e/`                         | the game's own tests (`@aspect` tags in e2e titles)      |
 
+A 3D game (`engine.type: threejs`) gets asset loading with progress, animation on the fixed
+step, disposal, lights and camera rigs from `@wgf/three-framework`, and the Rapier recipe for
+when the tech plan calls for physics: [threejs.md](threejs.md).
+
 Ads, gameplay start/stop, analytics and saves go through `context.integration`
 (`GameIntegration`) or `context.gameplay` (`PlatformGameplay`) — never a `Platform` method,
 never a portal SDK.
