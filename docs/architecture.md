@@ -23,7 +23,9 @@ the split is what makes it visible in review. The full list, and what the Factor
   runtime counterpart of a platform profile.
 - **`@wgf/analytics-sdk`** — one event vocabulary, batched, backend-agnostic.
 - **`@wgf/pixi-framework`** / **`@wgf/three-framework`** — `Renderer` implementations for
-  `engine.type: pixijs` and `engine.type: threejs`.
+  `engine.type: pixijs` and `engine.type: threejs`. The Three.js package also carries the 3D
+  infrastructure a game would otherwise write first — asset loading with progress, animation
+  on the fixed step, disposal, lights, camera rigs: [threejs.md](threejs.md).
 
 ## The loop
 

@@ -26,6 +26,9 @@ const alias = [
   // The 2D framework's asset loader is unit-tested against a fake backend, so no WebGL
   // context is needed and the node environment is enough.
   packageAlias("pixi-framework"),
+  // The Three.js infrastructure is tested headlessly (dispose, animation, assets, cameras):
+  // three's math, scene graph and AnimationMixer need no WebGL context.
+  packageAlias("three-framework"),
 ];
 
 export default defineWorkspace([
