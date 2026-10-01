@@ -33,7 +33,8 @@ during play.
 
 **The art.** The port draws the design's production art, never procedural stand-ins: every
 tower, the track frame, the backdrop, the merge burst and streak, the title wordmark, the icon
-set, the ui-kit card and both bundled fonts (Bungee display, Figtree body) are loaded through
+set, the ui-kit card and both bundled fonts (Rubik Mono One display, Manrope body - Latin and Cyrillic, so the `ru` locale
+is set in the design's faces) are loaded through
 the runtime asset manifest, `public/assets/assets.json`, which the Factory's `assets` step
 writes. `src/game/runtime-assets.ts` fetches it once at boot and resolves each asset by the
 design's id, else by its role; `src/rendering/pixijs/art.ts` loads the board's textures and
@@ -45,7 +46,7 @@ art test fails on any entity drawn as a primitive, with no asset, or by a placeh
 any manifest file the game never fetched.
 
 `library/` is the art itself, as an asset library the Factory reads (`library.json`, mapped by
-the drop-merge design's requirement ids and, for any other id, by role): eight tower SVGs in
+the drop-merge design's requirement ids and, for any other id, by role): ten tower SVGs (one per level the rules reach) in
 the design's riso-arcade identity, the frame, backdrop, effects, ui-kit, wordmark and icons
 (CC0-1.0, written by `library/tools/make_art.py`), and the two OFL-1.1 fonts as subset WOFF2
 with their licences. A golden run points `factory.assets.libraries` at it.

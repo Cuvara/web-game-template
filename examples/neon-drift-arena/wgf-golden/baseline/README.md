@@ -1,6 +1,19 @@
 # Runtime baseline
 
-Frames of the built game, played - not rendered offline, not mocked. How they were made:
+Frames of the built game, played - not rendered offline, not mocked.
+
+**Re-captured 2026-10-02** when the library's body face became Commissioner 500 (Latin +
+Cyrillic; Instrument Sans has no Cyrillic and failed `font.coverage` for `ru`): a real golden
+3D run (`WGF_GOLDEN=1 WGF_GOLDEN_KEEP=1 python3 -m unittest discover scripts/tests -p
+test_golden_3d.py`, Factory lock `golden_ports` at this branch) built the game and wrote
+`public/assets/` with its own assets step from `../library/`; that checkout's `pnpm build` was
+served by `vite preview` and played by `capture.mjs` here (`node capture.mjs <url> <out>
+desktop|mobile`, run from the game checkout; it holds the result card's own CSS animations
+for the `crash` frame, taken 60 ms after the crash under its flash, because a SwiftShader
+screenshot at the phone's pixel ratio can outlast the card's 650 ms delay - a crash frame
+with the card up is refused). `<viewport>/evidence.json` is that script's
+output: the page errors (the aborted portal SDK request), every `/assets/` response, and the
+play probe's snapshot at each frame. How the first baseline was made:
 
 1. A golden 3D run of the Factory (`python3 scripts/golden/run.py --game 3d --keep`) created
    and built the game repository from the pinned template; this port was laid onto that

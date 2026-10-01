@@ -11,9 +11,14 @@ shading. Every colour below is a palette token or within the asset-quality toler
 
     python3 tools/make_art.py            # rewrite svg/ and fonts/ (fonts need fontTools)
 
-The font files are subset (Latin-1 + punctuation) WOFF2 builds of OFL-1.1 Google Fonts
-families, found on this machine; their OFL texts are kept beside them. The wordmark's letters
-are Bungee's own outlines, converted to paths so the SVG needs no font at load time.
+The font files are subset (Latin-1 + Cyrillic + punctuation) WOFF2 builds of OFL-1.1 Google
+Fonts families: the faces the design's riso-arcade typography names for a title whose
+scope.locales include ru - Rubik Mono One for Bungee (display), Manrope for Figtree (body),
+the kit's covering alternates (scripts/wgf_design/identity.py ALTERNATES in the Factory).
+Their sources are github.com/google/fonts ofl/rubikmonoone and ofl/manrope, read from
+WGF_FONT_SOURCE_DIR; their OFL texts are kept beside them. The wordmark's letters are
+Bungee's own outlines (Latin only: the title is a name), converted to paths so the SVG needs
+no font at load time.
 """
 
 import os
@@ -37,10 +42,13 @@ BLUE_LIGHT = "#2E92D2"
 # The third ink: lamp light and windows only.
 SUN = "#FFD23F"
 
+# The bundled faces, display first: the game binds the first file to its display face and the
+# second to its body face.
 FONT_SOURCES = {
-    "Bungee": ("bungee_Bungee-Regular.ttf", "bungee_OFL.txt"),
-    "Figtree": ("figtree_Figtree[wght].ttf", "figtree_OFL.txt"),
+    "RubikMonoOne": ("rubikmonoone_RubikMonoOne-Regular.ttf", "rubikmonoone_OFL.txt"),
+    "Manrope": ("manrope_Manrope[wght].ttf", "manrope_OFL.txt"),
 }
+WORDMARK_FONT = "bungee_Bungee-Regular.ttf"
 FONT_DIR = os.environ.get("WGF_FONT_SOURCE_DIR", "/tmp/wgf-dui/fonts")
 
 
@@ -101,7 +109,7 @@ def piece(level, body):
                      f'the riso third ink (sunflower)"')
 
 
-# --- the eight towers -----------------------------------------------------------------------
+# --- the ten towers -------------------------------------------------------------------------
 # One silhouette per level, each taller than the last: a player reads the level from the
 # shape and size before the numeral badge the game draws on it.
 
@@ -258,7 +266,47 @@ def piece_8():  # Crown spire: a three-tier pagoda under a star, haloed
     return piece(8, "".join(out))
 
 
-PIECES = [piece_1, piece_2, piece_3, piece_4, piece_5, piece_6, piece_7, piece_8]
+def piece_9():  # Sky needle: a TV tower - flared tripod, a slim shaft, an orb deck, a mast
+    legs = "M44 184L86 120H106L148 184H124L100 140H92L68 184Z"
+    shaft = rect_d(86, 74, 20, 50)
+    orb = "M60 66a36 30 0 1 0 72 0a36 30 0 1 0-72 0Z"
+    deck = "M54 66H138"
+    windows = "".join(path(rect_d(68 + i * 14, 58, 8, 12), SUN, 2.5) for i in range(5))
+    return piece(9, "".join([
+        ground(96, 66),
+        misreg(legs, PINK), path(legs, BLUE), shade("M106 120l42 64h-24l-22-40Z"),
+        misreg(shaft, BLUE), path(shaft, PURPLE), line(86, 92, 106, 92, 3), line(86, 108, 106, 108, 3),
+        misreg(orb, BLUE), path(orb, PINK), shade("M96 36a36 30 0 0 1 0 60Z", "dots"),
+        windows,
+        line(54, 66, 138, 66, 4),
+        line(96, 36, 96, 4, 5), circle(96, 6, 5, RED, 3), line(88, 20, 104, 20, 3),
+    ]))
+
+
+def piece_10():  # Sky citadel: a walled keep between twin turrets, its spire under a crown
+    wall = rect_d(38, 128, 116, 56)
+    keep = rect_d(68, 74, 56, 56)
+    left, right = rect_d(34, 70, 30, 114), rect_d(128, 70, 30, 114)
+    roof_l, roof_r = "M28 72L49 28L70 72Z", "M122 72L143 28L164 72Z"
+    spire = "M64 76L96 18L128 76Z"
+    crown = "M76 20L76 2L86 12L96 0L106 12L116 2L116 20Z"
+    return piece(10, "".join([
+        ground(96, 66),
+        misreg(wall, PINK), path(wall, BLUE), shade("M128 128h26v56h-26Z"),
+        misreg(left, BLUE), path(left, PURPLE), misreg(right, BLUE), path(right, PURPLE),
+        misreg(roof_l, PURPLE), path(roof_l, PINK), misreg(roof_r, PURPLE), path(roof_r, PINK),
+        misreg(keep, PINK), path(keep, PURPLE), shade("M106 74h18v56h-18Z"),
+        misreg(spire, BLUE), path(spire, RED),
+        path(crown, SUN, 4),
+        path(rect_d(43, 92, 12, 18), SUN, 3), path(rect_d(137, 92, 12, 18), SUN, 3),
+        circle(96, 100, 9, SUN, 3),
+        path("M80 184v-30a16 16 0 0 1 32 0v30Z", PAPER, 4),
+        line(96, 138, 96, 184, 3),
+    ]))
+
+
+PIECES = [piece_1, piece_2, piece_3, piece_4, piece_5, piece_6, piece_7, piece_8, piece_9,
+          piece_10]
 
 
 # --- board, backdrop, effects, UI -----------------------------------------------------------
@@ -441,7 +489,7 @@ def glyph_paths(font_path, text, size, x, y, tracking=0):
 
 
 def wordmark():
-    bungee = os.path.join(FONT_DIR, FONT_SOURCES["Bungee"][0])
+    bungee = os.path.join(FONT_DIR, WORDMARK_FONT)
     w, h = 720, 330
     # Sized so the longest line fits inside the banner's width with a margin.
     _, natural = glyph_paths(bungee, "TOWER MERGE", 100, 0, 0, 2)
@@ -478,7 +526,9 @@ def fonts():
 
     out = os.path.join(ROOT, "fonts")
     os.makedirs(out, exist_ok=True)
-    unicodes = "U+0020-007E,U+00A0-00FF,U+2010-2027,U+2032-2033,U+20AC,U+2122,U+00D7"
+    # Latin-1, Cyrillic (ru, uk, be: U+0400-045F, U+0490-0491) and punctuation.
+    unicodes = ("U+0020-007E,U+00A0-00FF,U+0400-045F,U+0490-0491,U+2010-2027,U+2032-2033,"
+                "U+20AC,U+2116,U+2122,U+00D7")
     for family, (ttf, ofl) in FONT_SOURCES.items():
         options = subset.Options()
         options.flavor = "woff2"

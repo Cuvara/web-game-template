@@ -39,13 +39,13 @@
       "role": "font",
       "files": [
         "fonts/unbounded-800.woff2",
-        "fonts/instrument-sans-500.woff2",
+        "fonts/commissioner-500.woff2",
         "fonts/jetbrains-mono-700.woff2"
       ],
       "license": "OFL-1.1",
       "source": "https://github.com/google/fonts/tree/main/ofl",
-      "author": "The Unbounded Project Authors; The Instrument Sans Project Authors; The JetBrains Mono Project Authors. Instanced (800 / 500 / 700) and subset to Latin and Cyrillic as WOFF2; licence texts fonts/OFL-*.txt",
-      "attribution": "Unbounded, Instrument Sans and JetBrains Mono: SIL Open Font License 1.1; copyright notices and licence texts in public/licenses/OFL-*.txt"
+      "author": "The Unbounded Project Authors; The Commissioner Project Authors (Kostas Bartsokas); The JetBrains Mono Project Authors. Instanced (800 / 500 / 700) and subset to Latin and Cyrillic as WOFF2 (subsets: latin, cyrillic; Commissioner by fonts/make-fonts.py, the body face the design names for Instrument Sans when ru is in scope); licence texts fonts/OFL-*.txt",
+      "attribution": "Unbounded, Commissioner and JetBrains Mono: SIL Open Font License 1.1; copyright notices and licence texts in public/licenses/OFL-*.txt"
     },
     {
       "requirement": "wordmark",

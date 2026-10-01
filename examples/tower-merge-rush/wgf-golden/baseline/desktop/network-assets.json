@@ -7,12 +7,12 @@
       "type": "fetch"
     },
     {
-      "url": "/assets/fonts/fonts-2.woff2",
+      "url": "/assets/fonts/fonts-1.woff2",
       "status": 200,
       "type": "font"
     },
     {
-      "url": "/assets/fonts/fonts-1.woff2",
+      "url": "/assets/fonts/fonts-2.woff2",
       "status": 200,
       "type": "font"
     },
@@ -27,12 +27,12 @@
       "type": "image"
     },
     {
-      "url": "/assets/ui/wordmark.svg",
+      "url": "/assets/icons/icons-2.svg",
       "status": 200,
       "type": "image"
     },
     {
-      "url": "/assets/icons/icons-2.svg",
+      "url": "/assets/ui/wordmark.svg",
       "status": 200,
       "type": "image"
     },
@@ -42,12 +42,12 @@
       "type": "image"
     },
     {
-      "url": "/assets/icons/icons-5.svg",
+      "url": "/assets/icons/icons-4.svg",
       "status": 200,
       "type": "image"
     },
     {
-      "url": "/assets/icons/icons-4.svg",
+      "url": "/assets/icons/icons-5.svg",
       "status": 200,
       "type": "image"
     },
@@ -77,12 +77,32 @@
       "type": "fetch"
     },
     {
-      "url": "/assets/vfx/merge-vfx-1.svg",
+      "url": "/assets/sprites/pieces-6.svg",
       "status": 200,
       "type": "fetch"
     },
     {
-      "url": "/assets/sprites/pieces-6.svg",
+      "url": "/assets/sprites/pieces-7.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-8.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-9.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-10.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/vfx/merge-vfx-1.svg",
       "status": 200,
       "type": "fetch"
     },
@@ -123,6 +143,11 @@
     },
     {
       "url": "/assets/sprites/pieces-4.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/sprites/pieces-1.svg",
       "status": 200,
       "type": "image"
     }
