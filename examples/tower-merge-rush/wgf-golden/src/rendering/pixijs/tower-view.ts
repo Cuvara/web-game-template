@@ -27,6 +27,10 @@ import type { BoardArt } from "./art.js";
 
 const PAPER = 0xf4ede1;
 const PAPER_SHADE = 0xe4d9c6;
+// The ground of a build without the backdrop (a greybox): a deeper paper, so the frame is not
+// a wash - plain paper behind paper slots averages above the playability bar's luminance
+// ceiling (core/reference/visual-quality.yaml max_mean_luminance in the Factory).
+const GREYBOX_GROUND = 0xd8cbb4;
 const INK = 0x1c1a17;
 const PINK = 0xff48b0;
 const BLUE = 0x0078bf;
@@ -480,7 +484,7 @@ export class TowerView {
   #drawStatic(): void {
     const w = this.#width;
     const h = this.#height;
-    this.#ground.clear().rect(0, 0, w, h).fill(PAPER);
+    this.#ground.clear().rect(0, 0, w, h).fill(this.#backdrop ? PAPER : GREYBOX_GROUND);
     if (this.#backdrop) {
       const tex = this.#backdrop.texture;
       const scale = Math.max(w / tex.width, h / tex.height);
