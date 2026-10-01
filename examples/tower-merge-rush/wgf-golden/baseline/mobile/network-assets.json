@@ -22,12 +22,12 @@
       "type": "image"
     },
     {
-      "url": "/assets/icons/icons-1.svg",
+      "url": "/assets/ui/wordmark.svg",
       "status": 200,
       "type": "image"
     },
     {
-      "url": "/assets/ui/wordmark.svg",
+      "url": "/assets/icons/icons-1.svg",
       "status": 200,
       "type": "image"
     },
@@ -72,6 +72,11 @@
       "type": "fetch"
     },
     {
+      "url": "/assets/sprites/pieces-5.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
       "url": "/assets/sprites/pieces-6.svg",
       "status": 200,
       "type": "fetch"
@@ -82,22 +87,17 @@
       "type": "fetch"
     },
     {
-      "url": "/assets/sprites/pieces-5.svg",
-      "status": 200,
-      "type": "fetch"
-    },
-    {
       "url": "/assets/vfx/merge-vfx-2.svg",
       "status": 200,
       "type": "fetch"
     },
     {
-      "url": "/assets/backgrounds/backdrop.svg",
+      "url": "/assets/ui/track-frame.svg",
       "status": 200,
       "type": "fetch"
     },
     {
-      "url": "/assets/ui/track-frame.svg",
+      "url": "/assets/backgrounds/backdrop.svg",
       "status": 200,
       "type": "fetch"
     },

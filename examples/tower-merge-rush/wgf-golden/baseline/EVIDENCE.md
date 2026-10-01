@@ -25,3 +25,13 @@ examples/tower-merge-rush/wgf-golden/library` with the drop-merge golden design 
 `render: "asset"` with its runtime asset id; `assets_loaded` lists all 24 manifest ids);
 `<viewport>/network-assets.json` every `/assets/` response (all 200) and the one failed request,
 the portal SDK, refused on purpose.
+
+## Production-quality gate
+
+Run with the Factory's integration-2.6 code (`/tmp/wgf-int` at 211ac0c): the real `AssetsStep`
+with `factory.assets.libraries: [examples/tower-merge-rush/wgf-golden/library]` (8 of 8 items
+delivered, quality `pass`, production-ready - fonts included), then the real `PlayabilityStep`
+and `ProductionQualityStep` (`drive.py` of `~/wgf-runs/production-gate-2026-10-01`) on the game
+checkout's commit holding this port and those assets: playability PASS, production-quality
+PASS - 16 of 16 checks on desktop and mobile (assets.present, assets.loaded, assets.runtime,
+assets.used, scene.no_primitives, ui.targets, ui.overlap, ui.text, ui.styled, ui.states).

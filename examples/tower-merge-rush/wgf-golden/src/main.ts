@@ -19,7 +19,7 @@ import { loadLocale } from "./core/i18n.js";
 import { installProbe } from "./core/probe.js";
 import { App } from "./game/app.js";
 import { installPlayProbe } from "./game/play-probe.js";
-import { bindColumnInput } from "./input/columns.js";
+import { bindColumnInput, columnFromClientX } from "./input/columns.js";
 import { bindPlatform } from "./platform/bind.js";
 import { DefaultGameIntegration } from "./platform/default-integration.js";
 import { createRenderer } from "./rendering/create-renderer.js";
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
     height: container.clientHeight || window.innerHeight,
     background: 0xf4ede1,
   });
-  const view = await createBoardView(renderer, assets, (share) =>
+  const view = await createBoardView(renderer, assets, { next: i18n.t("hud.next") }, (share) =>
     platform.reportLoadingProgress(0.6 + share * 0.15),
   );
 
@@ -139,6 +139,11 @@ async function main(): Promise<void> {
     dropAnywhere: () => app.dropAnywhere(),
     togglePause: () => (game.paused ? app.resumeMenu() : app.pauseMenu()),
   });
+  // The next piece hovers over the column under the pointer.
+  container.addEventListener("pointermove", (event) =>
+    view.hover(columnFromClientX(container, event.clientX)),
+  );
+  container.addEventListener("pointerleave", () => view.hover(null));
 
   platform.reportLoadingProgress(1);
   await platform.signalReady();

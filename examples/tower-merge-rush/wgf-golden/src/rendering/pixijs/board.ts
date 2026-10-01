@@ -16,11 +16,12 @@ import { TowerView } from "./tower-view.js";
 export async function createBoardView(
   renderer: Renderer,
   assets: RuntimeAssets,
+  labels: { readonly next: string },
   onProgress?: (share: number) => void,
 ): Promise<TowerView> {
   if (renderer.kind !== "pixijs") {
     throw new Error(`Tower Merge Rush draws with PixiJS; game.config.yaml says ${renderer.kind}`);
   }
   const art = await loadBoardArt(assets, onProgress);
-  return new TowerView((renderer as PixiRenderer).stage, art);
+  return new TowerView((renderer as PixiRenderer).stage, art, labels);
 }

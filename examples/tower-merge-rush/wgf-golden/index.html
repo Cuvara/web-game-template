@@ -48,10 +48,13 @@
       }
       #hud {
         position: absolute;
-        bottom: 4px;
+        bottom: max(4px, env(safe-area-inset-bottom));
         right: 8px;
-        opacity: 0.35;
-        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: 3px;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 12px;
         pointer-events: none;
       }
       #ui {
@@ -91,7 +94,7 @@
           400 14px/1.1 var(--font-display),
           sans-serif;
         letter-spacing: 0.02em;
-        color: var(--blue);
+        color: var(--purple);
         text-transform: uppercase;
       }
       #ui .chip b {
@@ -116,8 +119,7 @@
         margin: -4px 0 -2px;
       }
       #ui .chip.next b {
-        color: var(--pink);
-        -webkit-text-stroke: 1px var(--ink);
+        color: var(--ink);
       }
       #ui .objective {
         position: absolute;
@@ -203,7 +205,7 @@
         height: 30px;
       }
       #ui button.secondary {
-        background: var(--blue);
+        background: var(--purple);
         color: var(--paper);
         font-size: 16px;
       }
@@ -300,16 +302,17 @@
         font:
           400 16px/1.1 var(--font-display),
           sans-serif;
-        color: var(--blue);
+        color: var(--purple);
         text-transform: uppercase;
       }
       #ui .result b {
         font:
           400 56px/1 var(--font-display),
           sans-serif;
-        color: var(--pink);
-        -webkit-text-stroke: 2px var(--ink);
-        text-shadow: 4px 3px 0 var(--blue);
+        color: var(--purple);
+        text-shadow:
+          4px 3px 0 var(--pink),
+          7px 5px 0 var(--blue);
       }
       #ui .best {
         font:
@@ -325,8 +328,13 @@
       }
       #ui .note {
         min-height: 1.4em;
-        color: var(--danger);
+        color: var(--ink);
         font-weight: 700;
+      }
+      #ui .note:not(:empty) {
+        padding: 4px 10px;
+        border-left: 5px solid var(--danger);
+        background: var(--paper-shade);
       }
       #ui .bump {
         animation: bump 240ms ease-out;
@@ -348,8 +356,11 @@
           padding-right: 116px;
         }
         #ui .chip {
-          min-width: 52px;
-          padding: 2px 6px 3px;
+          min-width: 50px;
+          padding: 2px 5px 3px;
+        }
+        #ui .chip.next {
+          max-width: 92px;
         }
         #ui .objective {
           top: calc(max(10px, env(safe-area-inset-top)) + 64px);
@@ -357,6 +368,12 @@
         }
         #ui button.big {
           font-size: 20px;
+        }
+      }
+      /* A portrait phone shows the next piece large on the board; the HUD keeps score and best. */
+      @media (orientation: portrait) and (max-width: 600px) {
+        #ui .chip.next {
+          display: none;
         }
       }
       @media (prefers-reduced-motion: reduce) {
