@@ -1,0 +1,6 @@
+{
+  "steer": "interaction",
+  "near-miss": "gameplay",
+  "close-wall": "gameplay",
+  "crash": "loss"
+}
