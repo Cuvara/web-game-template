@@ -7,6 +7,7 @@
   "hud.score": "Score",
   "hud.best": "Best",
   "hud.next": "Next lvl",
+  "hud.objective": "Drop pieces so matching ones merge - keep the columns from filling up.",
   "hud.pause": "Pause",
   "pause.heading": "Paused",
   "pause.resume": "Resume",

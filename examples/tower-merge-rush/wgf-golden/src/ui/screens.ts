@@ -21,6 +21,7 @@ export class Screens implements Hud {
   readonly #root: HTMLElement;
   readonly #i18n: I18n;
   readonly #hud: HTMLElement;
+  readonly #objective: HTMLElement;
   readonly #score: HTMLElement;
   readonly #best: HTMLElement;
   readonly #drop: HTMLElement;
@@ -46,6 +47,7 @@ export class Screens implements Hud {
         <span class="spacer"></span>
         <span data-role="drop"></span>
       </div>
+      <p class="objective" data-role="objective" hidden>${t("hud.objective")}</p>
       <button class="pause" data-action="pause" hidden>${t("hud.pause")}</button>
       <section class="screen" data-screen="start" data-role="start">
         <h1>${t("title.heading")}</h1>
@@ -74,6 +76,7 @@ export class Screens implements Hud {
       return found;
     };
     this.#hud = find('[data-role="hud"]');
+    this.#objective = find('[data-role="objective"]');
     this.#score = find('[data-role="score"]');
     this.#best = find('[data-role="best"]');
     this.#drop = find('[data-role="drop"]');
@@ -100,6 +103,8 @@ export class Screens implements Hud {
     this.#start.hidden = state !== "start";
     this.#over.hidden = state !== "over";
     this.#hud.hidden = state === "start";
+    // The objective stays on screen through play: a first-time player reads it there.
+    this.#objective.hidden = state !== "playing";
     this.#pauseBtn.hidden = state !== "playing";
     this.#root.dataset["screen"] = state;
   }

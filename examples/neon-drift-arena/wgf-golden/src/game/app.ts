@@ -67,6 +67,12 @@ export class App implements Scene {
   /** Bumped once per fresh run. A generation marker: same value => same run. */
   #runId = 0;
   #steps = 0;
+  /**
+   * The opening grace: until the player first steers in a run, a wall that reaches the craft
+   * passes through it (the simulation's own revive clears it) instead of ending the run. A
+   * first-time player still reading the screen is never failed for not moving yet.
+   */
+  #steered = false;
 
   constructor(options: AppOptions) {
     this.#o = options;
@@ -118,7 +124,9 @@ export class App implements Scene {
     if (this.#phase !== "playing" || !this.#sim) return;
     const before = this.#sim.score;
     const stillRunning = this.#sim.tick(stepMs);
-    if (!stillRunning) {
+    if (!stillRunning && !this.#steered && this.#sim.revive()) {
+      // Inside the opening grace: the wall passes through.
+    } else if (!stillRunning) {
       void this.#endRun();
       return;
     }
@@ -154,6 +162,7 @@ export class App implements Scene {
   /** Steer the current run: -1 left, +1 right, 0 coast. No effect outside a run or paused. */
   steer(direction: number): void {
     if (this.#o.game.paused) return;
+    if (direction !== 0 && this.#phase === "playing") this.#steered = true;
     this.#sim?.steer(direction);
   }
 
@@ -210,6 +219,7 @@ export class App implements Scene {
   #startRun(): void {
     this.#sim = new Simulation({ seed: this.#seedCounter++ });
     this.#reviveUsed = false;
+    this.#steered = false;
     this.#runId += 1;
     this.#phase = "playing";
     this.#o.integration.gameplayStart();

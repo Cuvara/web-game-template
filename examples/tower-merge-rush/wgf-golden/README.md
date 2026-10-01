@@ -22,3 +22,11 @@ matched by its `examples/*/src` include).
 
 Change these files only together with the Factory's golden runs: both must pass on the
 template commit the Factory pins.
+
+**The play probe.** `src/game/play-probe.ts` adds `window.__wgf__.play.snapshot()` - the
+session state, the design's metrics, the entities a player must see with their screen bounds,
+the inputs the player can make now, and (only with `?wgf-probe=1`) the input that succeeds
+now. The Factory's `playability` step builds the game and plays it through real pointer and
+key input at those positions, on a desktop and a mobile viewport, and holds what it sees to
+the design's experience contract. Each port also shows the design's objective on screen
+during play.

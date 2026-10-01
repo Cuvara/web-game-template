@@ -14,11 +14,12 @@ import { config, primaryPlatform } from "./core/config.js";
 import { loadLocale } from "./core/i18n.js";
 import { installProbe } from "./core/probe.js";
 import { App } from "./game/app.js";
+import { installPlayProbe } from "./game/play-probe.js";
 import { Input } from "./input/steering.js";
 import { bindPlatform } from "./platform/bind.js";
 import { DefaultGameIntegration } from "./platform/default-integration.js";
 import { createRenderer } from "./rendering/create-renderer.js";
-import { createArenaView } from "./rendering/threejs/arena.js";
+import { createArenaView, screenBounds } from "./rendering/threejs/arena.js";
 import { Screens } from "./ui/screens.js";
 
 function element(id: string): HTMLElement {
@@ -133,6 +134,14 @@ async function main(): Promise<void> {
     timeToInteractiveMs,
   });
   installGameHooks(app, game, input, platform);
+  // After installProbe, which replaces window.__wgf__.
+  installPlayProbe({
+    app,
+    game,
+    surface: container,
+    ui: uiRoot,
+    project: (centre, size) => screenBounds(renderer, container, centre, size),
+  });
 
   hud.dataset["ready"] = "true";
 }

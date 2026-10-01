@@ -47,6 +47,8 @@ async function boot(page: Page): Promise<{ errors: string[] }> {
 
 async function crash(page: Page): Promise<void> {
   await page.evaluate((step) => {
+    // A first steer ends the run's opening grace (game/app.ts), as a player's would.
+    (window as unknown as W).__game.steer(1);
     (window as unknown as W).__game.steer(0);
     (window as unknown as W).__game.spawnObstacleAt(0, 1, 0.8);
     for (let i = 0; i < 60 && (window as unknown as W).__game.phase === "playing"; i++)

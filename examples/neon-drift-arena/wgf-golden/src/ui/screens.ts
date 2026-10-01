@@ -18,6 +18,7 @@ export interface ScreenActions {
 export class Screens {
   readonly #i18n: I18n;
   readonly #hud: HTMLElement;
+  readonly #objective: HTMLElement;
   readonly #score: HTMLElement;
   readonly #best: HTMLElement;
   readonly #menu: HTMLElement;
@@ -37,6 +38,7 @@ export class Screens {
         <span>${t("hud.score")} <b id="score">0</b></span>
         <span>${t("hud.best")} <b id="best">0</b></span>
       </div>
+      <p id="objective" class="objective" hidden>${t("hud.objective")}</p>
       <button id="pause" class="pause" hidden>${t("hud.pause")}</button>
       <div id="menu" class="screen" data-screen="start">
         <h1>${t("title.heading")}</h1>
@@ -62,6 +64,7 @@ export class Screens {
       return found;
     };
     this.#hud = find("score-hud");
+    this.#objective = find("objective");
     this.#score = find("score");
     this.#best = find("best");
     this.#menu = find("menu");
@@ -91,6 +94,8 @@ export class Screens {
     this.#score.textContent = String(v.score);
     this.#best.textContent = String(v.best);
     this.#hud.hidden = v.phase === "menu";
+    // The objective stays on screen through play: a first-time player reads it there.
+    this.#objective.hidden = v.phase !== "playing";
     this.#pauseBtn.hidden = v.phase !== "playing" || v.paused;
     this.#menu.hidden = v.phase !== "menu";
     this.#pause.hidden = !(v.paused && v.phase === "playing");
