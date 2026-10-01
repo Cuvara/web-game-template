@@ -1,5 +1,16 @@
 # How this baseline was made
 
+**Re-captured 2026-10-02** when the library gained towers 9 and 10 (the rules reach level 10)
+and its bundled faces became Rubik Mono One and Manrope, Latin + Cyrillic (Bungee and Figtree
+have no Cyrillic and failed `font.coverage` for `ru`). The game repository is the one a real
+golden 2D run created (`WGF_GOLDEN=1 WGF_GOLDEN_KEEP=1 python3 -m unittest discover
+scripts/tests -p test_golden_2d.py`, Factory lock `golden_ports` at this branch), with
+`public/assets/` rebuilt by the Factory's assets CLI from `../library` (`wgf-assets.py build
+--design <that run's game-design> --root <checkout> --library ../library --dimension 2d`: 8 of
+8 items delivered, quality `pass`; `wgf-assets.py validate`: 0 errors, 0 warnings); `pnpm build`, `vite preview`, then `node
+baseline/capture.mjs http://localhost:4310/ baseline`. The frames below were first made like
+this:
+
 Captured 2026-10-01 from a production build of a game repository the Factory's 2D golden run
 created, with this port laid on it by the Factory's own replay developer and its assets built
 from `../library` by the Factory's own assets CLI. Every screenshot is of that running build,

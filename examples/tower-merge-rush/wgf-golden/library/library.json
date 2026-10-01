@@ -1,7 +1,7 @@
 {
   "library": {
     "id": "tower-merge-rush-golden",
-    "about": "Production art for the 2D golden run's Tower Merge Rush, in the design's riso-arcade identity kit. Mapped by requirement id for the drop-merge archetype's ids, and by role for any other id the design gives the same role. Every SVG is written by tools/make_art.py (authored for web-game-template, CC0-1.0). The fonts are subset WOFF2 builds of OFL-1.1 Google Fonts families; their licences are fonts/*-OFL.txt."
+    "about": "Production art for the 2D golden run's Tower Merge Rush, in the design's riso-arcade identity kit. Mapped by requirement id for the drop-merge archetype's ids, and by role for any other id the design gives the same role. Every SVG is written by tools/make_art.py (authored for web-game-template, CC0-1.0). The fonts are subset WOFF2 builds (Latin + Cyrillic) of OFL-1.1 Google Fonts families - Rubik Mono One and Manrope, the riso-arcade kit's faces for a title with ru in scope; their licences are fonts/*-OFL.txt."
   },
   "items": [
     {
@@ -14,7 +14,9 @@
         "svg/pieces/piece-5.svg",
         "svg/pieces/piece-6.svg",
         "svg/pieces/piece-7.svg",
-        "svg/pieces/piece-8.svg"
+        "svg/pieces/piece-8.svg",
+        "svg/pieces/piece-9.svg",
+        "svg/pieces/piece-10.svg"
       ],
       "license": "CC0-1.0",
       "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
@@ -30,7 +32,9 @@
         "svg/pieces/piece-5.svg",
         "svg/pieces/piece-6.svg",
         "svg/pieces/piece-7.svg",
-        "svg/pieces/piece-8.svg"
+        "svg/pieces/piece-8.svg",
+        "svg/pieces/piece-9.svg",
+        "svg/pieces/piece-10.svg"
       ],
       "license": "CC0-1.0",
       "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
@@ -89,7 +93,7 @@
       "requirement": "wordmark",
       "files": ["svg/ui/wordmark.svg"],
       "license": "CC0-1.0",
-      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py); letters are Bungee outlines (OFL-1.1, The Bungee Project Authors)",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py); letters are Bungee outlines (OFL-1.1, The Bungee Project Authors; fonts/Bungee-OFL.txt)",
       "author": "Cuvara web-game-template contributors"
     },
     {
@@ -129,19 +133,19 @@
     },
     {
       "requirement": "fonts",
-      "files": ["fonts/Bungee.woff2", "fonts/Figtree.woff2"],
+      "files": ["fonts/RubikMonoOne.woff2", "fonts/Manrope.woff2"],
       "license": "OFL-1.1",
-      "source": "https://github.com/google/fonts/tree/main/ofl (bungee, figtree); subset to Latin-1 by tools/make_art.py",
-      "author": "The Bungee Project Authors (David Jonathan Ross); The Figtree Project Authors (Erik Kennedy)",
-      "attribution": "Bungee and Figtree, SIL Open Font License 1.1; see fonts/Bungee-OFL.txt and fonts/Figtree-OFL.txt"
+      "source": "https://github.com/google/fonts/tree/main/ofl (rubikmonoone/RubikMonoOne-Regular.ttf, manrope/Manrope[wght].ttf); subset to Latin-1 + Cyrillic (U+0400-045F, U+0490-0491) WOFF2 by tools/make_art.py - subsets: latin, cyrillic",
+      "author": "The Rubik Project Authors (Hubert and Fischer); The Manrope Project Authors (Mikhail Sharanda)",
+      "attribution": "Rubik Mono One and Manrope, SIL Open Font License 1.1; see fonts/RubikMonoOne-OFL.txt and fonts/Manrope-OFL.txt"
     },
     {
       "role": "font",
-      "files": ["fonts/Bungee.woff2", "fonts/Figtree.woff2"],
+      "files": ["fonts/RubikMonoOne.woff2", "fonts/Manrope.woff2"],
       "license": "OFL-1.1",
-      "source": "https://github.com/google/fonts/tree/main/ofl (bungee, figtree); subset to Latin-1 by tools/make_art.py",
-      "author": "The Bungee Project Authors (David Jonathan Ross); The Figtree Project Authors (Erik Kennedy)",
-      "attribution": "Bungee and Figtree, SIL Open Font License 1.1; see fonts/Bungee-OFL.txt and fonts/Figtree-OFL.txt"
+      "source": "https://github.com/google/fonts/tree/main/ofl (rubikmonoone/RubikMonoOne-Regular.ttf, manrope/Manrope[wght].ttf); subset to Latin-1 + Cyrillic (U+0400-045F, U+0490-0491) WOFF2 by tools/make_art.py - subsets: latin, cyrillic",
+      "author": "The Rubik Project Authors (Hubert and Fischer); The Manrope Project Authors (Mikhail Sharanda)",
+      "attribution": "Rubik Mono One and Manrope, SIL Open Font License 1.1; see fonts/RubikMonoOne-OFL.txt and fonts/Manrope-OFL.txt"
     }
   ]
 }
