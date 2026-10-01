@@ -47,6 +47,8 @@ export default defineWorkspace([
         "packages/*/tests/**/*.test.ts",
       ],
       environment: "node",
+      // pixi.js reads `navigator` at import, which Node 20 (the .nvmrc pin) does not have.
+      setupFiles: ["tests/support/node-navigator.ts"],
     },
   },
   {
