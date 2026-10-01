@@ -6,8 +6,10 @@
 // golden-run replay developer, not written by an agent. The boot lines are the template's
 // own, unchanged, so the Factory's `sdk` step can route them through its integration.
 // Loading is real: the production models, fonts and UI art come through the runtime asset
-// manifest (public/assets/assets.json) before the title screen shows, and a missing or
-// placeholder model fails the boot visibly instead of drawing boxes.
+// manifest (public/assets/assets.json) before the title screen shows, and a manifest that
+// lacks a production model, or offers only a placeholder, fails the boot visibly instead of
+// drawing boxes. A build with no manifest at all is the greybox, before the assets exist: it
+// draws plain boxes the play probe reports as primitives (rendering/threejs/assets.ts).
 
 import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";

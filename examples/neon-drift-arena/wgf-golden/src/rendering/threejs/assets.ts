@@ -9,7 +9,16 @@
 // variants (`arena-kit-1`). A model that is missing, fails to load, or is a placeholder is a
 // boot error - never an empty or boxed scene.
 
-import { type Group, type Object3D, SRGBColorSpace, type Texture, TextureLoader } from "three";
+import {
+  BoxGeometry,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  type Object3D,
+  SRGBColorSpace,
+  type Texture,
+  TextureLoader,
+} from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 interface ManifestEntry {
@@ -66,9 +75,60 @@ function rootName(scene: Object3D): string {
   return typeof wgf === "string" ? wgf : (named?.name ?? "");
 }
 
+/** A plain lit box, `size` metres, standing on y = 0 at `at` (x, z). */
+function box(
+  size: readonly [number, number, number],
+  color: number,
+  at: readonly [number, number] = [0, 0],
+  lift = 0,
+): Mesh {
+  const mesh = new Mesh(
+    new BoxGeometry(size[0], size[1], size[2]),
+    new MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.25 }),
+  );
+  mesh.position.set(at[0], lift + size[1] / 2, at[1]);
+  return mesh;
+}
+
+function stand(id: string, ...meshes: Mesh[]): LoadedModel {
+  const scene = new Group();
+  scene.add(...meshes);
+  return { id, scene };
+}
+
+/**
+ * What a build with no runtime asset manifest draws: the greybox, before the assets exist
+ * (the Factory's greybox phase). Plain boxes at the production models' sizes and pivots, in
+ * the palette, with no `wgf_asset` stamp - so the play probe reports every one as a
+ * primitive with no asset, and never claims art the build does not have.
+ */
+export function greyboxAssets(): ArenaAssets {
+  return {
+    craft: stand("", box([1.0, 0.3, 1.5], 0x2ef2ff)),
+    wall: stand("", box([1.0, 1.1, 0.3], 0xff2e88)),
+    track: stand(
+      "",
+      box([9.0, 0.02, 10.0], 0x2a2450, [0, 0], -0.02),
+      box([0.08, 0.04, 10.0], 0x2ef2ff, [-4.4, 0]),
+      box([0.08, 0.04, 10.0], 0x2ef2ff, [4.4, 0]),
+    ),
+    skyline: stand(
+      "",
+      box([12, 9, 6], 0x3a2f6e, [-14, -16]),
+      box([10, 13, 6], 0x31285e, [0, -20]),
+      box([12, 7, 6], 0x3a2f6e, [14, -16]),
+    ),
+    textures: { sky: null, spark: null },
+    ui: { wordmark: null, panel: null, icons: {} },
+    loaded: [],
+  };
+}
+
 /**
  * Fetch the manifest and everything Neon Drift Arena draws with. `progress` gets 0..1 as
- * files arrive, for the platform's loading bar.
+ * files arrive, for the platform's loading bar. No manifest at all (a greybox build: none
+ * is served, or the preview server answers its SPA page instead) draws greyboxAssets(); a
+ * manifest that is malformed, or lacks a production model, still fails the boot visibly.
  */
 export async function loadArenaAssets(
   base: string,
@@ -76,6 +136,11 @@ export async function loadArenaAssets(
 ): Promise<ArenaAssets> {
   const manifestUrl = new URL(MANIFEST_PATH, base).href;
   const response = await fetch(manifestUrl);
+  const json = (response.headers.get("content-type") ?? "").includes("json");
+  if (response.status === 404 || (response.ok && !json)) {
+    progress(1);
+    return greyboxAssets();
+  }
   if (!response.ok) throw new Error(`${MANIFEST_PATH}: HTTP ${response.status}`);
   const manifest = (await response.json()) as Manifest;
   if (manifest.format !== "wgf-runtime-assets") {

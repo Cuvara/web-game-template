@@ -201,9 +201,15 @@ interface RuntimeEntry {
 }
 type P = { __wgf__: { play: { snapshot(): PlaySnapshot } } };
 
+// A build with no runtime manifest at all is the greybox, before the assets step: there is no
+// art to hold it to, and the test says so.
 test("the craft and the walls are the production models, fetched and drawn @assets @art", async ({
   page,
 }) => {
+  const manifestResponse = await page.request.get("/assets/assets.json");
+  const isManifest =
+    manifestResponse.ok() && (manifestResponse.headers()["content-type"] ?? "").includes("json");
+  test.skip(!isManifest, "no public/assets/assets.json: a greybox build has no art");
   const fetched = new Map<string, number>();
   page.on("response", (r) => {
     if (r.url().includes("/assets/")) fetched.set(new URL(r.url()).pathname, r.status());
