@@ -35,7 +35,7 @@ during play.
 tower, the track frame, the backdrop, the merge burst and streak, the title wordmark, the icon
 set, the ui-kit card and both bundled fonts (Bungee display, Figtree body) are loaded through
 the runtime asset manifest, `public/assets/assets.json`, which the Factory's `assets` step
-writes. `src/assets/runtime-assets.ts` fetches it once at boot and resolves each asset by the
+writes. `src/game/runtime-assets.ts` fetches it once at boot and resolves each asset by the
 design's id, else by its role; `src/rendering/pixijs/art.ts` loads the board's textures and
 `src/rendering/pixijs/tower-view.ts` draws them, with the merge feedback (drop bounce, merge
 pop, burst, confetti, cascade streak, points). A build with no manifest - the greybox, before

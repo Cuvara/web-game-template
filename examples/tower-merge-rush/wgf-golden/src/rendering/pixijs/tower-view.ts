@@ -21,7 +21,7 @@ import {
   type TextStyleOptions,
   type Texture,
 } from "pixi.js";
-import { FONT_DISPLAY } from "../../assets/runtime-assets.js";
+import { FONT_DISPLAY } from "../../game/runtime-assets.js";
 import { COLUMNS, type Cell, type Snapshot } from "../../game/rules.js";
 import type { BoardArt } from "./art.js";
 

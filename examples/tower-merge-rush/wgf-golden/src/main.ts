@@ -12,7 +12,7 @@
 import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";
 import availableLocales from "virtual:locales";
-import { RuntimeAssets } from "./assets/runtime-assets.js";
+import { RuntimeAssets } from "./game/runtime-assets.js";
 import { Audio } from "./audio/audio.js";
 import { config, primaryPlatform } from "./core/config.js";
 import { loadLocale } from "./core/i18n.js";

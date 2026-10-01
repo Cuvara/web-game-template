@@ -2,11 +2,11 @@
 //
 // GOLDEN-RUN REPLAY, written by hand for the Factory's golden-run replay developer; not
 // agent-written. Each slot names the design's asset id and its role; the manifest resolves it
-// (assets/runtime-assets.ts). SVGs are rasterised by PixiJS at a resolution that stays sharp
+// (game/runtime-assets.ts). SVGs are rasterised by PixiJS at a resolution that stays sharp
 // at the size the view draws them on a high-density phone.
 
 import { Assets, type Texture } from "pixi.js";
-import type { AssetQuery, RuntimeAssets } from "../../assets/runtime-assets.js";
+import type { AssetQuery, RuntimeAssets } from "../../game/runtime-assets.js";
 
 export const ART = {
   pieces: { id: "pieces", role: "target" },

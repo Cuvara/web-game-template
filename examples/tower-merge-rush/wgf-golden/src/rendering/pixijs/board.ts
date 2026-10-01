@@ -9,7 +9,7 @@
 
 import type { Renderer } from "@wgf/game-core";
 import type { PixiRenderer } from "@wgf/pixi-framework";
-import type { RuntimeAssets } from "../../assets/runtime-assets.js";
+import type { RuntimeAssets } from "../../game/runtime-assets.js";
 import { loadBoardArt } from "./art.js";
 import { TowerView } from "./tower-view.js";
 

@@ -7,7 +7,7 @@
 // from the tower art, each screen on the ui-kit card - all resolved from the runtime asset
 // manifest (uiArt below). index.html holds the styles; nothing is a browser default.
 
-import type { RuntimeAssets } from "../assets/runtime-assets.js";
+import type { RuntimeAssets } from "../game/runtime-assets.js";
 import type { I18n } from "../core/i18n.js";
 import type { Hud } from "../game/app.js";
 import { COLUMNS, type State } from "../game/rules.js";
