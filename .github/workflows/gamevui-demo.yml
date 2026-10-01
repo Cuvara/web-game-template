@@ -24,8 +24,28 @@ permissions:
   contents: read
 
 jobs:
+  example:
+    # Template-only: a game created by the Factory ships no examples/, so the demo this
+    # workflow drives may be absent. hashFiles is not available in a job-level `if`, so
+    # presence is evaluated here and the job below skips when the demo is absent.
+    name: detect gamevui-compliance-demo
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.detect.outputs.present }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: examples
+
+      - id: detect
+        run: |
+          echo "present=${{ hashFiles('examples/gamevui-compliance-demo/package.json') != '' }}" >> "$GITHUB_OUTPUT"
+
   verify:
     name: typecheck, unit, build, e2e, audit, package, compliance
+    needs: example
+    if: needs.example.outputs.present == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

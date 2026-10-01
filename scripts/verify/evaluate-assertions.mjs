@@ -11,16 +11,24 @@
 // as well as failures: "which rules did we check" is as much of the record as "which
 // failed".
 //
+// Before any assertion runs, the profile itself is checked against the pin: its version must
+// equal the one game.config.yaml's platforms entry names, and when config/platforms/pinned.json
+// records a content hash for it, the file must hash to that. A mismatch is reported as a
+// blocking breach (`profile_pin`), not as a crash — it is a finding about the release, and
+// the record should say which rule set was actually applied.
+//
 // Exit code is 1 if any BLOCKING assertion breached. Warnings are reported and do not fail.
+// Exit code 2 is a usage/config error (no profile, no facts): nothing was evaluated.
 //
 // Usage:
 //   node scripts/verify/evaluate-assertions.mjs --platform generic-web \
 //     [--facts <path>] [--out <path>]
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { parse } from "yaml";
-import { isEntryPoint, parseArgs, repoRoot } from "../_shared.mjs";
+import { isEntryPoint, parseArgs, readGameConfig, repoRoot } from "../_shared.mjs";
 
 /** Read a dotted path such as `package.perf.time_to_interactive_s` out of the facts. */
 function readPath(facts, path) {
@@ -167,22 +175,147 @@ export function evaluateProfile(profile, facts, now = new Date().toISOString()) 
   });
 }
 
+const sha256 = (bytes) => "sha256:" + createHash("sha256").update(bytes).digest("hex");
+
+/**
+ * Check that `profile` is the profile the game pinned. Returns criterionResult objects —
+ * empty when there is nothing to object to — so a mismatch lands in the same record as
+ * every other assertion.
+ *
+ *   profileBytes — the raw file, for the content hash.
+ *   pinned       — parsed config/platforms/pinned.json, or null when absent. Profiles not
+ *                  vendored from the Factory (y8, gamedistribution) have no entry and so no
+ *                  hash to check; their version pin is still checked.
+ */
+export function checkProfilePin({
+  platformId,
+  profile,
+  profileBytes,
+  gameConfig,
+  pinned,
+  now = new Date().toISOString(),
+}) {
+  const breach = (criterionId, measured, note) => ({
+    criterion_id: criterionId,
+    measured,
+    breached: true,
+    evaluated_at: now,
+    severity: "blocking",
+    note,
+  });
+  const results = [];
+
+  const entry = (gameConfig?.platforms ?? []).find((candidate) => candidate.id === platformId);
+  const [pinnedId, pinnedVersion] = String(entry?.profile ?? "").split("@");
+  if (!entry) {
+    results.push(
+      breach("profile_pin", null, `game.config.yaml platforms[] has no entry for "${platformId}"`),
+    );
+  } else if (!pinnedVersion) {
+    results.push(breach("profile_pin", null, `platform "${platformId}" has an unpinned profile`));
+  } else if (pinnedId !== platformId || profile?.id !== platformId) {
+    results.push(
+      breach(
+        "profile_pin",
+        `${profile?.id}@${profile?.version}`,
+        `pin ${entry.profile} does not name profile "${platformId}"`,
+      ),
+    );
+  } else if (String(profile?.version) !== pinnedVersion) {
+    results.push(
+      breach(
+        "profile_pin",
+        String(profile?.version),
+        `config/platforms/${platformId}.yaml is version ${profile?.version}, ` +
+          `game.config.yaml pins ${entry.profile}`,
+      ),
+    );
+  }
+
+  const record = (pinned?.profiles ?? []).find((candidate) => candidate.id === platformId);
+  if (record?.content_hash) {
+    const actual = sha256(profileBytes);
+    // core.autocrlf=true checks the vendored copy out with CRLF endings; the Factory hashed
+    // the LF bytes. A difference in line endings alone is a checkout artifact, not a drift.
+    const normalised = sha256(Buffer.from(profileBytes.toString("utf8").replace(/\r\n/g, "\n")));
+    if (actual !== record.content_hash && normalised !== record.content_hash) {
+      results.push(
+        breach(
+          "profile_content_hash",
+          actual,
+          `config/platforms/${platformId}.yaml does not hash to ${record.content_hash} ` +
+            "recorded in pinned.json — the vendored profile was edited or replaced",
+        ),
+      );
+    }
+    if (record.version !== undefined && String(record.version) !== String(profile?.version)) {
+      results.push(
+        breach(
+          "profile_pin",
+          String(profile?.version),
+          `pinned.json records ${platformId}@${record.version}, the file is ${profile?.version}`,
+        ),
+      );
+    }
+  }
+
+  return results;
+}
+
+function usageError(message) {
+  console.error(`evaluate-assertions: ${message}`);
+  process.exit(2);
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const platform = args.platform;
-  if (!platform) {
+  if (!platform || platform === true) {
     console.error("usage: evaluate-assertions.mjs --platform <id> [--facts <path>] [--out <path>]");
     process.exit(2);
   }
 
   const root = repoRoot();
-  const profilePath = resolve(root, "config/platforms", `${platform}.yaml`);
-  const factsPath = resolve(root, args.facts ?? `build/facts/${platform}.json`);
+  const profileRel = `config/platforms/${platform}.yaml`;
+  const profilePath = resolve(root, profileRel);
+  const factsRel = args.facts ?? `build/facts/${platform}.json`;
+  const factsPath = resolve(root, factsRel);
 
-  const profile = parse(readFileSync(profilePath, "utf8"));
-  const facts = JSON.parse(readFileSync(factsPath, "utf8"));
+  if (!existsSync(profilePath)) {
+    usageError(`no platform profile at ${profileRel} — "${platform}" has no vendored profile`);
+  }
+  if (!existsSync(factsPath)) {
+    usageError(
+      `no facts at ${factsRel} — run \`node scripts/verify/collect-facts.mjs --platform ${platform}\` first`,
+    );
+  }
 
-  const results = evaluateProfile(profile, facts);
+  const profileBytes = readFileSync(profilePath);
+  let profile;
+  let facts;
+  try {
+    profile = parse(profileBytes.toString("utf8"));
+  } catch (error) {
+    usageError(`${profileRel} is not valid YAML: ${error.message}`);
+  }
+  try {
+    facts = JSON.parse(readFileSync(factsPath, "utf8"));
+  } catch (error) {
+    usageError(`${factsRel} is not valid JSON: ${error.message}`);
+  }
+  const pinnedPath = resolve(root, "config/platforms/pinned.json");
+  const pinned = existsSync(pinnedPath) ? JSON.parse(readFileSync(pinnedPath, "utf8")) : null;
+
+  const results = [
+    ...checkProfilePin({
+      platformId: platform,
+      profile,
+      profileBytes,
+      gameConfig: readGameConfig(root),
+      pinned,
+    }),
+    ...evaluateProfile(profile, facts),
+  ];
   const blocking = results.filter((r) => r.breached && r.severity === "blocking");
   const warnings = results.filter((r) => r.breached && r.severity !== "blocking");
 

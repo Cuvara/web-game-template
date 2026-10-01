@@ -1,0 +1,22 @@
+{
+  "comment": "How the golden-run port of this example is assembled onto a repository created from the template: each overlay directory is copied onto the repository root in order (a later one wins, README.md excepted), then each `copy` entry is taken from this example and written to `to` with its `replace` pairs applied, then `engine_dependencies` are added to the root package.json at the versions this example pins. Template-owned: scripts/verify/golden-check.mjs assembles and tests it in CI, and the Factory's golden-run replay developer reads the same file.",
+  "example": "tower-merge-rush",
+  "engine": "pixijs",
+  "overlays": ["examples/wgf-golden-shared", "examples/tower-merge-rush/wgf-golden"],
+  "copy": [
+    {
+      "from": "src/game/rules.ts",
+      "to": "src/game/rules.ts"
+    },
+    {
+      "from": "src/rendering/board-view.ts",
+      "to": "src/rendering/pixijs/board-view.ts",
+      "replace": [["from \"../game/rules.js\"", "from \"../../game/rules.js\""]]
+    },
+    {
+      "from": "tests/unit/rules.test.ts",
+      "to": "tests/unit/tower-merge-rush-rules.test.ts"
+    }
+  ],
+  "engine_dependencies": ["pixi.js"]
+}

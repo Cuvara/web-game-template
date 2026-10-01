@@ -1,19 +1,27 @@
 {
   "name": "web-game-template",
-  "version": "1.1.0",
-  "description": "Web Game Factory \u2014 reusable game template",
+  "version": "1.2.0",
+  "description": "Web Game Factory — reusable game template",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=20"
   },
+  "wgf": {
+    "template": {
+      "version": "1.2.0",
+      "contract": 2
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "pnpm -r --filter \"./packages/*\" build && vite build",
+    "build:platforms": "node scripts/build/build-platforms.mjs",
+    "build:engine": "node scripts/verify/engine-build.mjs",
     "build:crazygames-demo": "pnpm -r --filter \"./packages/*\" build && pnpm --filter @wgf/example-crazygames-compliance-demo build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --force && tsc -b examples/crazygames-compliance-demo --force",
+    "typecheck": "tsc -b --force && node scripts/typecheck-examples.mjs",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
@@ -33,9 +41,10 @@
     "demo:poki:build": "pnpm --filter @wgf-examples/poki-compliance-demo build",
     "test:poki": "playwright test --config playwright.poki.config.ts",
     "audit:poki": "node scripts/verify/poki-audit.mjs --dist examples/poki-compliance-demo/dist",
-    "test:crazygames": "playwright test -c playwright.crazygames.config.ts",
     "test:sdk:matrix": "playwright test -c playwright.sdk-matrix.config.ts",
     "sdk:prepare": "node scripts/sdk/prepare-integration.mjs",
+    "sdk:check": "node scripts/sdk/check-integration.mjs",
+    "golden:check": "node scripts/verify/golden-check.mjs",
     "facts": "node scripts/verify/collect-facts.mjs",
     "assert": "node scripts/verify/evaluate-assertions.mjs",
     "audit:crazygames": "node scripts/crazygames-audit.mjs",
@@ -53,11 +62,13 @@
     "@eslint/js": "^9.17.0",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.10.0",
+    "@types/three": "^0.170.0",
     "@vitest/coverage-v8": "^2.1.8",
     "adm-zip": "^0.5.16",
     "eslint": "^9.17.0",
     "globals": "^17.12.0",
     "prettier": "^3.4.0",
+    "three": "^0.170.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
     "vite": "^6.0.0",
@@ -67,6 +78,7 @@
   "dependencies": {
     "@wgf/analytics-sdk": "workspace:*",
     "@wgf/game-core": "workspace:*",
+    "@wgf/phaser-framework": "workspace:*",
     "@wgf/pixi-framework": "workspace:*",
     "@wgf/platform-sdk": "workspace:*",
     "@wgf/three-framework": "workspace:*"

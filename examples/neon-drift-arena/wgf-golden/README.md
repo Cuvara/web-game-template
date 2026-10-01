@@ -9,11 +9,30 @@ In a golden run the Factory creates a game repository from a pinned commit of th
 and its replay developer (`scripts/golden/replay_developer.py` in the Factory — a
 deterministic stand-in, **not** an AI developer) copies:
 
-1. the example's portable files (`src/game/simulation.ts`, `src/game/arena-view.ts`,
-   `src/input.ts`, the unit test) with import paths adapted — the mapping is the Factory's
-   `scripts/golden/fixtures/3d/port.json`;
-2. `examples/wgf-golden-shared/` (the default integration seam implementation, audio);
+1. the example's portable files (`src/game/simulation.ts`, `src/input.ts`, the unit test)
+   with import paths adapted — the mapping is `../wgf-golden.port.json` and the Factory's
+   `scripts/golden/fixtures/3d/port.json`. The example's `src/game/arena-view.ts` is not
+   copied: this directory ships its own `src/rendering/threejs/arena-view.ts`, drawn with the
+   production models;
+2. `examples/wgf-golden-shared/` (the audio service);
 3. this directory, onto the repository root (this README excepted).
+
+The port supplies **`src/game/index.ts`** — the template's game entry,
+`createGame(context)` — and never `src/main.ts`. The template's own main.ts (contract 2) boots
+the platform through `bootPlatform`, installs `PlatformGameplay` with
+`src/platform/integration-plan.ts`, and hands the game its `GameContext`: the platform seam
+arrives as `context.integration` (the template's `PlatformGameIntegration`), so no default
+seam implementation is shipped and the Factory's `sdk` step patches nothing — it regenerates
+the integration plan only. `#hud[data-scene|data-steps]` are published by main.ts, and the
+template's inherited e2e specs (`tests/e2e/smoke.spec.ts`, `pause-resume.spec.ts`,
+`responsive.spec.ts`) run against the port unchanged, beside its own spec here.
+
+`createGame` returns before main.ts signals ready, and main.ts installs `window.__wgf__`
+after it. What must sit beside that probe (the play probe) or wait until the game is
+interactive (streaming the sound in) is deferred to `#hud[data-ready="true"]` by the shared
+`src/game/after-ready.ts`, so it is in place before any test can see the game ready. The
+Factory still creates its games from a contract-1 release (`v1.2.0`); for those, its replay
+applies the temporary boot bridge in `examples/wgf-golden-shared/release-1/` (see its README).
 
 Every file here carries a `GOLDEN-RUN REPLAY` header. The paths and imports are the ones the
 files have **after** that copy, which is why they only typecheck inside a generated game

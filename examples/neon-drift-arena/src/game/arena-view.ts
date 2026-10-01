@@ -4,14 +4,7 @@
 // meshes; it never writes simulation state. Meshes are pooled per obstacle id so the scene
 // graph tracks the simulation's obstacle list without allocating every frame.
 
-import {
-  BoxGeometry,
-  GridHelper,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  type Scene,
-} from "three";
+import { BoxGeometry, GridHelper, Group, Mesh, MeshBasicMaterial, type Scene } from "three";
 import type { Obstacle, Simulation } from "./simulation.js";
 
 const PLAYER_COLOR = 0x33ffd6;
@@ -81,10 +74,7 @@ export class ArenaView {
   #syncObstacle(obstacle: Obstacle): void {
     let mesh = this.#obstacleMeshes.get(obstacle.id);
     if (!mesh) {
-      mesh = new Mesh(
-        this.#obstacleGeometry,
-        new MeshBasicMaterial({ color: OBSTACLE_COLOR }),
-      );
+      mesh = new Mesh(this.#obstacleGeometry, new MeshBasicMaterial({ color: OBSTACLE_COLOR }));
       const width = obstacle.halfWidth * 2;
       mesh.scale.set(width, 1, 1);
       this.#obstacleMeshes.set(obstacle.id, mesh);

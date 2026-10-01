@@ -19,10 +19,9 @@ import { YandexPlatform } from "./adapters/yandex.js";
 import type { Platform } from "./types.js";
 
 /**
- * Every platform id with an adapter. Most have a profile in the Factory's reference data;
- * `y8` has one proposed from this repository (config/platforms/y8.yaml), `gamedistribution` a
- * draft (config/platforms/gamedistribution.yaml), and gamemonetize's is still to be written
- * there (docs/platforms/gamemonetize.md lists the values the adapter implies).
+ * Every platform id with an adapter. Each has a profile in the Factory's reference data
+ * (core/reference/platforms/<id>.yaml, 1.0.0); the ones a game pins are vendored into its
+ * config/platforms/ at scaffolding.
  */
 export const KNOWN_PLATFORM_IDS = [
   "generic-web",

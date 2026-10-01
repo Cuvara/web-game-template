@@ -8,7 +8,9 @@ import { resolve } from "node:path";
 import { CRAZYGAMES_SDK_URL } from "@wgf/platform-sdk";
 import { describe, expect, it } from "vitest";
 
-const root = resolve(import.meta.dirname, "../..");
+// Repo root: this suite lives in examples/crazygames-compliance-demo/tests/integration and
+// compares the demo with files the template owns.
+const root = resolve(import.meta.dirname, "../../../..");
 const read = (path: string): string => readFileSync(resolve(root, path), "utf8");
 
 describe("CrazyGames SDK URL", () => {

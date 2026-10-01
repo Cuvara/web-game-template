@@ -1,10 +1,11 @@
 // Binds Neon Drift Arena's view to the template's renderer.
 //
 // GOLDEN-RUN REPLAY, written by hand for the Factory's golden-run replay developer; not
-// agent-written. main.ts gets its renderer from the template's createRenderer, which returns
-// the engine-agnostic Renderer. This file, inside src/rendering/threejs/, is the one place
-// that knows it is a ThreeRenderer - the engine stays behind this directory. The view places
-// and aims the camera itself (a chase camera that keeps the arena's width in frame).
+// agent-written. The template's main.ts initialises the engine-agnostic Renderer before
+// createGame runs, so the backdrop colour is applied here. This file, inside
+// src/rendering/threejs/, is the one place that knows it is a ThreeRenderer - the engine stays
+// behind this directory. The view places and aims the camera itself (a chase camera that keeps
+// the arena's width in frame) and replaces the backdrop with its sky once attached.
 
 import type { Renderer } from "@wgf/game-core";
 import type { ThreeRenderer } from "@wgf/three-framework";
@@ -13,6 +14,9 @@ import { ArenaView, type ArenaViewEvents } from "./arena-view.js";
 import type { ArenaAssets } from "./assets.js";
 
 export { loadArenaAssets } from "./assets.js";
+
+/** The example's backdrop, matching index.html's page colour; the sky covers it once drawn. */
+const BACKGROUND = 0x05060f;
 
 export function createArenaView(
   renderer: Renderer,
@@ -23,6 +27,9 @@ export function createArenaView(
     throw new Error(`Neon Drift Arena draws with Three.js; game.config.yaml says ${renderer.kind}`);
   }
   const three = renderer as ThreeRenderer;
+  // The renderer created the background as a Color; recolour it rather than import three.
+  const background = three.scene.background;
+  if (background && "setHex" in background) background.setHex(BACKGROUND);
   const view = new ArenaView(assets, events);
   view.attach(three.scene, three.camera);
   return view;

@@ -151,9 +151,7 @@ export class App implements Scene {
     if (this.#phase !== "over") return;
     // gameplayStart for the fresh run is reported by #startRun below, so the break resumes
     // only what it interrupted (nothing, at game over) rather than double-reporting.
-    await withAdBreak(this.#o.game, this.#o.platform, () =>
-      this.#o.platform.showInterstitial(),
-    );
+    await withAdBreak(this.#o.game, this.#o.platform, () => this.#o.platform.showInterstitial());
     this.#startRun();
   }
 

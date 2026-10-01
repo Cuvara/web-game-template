@@ -84,12 +84,17 @@ jobs:
           echo "release_id=r$((existing + 1))" >> "$GITHUB_OUTPUT"
           echo "resolved r$((existing + 1)) at $version"
 
-      - name: build
-        run: pnpm build
+      # One build per platforms[] entry, into build/platforms/<id>/dist with its build.json.
+      # Each platform ships only its own adapter, so a single dist/ cannot be packaged for
+      # every portal; release:package zips each per-platform dist and refuses one that is
+      # missing, stale against HEAD, or built with WGF_ALLOW_UNCONFIGURED_PORTAL.
+      - name: build every platform
+        run: pnpm build:platforms
 
       # The verify job already measured these, but it ran on its own runner and artifacts do
-      # not carry across without a download. Re-measuring against the build that is actually
-      # being packaged is the stronger guarantee anyway.
+      # not carry across without a download. Re-measuring against the builds that are
+      # actually being packaged is the stronger guarantee anyway: test:verify measures each
+      # build/platforms/<id>/dist into build/runtime-facts/<id>.json.
       - name: measure runtime facts
         run: pnpm test:verify
 
@@ -98,7 +103,7 @@ jobs:
           RELEASE_ID: ${{ steps.meta.outputs.release_id }}
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          node scripts/release/package.mjs --release "$RELEASE_ID"
+          pnpm release:package --release "$RELEASE_ID"
 
           for platform in $(node -e "
             const {readFileSync}=require('fs');const {parse}=require('yaml');

@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { validateGameConfig } from "../../src/core/game-config.js";
+import { ENGINES, resolveBuild, validateGameConfig } from "../../src/core/game-config.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const raw = parse(readFileSync(resolve(ROOT, "game.config.yaml"), "utf8")) as unknown;
@@ -20,12 +20,18 @@ describe("game.config.yaml", () => {
 
   it("names an engine the template implements", () => {
     const config = validateGameConfig(raw);
-    expect(["pixijs", "threejs"]).toContain(config.engine.type);
+    // Read from the one list rather than repeated here: a second copy is how an engine gets
+    // registered in the validator and nowhere else.
+    expect(ENGINES).toContain(config.engine.type);
   });
 
   it("declares at least one required platform", () => {
     const config = validateGameConfig(raw);
     expect(config.platforms.some((entry) => entry.role === "required")).toBe(true);
+  });
+
+  it("builds as it stands: its target needs no portal id", () => {
+    expect(resolveBuild(raw, {}).portalConfigured).toBe(true);
   });
 
   it("agrees with the build command the Factory expects", () => {

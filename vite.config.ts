@@ -5,6 +5,11 @@
 // way rather than being fetched at runtime: a malformed config fails the build instead of
 // the game, and the config the bundle was built against is fixed in the bundle — which is
 // what makes a release reproducible against the plan approved at G3.
+//
+// One build is for one platform and one engine: WGF_TARGET_PLATFORM picks the platforms[]
+// entry (default the first required one), and the plugin keeps every other adapter and the
+// other engine out of the bundle. `pnpm build` writes that one build to dist/;
+// `pnpm build:platforms` (scripts/build/build-platforms.mjs) runs this config once per entry.
 
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
@@ -15,10 +20,11 @@ export default defineConfig({
     gameConfigPlugin({
       // WGF_GAME_CONFIG builds against another config without editing game.config.yaml —
       // the SDK browser smoke builds one bundle per engine × platform this way. Unset in a
-      // normal build, which is always the game.config.yaml the Factory wrote.
+      // normal build, which is always the game.config.yaml the Factory wrote. An empty value
+      // counts as unset, as in scripts/_shared.mjs.
       configPath: resolve(
         import.meta.dirname,
-        process.env["WGF_GAME_CONFIG"] ?? "game.config.yaml",
+        process.env["WGF_GAME_CONFIG"] || "game.config.yaml",
       ),
       localesDir: resolve(import.meta.dirname, "public/locales"),
     }),

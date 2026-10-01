@@ -79,6 +79,13 @@ export interface YandexOptions {
    * Defaults: 8 s for an interstitial, 20 s for a rewarded video.
    */
   readonly adOpenTimeoutMs?: number;
+  /**
+   * How long an ad may stay open (onOpen without onClose/onError) before the adapter gives
+   * the game control back: the call resolves unshown and unrewarded, `ad:end` is emitted and,
+   * if the portal's game_api_resume never came, the foreground is handed back too. Defaults
+   * to 180 s — past any real Yandex ad; only a lost callback reaches it.
+   */
+  readonly adMaxDurationMs?: number;
   readonly now?: () => number;
   readonly timers?: Timers;
   readonly storage?: YandexStorage;
@@ -87,6 +94,8 @@ export interface YandexOptions {
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_INTERSTITIAL_OPEN_TIMEOUT_MS = 8_000;
 const DEFAULT_REWARDED_OPEN_TIMEOUT_MS = 20_000;
+// Same cap Y8 and CrazyGames use for an ad that opened and never reported closing.
+const DEFAULT_AD_MAX_DURATION_MS = 180_000;
 
 /** Load `/sdk.js` by script tag, the dynamic form the docs show. */
 export function loadSdkScript(src: string, timeoutMs: number): Promise<YaGamesGlobal> {
@@ -407,6 +416,11 @@ export class YandexPlatform implements Platform {
       // when the game was already told it did not earn one; if the resolved result already
       // granted, re-announcing it would double the effect.
       let resolvedRewarded = false;
+      // The open ad outlived adMaxDurationMs and was ended by the adapter. The portal may still
+      // report onClose later: it may settle an owed reward, never end the ad a second time.
+      let capped = false;
+      let lateRewardSent = false;
+      let capTimer: unknown;
 
       const finish = (result: RewardedResult): void => {
         if (settled) return;
@@ -425,8 +439,24 @@ export class YandexPlatform implements Platform {
       const end = (): void => {
         if (closed) return;
         closed = true;
+        this.#timers.clearTimeout(capTimer);
         this.#adShowing = false;
         if (opened) this.#events.emit("ad:end", { kind });
+      };
+
+      // An open ad whose onClose/onError is lost. Without this the call — or, for a late ad,
+      // the ad:start it raised — would hold the game paused and muted for good, because
+      // game_api_resume is as lost as the close. Reward is never granted here; only the
+      // portal's own onRewarded + onClose can do that, later, as ad:late-reward.
+      const cap = (): void => {
+        if (closed) return;
+        capped = true;
+        // The ad was on screen: it counts toward the local interval even though the result
+        // reports it unshown.
+        if (!settled) this.#ads.record(kind);
+        finish({ shown: false, rewarded: false, reason: "error" });
+        end();
+        this.#onPortalResume();
       };
 
       const timeoutMs =
@@ -442,11 +472,18 @@ export class YandexPlatform implements Platform {
 
       const callbacks = {
         onOpen: () => {
+          // Once capped (or closed) the ad is over as far as the game knows; a duplicate
+          // onOpen must not raise an ad:start that nothing will end.
+          if (closed || opened) return;
           // A late ad still counts toward the local interval.
           if (settled) this.#ads.record(kind);
           opened = true;
           this.#adShowing = true;
           this.#timers.clearTimeout(timer);
+          capTimer = this.#timers.setTimeout(
+            cap,
+            this.#options.adMaxDurationMs ?? DEFAULT_AD_MAX_DURATION_MS,
+          );
           this.#events.emit("ad:start", { kind });
           hooks?.onStart?.();
         },
@@ -454,8 +491,17 @@ export class YandexPlatform implements Platform {
           const shown = wasShown === true;
           // A reward that arrived after the game already got a not-rewarded result: tell it
           // once, and only if the resolved result did not already grant. `!closed` keeps it
-          // to a single emit even if onClose is reached after onError already ran end().
-          if (!closed && settled && rewarded && !resolvedRewarded && kind === "rewarded") {
+          // to a single emit even if onClose is reached after onError already ran end(); a
+          // capped ad is closed by the adapter, not the portal, so its onClose still counts.
+          if (
+            (!closed || capped) &&
+            !lateRewardSent &&
+            settled &&
+            rewarded &&
+            !resolvedRewarded &&
+            kind === "rewarded"
+          ) {
+            lateRewardSent = true;
             this.#events.emit("ad:late-reward", { kind });
           }
           finish(

@@ -9,12 +9,16 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+// @ts-expect-error — plain ESM script without type declarations.
+import { testedEngines } from "../../scripts/_shared.mjs";
 import { expect, test, type Page } from "@playwright/test";
 import { MOCK_SDK_SOURCE as MOCK_CRAZYGAMES } from "../crazygames/mock-sdk.js";
 import { createY8Mock } from "../y8/mock-y8-sdk.js";
 import { MOCK_SDK_SOURCE as MOCK_GAMEMONETIZE } from "../gamemonetize/mock-sdk.js";
 
-const ENGINES = ["pixijs", "threejs"] as const;
+// The engines scripts/verify/sdk-smoke-build.mjs built: both in the template, the game's own
+// engine in a game repository.
+const ENGINES = testedEngines() as readonly ("pixijs" | "threejs")[];
 const POKI_SDK_URL = "https://game-cdn.poki.com/scripts/v2/poki-sdk.js";
 const CRAZYGAMES_SDK_URL = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
 const GAMEMONETIZE_SDK_URL = "https://api.gamemonetize.com/sdk.js";

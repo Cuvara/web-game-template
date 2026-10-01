@@ -6,6 +6,10 @@
 //
 // The @wgf/* aliases point at package sources, not their dist. Tests should fail on the
 // code as written, not on a stale build.
+//
+// Each example owns its tests under examples/<name>/tests/{unit,integration}. They run in
+// the same projects as the template's, but a checkout without examples/ (a game created by
+// the Factory) simply matches nothing there: no template suite may import or read examples/.
 
 import { resolve } from "node:path";
 import { defineWorkspace } from "vitest/config";
@@ -19,6 +23,12 @@ const alias = [
   packageAlias("game-core"),
   packageAlias("platform-sdk"),
   packageAlias("analytics-sdk"),
+  // The 2D framework's asset loader is unit-tested against a fake backend, so no WebGL
+  // context is needed and the node environment is enough.
+  packageAlias("pixi-framework"),
+  // The Three.js infrastructure is tested headlessly (dispose, animation, assets, cameras):
+  // three's math, scene graph and AnimationMixer need no WebGL context.
+  packageAlias("three-framework"),
 ];
 
 export default defineWorkspace([
@@ -28,8 +38,17 @@ export default defineWorkspace([
       name: "unit",
       // .mjs as well as .ts: the build and release scripts under scripts/ are plain ESM,
       // and they are tested the same way everything else is.
-      include: ["tests/unit/**/*.test.{ts,mjs}", "examples/*/tests/unit/**/*.test.ts"],
+      // packages/*/tests/ as well: a binding whose own dependency cannot be imported under
+      // Node (Phaser touches `window` at import) is tested next to itself, where that
+      // dependency resolves and can be mocked.
+      include: [
+        "tests/unit/**/*.test.{ts,mjs}",
+        "examples/*/tests/unit/**/*.test.ts",
+        "packages/*/tests/**/*.test.ts",
+      ],
       environment: "node",
+      // pixi.js reads `navigator` at import, which Node 20 (the .nvmrc pin) does not have.
+      setupFiles: ["tests/support/node-navigator.ts"],
     },
   },
   {
@@ -46,7 +65,7 @@ export default defineWorkspace([
     resolve: { alias },
     test: {
       name: "integration",
-      include: ["tests/integration/**/*.test.ts"],
+      include: ["tests/integration/**/*.test.ts", "examples/*/tests/integration/**/*.test.ts"],
       environment: "node",
     },
   },

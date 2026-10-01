@@ -28,7 +28,7 @@ interface GameHooks {
   gameplayActive(): boolean;
 }
 
-/** window, as the game's main.ts extends it. Local, so no global declaration
+/** window, as the game's src/game/index.ts extends it. Local, so no global declaration
  * collides with the template examples' own suites in one typecheck. */
 type W = { __game: GameHooks };
 

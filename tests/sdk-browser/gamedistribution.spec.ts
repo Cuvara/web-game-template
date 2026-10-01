@@ -14,11 +14,15 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+// @ts-expect-error — plain ESM script without type declarations.
+import { testedEngines } from "../../scripts/_shared.mjs";
 import { expect, test, type Frame, type Page } from "@playwright/test";
 // @ts-expect-error — plain ESM script without type declarations.
 import { wrapperHtml } from "../../scripts/release/gamedistribution-wrapper.mjs";
 
-const ENGINES = ["pixijs", "threejs"] as const;
+// The engines scripts/verify/sdk-smoke-build.mjs built: both in the template, the game's own
+// engine in a game repository.
+const ENGINES = testedEngines() as readonly ("pixijs" | "threejs")[];
 const GD_SDK_URL = "https://html5.api.gamedistribution.com/main.min.js";
 const TEST_GAME_ID = "0123456789abcdef0123456789abcdef";
 const MOCK_GD = readFileSync(

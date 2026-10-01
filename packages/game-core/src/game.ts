@@ -28,6 +28,7 @@ export class Game {
   readonly #loop: GameLoop;
   #elapsedMs = 0;
   #framesRendered = 0;
+  #steps = 0;
   /** Nested pause sources. An ad that ends while the tab is still hidden must not resume. */
   readonly #pauseReasons = new Set<PauseReason>();
 
@@ -36,6 +37,7 @@ export class Game {
       {
         update: (stepMs) => {
           this.#elapsedMs += stepMs;
+          this.#steps += 1;
           this.scenes.update(stepMs);
         },
         render: (alpha) => {
@@ -59,6 +61,14 @@ export class Game {
    */
   get framesRendered(): number {
     return this.#framesRendered;
+  }
+
+  /**
+   * Fixed simulation steps run since start. The template publishes it as #hud[data-steps],
+   * so any game proves its loop advances without having to report anything itself.
+   */
+  get steps(): number {
+    return this.#steps;
   }
 
   get running(): boolean {

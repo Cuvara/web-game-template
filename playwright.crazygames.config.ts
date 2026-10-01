@@ -18,7 +18,13 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env["CG_DEMO_PORT"] ?? 4174);
 
 export default defineConfig({
-  testDir: "tests/crazygames",
+  // The shared fixtures and the flow/layout suites live in tests/crazygames; the initial
+  // download measurement reads the demo's own dist, so it lives with the demo.
+  testDir: ".",
+  testMatch: [
+    "tests/crazygames/**/*.spec.ts",
+    "examples/crazygames-compliance-demo/tests/e2e/**/*.spec.ts",
+  ],
   // Its own output directory: each Playwright run clears its outputDir on start, and a shared
   // test-results/ lets one run delete another's traces mid-flight.
   outputDir: process.env["PW_OUTPUT_DIR"] ?? "test-results/crazygames",

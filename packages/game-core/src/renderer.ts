@@ -1,8 +1,11 @@
 // The renderer seam.
 //
-// game.config.yaml picks `engine.type` — pixijs for 2D, threejs for 3D — and the tech plan
-// records why. Everything above this interface is engine-agnostic, which is what keeps the
-// choice a one-line configuration change rather than a rewrite.
+// game.config.yaml picks `engine.type` — pixijs or phaserjs for 2D, threejs for 3D — and the
+// tech plan records why. Everything above this interface is engine-agnostic, which is what
+// keeps the choice a one-line configuration change rather than a rewrite.
+//
+// A binding never drives frames itself: this loop is the only one. An engine that ships its
+// own (Phaser) has it stopped at boot and is stepped from `render()`.
 
 export interface RendererOptions {
   readonly container: HTMLElement;
@@ -13,7 +16,7 @@ export interface RendererOptions {
 }
 
 export interface Renderer {
-  readonly kind: "pixijs" | "threejs";
+  readonly kind: "pixijs" | "phaserjs" | "threejs";
   /** Create the drawing surface and attach it to the container. */
   init(options: RendererOptions): Promise<void>;
   resize(width: number, height: number): void;

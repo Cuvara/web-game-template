@@ -484,7 +484,10 @@ export class TowerView {
   #drawStatic(): void {
     const w = this.#width;
     const h = this.#height;
-    this.#ground.clear().rect(0, 0, w, h).fill(this.#backdrop ? PAPER : GREYBOX_GROUND);
+    this.#ground
+      .clear()
+      .rect(0, 0, w, h)
+      .fill(this.#backdrop ? PAPER : GREYBOX_GROUND);
     if (this.#backdrop) {
       const tex = this.#backdrop.texture;
       const scale = Math.max(w / tex.width, h / tex.height);

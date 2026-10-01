@@ -38,14 +38,34 @@ permissions:
   contents: read
 
 jobs:
-  demo:
-    name: build, audit, e2e (desktop, mobile, tablet), archive
+  example:
+    # Template-only: a game created by the Factory ships no examples/, so the demo this
+    # workflow drives may be absent. hashFiles is not available in a job-level `if`, so
+    # presence is evaluated here and the job below skips when the demo is absent.
+    name: detect yandex-compliance-demo
     runs-on: ubuntu-latest
-    timeout-minutes: 25
     # Same fork rule as ci.yml: a same-repo PR is the push event again.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name != github.repository
+    outputs:
+      present: ${{ steps.detect.outputs.present }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: examples
+
+      - id: detect
+        run: |
+          echo "present=${{ hashFiles('examples/yandex-compliance-demo/package.json') != '' }}" >> "$GITHUB_OUTPUT"
+
+  demo:
+    name: build, audit, e2e (desktop, mobile, tablet), archive
+    needs: example
+    if: needs.example.outputs.present == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v5
