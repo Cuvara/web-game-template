@@ -1,42 +1,68 @@
 {
   "viewport": "mobile",
-  "base": "http://localhost:4311/",
-  "errors": ["console: Failed to load resource: net::ERR_FAILED"],
+  "base": "http://localhost:5395",
+  "errors": [
+    "console: Failed to load resource: net::ERR_FAILED"
+  ],
   "asset_requests": [
-    "http://localhost:4311/assets/index-CvFSiACf.js",
-    "200 http://localhost:4311/assets/index-CvFSiACf.js",
-    "http://localhost:4311/assets/index-D3tzy6Xp.js",
-    "200 http://localhost:4311/assets/index-D3tzy6Xp.js",
-    "http://localhost:4311/assets/assets.json",
-    "200 http://localhost:4311/assets/assets.json",
-    "http://localhost:4311/assets/environments/arena-kit-1.glb",
-    "http://localhost:4311/assets/environments/arena-kit-2.glb",
-    "http://localhost:4311/assets/models/craft.glb",
-    "http://localhost:4311/assets/models/wall.glb",
-    "200 http://localhost:4311/assets/environments/arena-kit-1.glb",
-    "200 http://localhost:4311/assets/environments/arena-kit-2.glb",
-    "200 http://localhost:4311/assets/models/craft.glb",
-    "200 http://localhost:4311/assets/models/wall.glb",
-    "http://localhost:4311/assets/fonts/fonts-1.woff2",
-    "http://localhost:4311/assets/fonts/fonts-2.woff2",
-    "http://localhost:4311/assets/fonts/fonts-3.woff2",
-    "200 http://localhost:4311/assets/fonts/fonts-1.woff2",
-    "200 http://localhost:4311/assets/fonts/fonts-3.woff2",
-    "200 http://localhost:4311/assets/fonts/fonts-2.woff2",
-    "http://localhost:4311/assets/textures/sky.png",
-    "http://localhost:4311/assets/vfx/crash-vfx.png",
-    "200 http://localhost:4311/assets/textures/sky.png",
-    "200 http://localhost:4311/assets/vfx/crash-vfx.png",
-    "http://localhost:4311/assets/ui/wordmark.svg",
-    "http://localhost:4311/assets/icons/icons-1.svg",
-    "200 http://localhost:4311/assets/icons/icons-1.svg",
-    "200 http://localhost:4311/assets/ui/wordmark.svg",
-    "http://localhost:4311/assets/icons/icons-2.svg",
-    "200 http://localhost:4311/assets/icons/icons-2.svg",
-    "http://localhost:4311/assets/ui/ui-kit.svg",
-    "http://localhost:4311/assets/icons/icons-3.svg",
-    "200 http://localhost:4311/assets/ui/ui-kit.svg",
-    "200 http://localhost:4311/assets/icons/icons-3.svg"
+    "http://localhost:5395/assets/index-rjI_rZ57.js",
+    "200 http://localhost:5395/assets/index-rjI_rZ57.js",
+    "http://localhost:5395/assets/index-xSp_htZ3.js",
+    "200 http://localhost:5395/assets/index-xSp_htZ3.js",
+    "http://localhost:5395/assets/assets.json",
+    "200 http://localhost:5395/assets/assets.json",
+    "http://localhost:5395/assets/environments/arena-kit-1.glb",
+    "http://localhost:5395/assets/environments/arena-kit-2.glb",
+    "http://localhost:5395/assets/models/craft.glb",
+    "http://localhost:5395/assets/models/wall.glb",
+    "200 http://localhost:5395/assets/environments/arena-kit-1.glb",
+    "200 http://localhost:5395/assets/environments/arena-kit-2.glb",
+    "200 http://localhost:5395/assets/models/craft.glb",
+    "200 http://localhost:5395/assets/models/wall.glb",
+    "http://localhost:5395/assets/fonts/fonts-1.woff2",
+    "http://localhost:5395/assets/fonts/fonts-2.woff2",
+    "http://localhost:5395/assets/fonts/fonts-3.woff2",
+    "200 http://localhost:5395/assets/fonts/fonts-2.woff2",
+    "200 http://localhost:5395/assets/fonts/fonts-3.woff2",
+    "200 http://localhost:5395/assets/fonts/fonts-1.woff2",
+    "http://localhost:5395/assets/textures/sky.png",
+    "http://localhost:5395/assets/vfx/crash-vfx.png",
+    "200 http://localhost:5395/assets/textures/sky.png",
+    "200 http://localhost:5395/assets/vfx/crash-vfx.png",
+    "http://localhost:5395/assets/ui/wordmark.svg",
+    "http://localhost:5395/assets/icons/icons-1.svg",
+    "http://localhost:5395/assets/icons/icons-5.svg",
+    "http://localhost:5395/assets/assets.json",
+    "200 http://localhost:5395/assets/icons/icons-1.svg",
+    "200 http://localhost:5395/assets/icons/icons-5.svg",
+    "200 http://localhost:5395/assets/ui/wordmark.svg",
+    "200 http://localhost:5395/assets/assets.json",
+    "http://localhost:5395/assets/audio/music-drive.ogg",
+    "http://localhost:5395/assets/audio/music-drive-layer.ogg",
+    "http://localhost:5395/assets/audio/sfx-engine.wav",
+    "http://localhost:5395/assets/audio/ui-tap.wav",
+    "http://localhost:5395/assets/audio/music-title.ogg",
+    "200 http://localhost:5395/assets/audio/music-drive.ogg",
+    "200 http://localhost:5395/assets/audio/music-drive-layer.ogg",
+    "200 http://localhost:5395/assets/audio/sfx-engine.wav",
+    "200 http://localhost:5395/assets/audio/ui-tap.wav",
+    "200 http://localhost:5395/assets/audio/music-title.ogg",
+    "http://localhost:5395/assets/audio/sfx-crash.wav",
+    "http://localhost:5395/assets/audio/sfx-game-over.wav",
+    "http://localhost:5395/assets/audio/sfx-near-miss.wav",
+    "http://localhost:5395/assets/audio/sfx-pass.wav",
+    "http://localhost:5395/assets/audio/ui-fanfare.wav",
+    "200 http://localhost:5395/assets/audio/sfx-crash.wav",
+    "200 http://localhost:5395/assets/audio/sfx-game-over.wav",
+    "200 http://localhost:5395/assets/audio/sfx-near-miss.wav",
+    "200 http://localhost:5395/assets/audio/sfx-pass.wav",
+    "200 http://localhost:5395/assets/audio/ui-fanfare.wav",
+    "http://localhost:5395/assets/icons/icons-2.svg",
+    "200 http://localhost:5395/assets/icons/icons-2.svg",
+    "http://localhost:5395/assets/ui/ui-kit.svg",
+    "http://localhost:5395/assets/icons/icons-3.svg",
+    "200 http://localhost:5395/assets/ui/ui-kit.svg",
+    "200 http://localhost:5395/assets/icons/icons-3.svg"
   ],
   "probes": {
     "title": {
@@ -70,11 +96,27 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
+      "audio": {
+        "music": null,
+        "playing": false,
+        "level": 0,
+        "muted": true
+      },
       "oracle": null
     },
     "playing": {
@@ -87,10 +129,10 @@
         {
           "id": "craft",
           "role": "player",
-          "x": 167.5127560230787,
-          "y": 461.0739880498321,
-          "w": 57.97448795384258,
-          "h": 43.68834922867279,
+          "x": 167.51494845665516,
+          "y": 461.25771881914056,
+          "w": 57.970103086689676,
+          "h": 43.70265739226329,
           "visible": true,
           "asset": "craft",
           "render": "asset"
@@ -98,10 +140,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 209.13723140141937,
-          "y": 280.82018209845353,
-          "w": 17.1903266959132,
-          "h": 31.99864851204717,
+          "x": 209.02678412042872,
+          "y": 280.0633320584885,
+          "w": 17.033695562677195,
+          "h": 31.713015436944715,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -109,10 +151,10 @@
         {
           "id": "wall-2",
           "role": "threat",
-          "x": 186.54324725857472,
-          "y": 266.089772690697,
-          "w": 27.546532506040847,
-          "h": 26.449030668757132,
+          "x": 186.61701374514604,
+          "y": 265.56999170585,
+          "w": 27.342448807975444,
+          "h": 26.253574845087144,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -120,10 +162,10 @@
         {
           "id": "wall-3",
           "role": "threat",
-          "x": 243.62568171764931,
-          "y": 255.74812126695355,
-          "w": 16.013347791827215,
-          "h": 22.564937765792536,
+          "x": 243.33267466382213,
+          "y": 255.36841024444425,
+          "w": 15.906985563542179,
+          "h": 22.422516294619243,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -171,11 +213,27 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
+      "audio": {
+        "music": "music-drive",
+        "playing": true,
+        "level": 0.1313,
+        "muted": false
+      },
       "oracle": {
         "action": "steer",
         "input": {
@@ -196,10 +254,10 @@
         {
           "id": "craft",
           "role": "player",
-          "x": 201.84205260341528,
-          "y": 463.7594944115659,
-          "w": 57.92624905057144,
-          "h": 51.32042067467626,
+          "x": 196.7560427053635,
+          "y": 463.75363347234617,
+          "w": 57.8862574520833,
+          "h": 51.06145802987652,
           "visible": true,
           "asset": "craft",
           "render": "asset"
@@ -207,10 +265,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 204.3680538704032,
-          "y": 310.04106914987244,
-          "w": 22.86420062717096,
-          "h": 43.122408718173574,
+          "x": 205.62695324543984,
+          "y": 307.9460920704066,
+          "w": 22.49384770634316,
+          "h": 42.31703446298485,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -218,10 +276,10 @@
         {
           "id": "wall-2",
           "role": "threat",
-          "x": 178.32661865538392,
-          "y": 284.98433993473043,
-          "w": 34.99134496751287,
-          "h": 33.63842500186132,
+          "x": 179.47083128121355,
+          "y": 283.70228494167816,
+          "w": 34.485615295404045,
+          "h": 33.14330402097585,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -229,10 +287,10 @@
         {
           "id": "wall-3",
           "role": "threat",
-          "x": 251.025304835531,
-          "y": 269.11039229123367,
-          "w": 19.662753152093984,
-          "h": 27.612348145236126,
+          "x": 250.8728466071775,
+          "y": 268.22615450000006,
+          "w": 19.433529250661877,
+          "h": 27.275664087206053,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -240,10 +298,10 @@
         {
           "id": "wall-4",
           "role": "threat",
-          "x": 198.49963699979764,
-          "y": 257.5923533991811,
-          "w": 21.05125133241782,
-          "h": 23.28247852987613,
+          "x": 198.72790877205364,
+          "y": 256.96655931469667,
+          "w": 20.84026200412464,
+          "h": 23.04402675364821,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -291,11 +349,185 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
+      "audio": {
+        "music": "music-drive",
+        "playing": true,
+        "level": 0.1453,
+        "muted": false
+      },
+      "oracle": {
+        "action": "steer",
+        "input": {
+          "type": "pointer",
+          "x": 39,
+          "y": 436,
+          "hold_ms": 220
+        }
+      }
+    },
+    "near-miss": {
+      "state": "playing",
+      "metrics": {
+        "score": 61,
+        "best": 0
+      },
+      "entities": [
+        {
+          "id": "craft",
+          "role": "player",
+          "x": 211.79502934676813,
+          "y": 463.5794410862492,
+          "w": 58.5399786826122,
+          "h": 51.936437992386004,
+          "visible": true,
+          "asset": "craft",
+          "render": "asset"
+        },
+        {
+          "id": "wall-2",
+          "role": "threat",
+          "x": 146.6225018058566,
+          "y": 376.3904992794853,
+          "w": 71.65895308217179,
+          "h": 68.84265676999206,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-3",
+          "role": "threat",
+          "x": 281.2360454642385,
+          "y": 321.6787923316492,
+          "w": 35.03712754931462,
+          "h": 47.60190458078705,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-4",
+          "role": "threat",
+          "x": 193.77343824489824,
+          "y": 291.30938070349373,
+          "w": 32.57432606884453,
+          "h": 36.04179600344838,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-5",
+          "role": "threat",
+          "x": 165.42233195217622,
+          "y": 273.2540258410862,
+          "w": 30.69823033373052,
+          "h": 29.204510898117576,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-6",
+          "role": "threat",
+          "x": 179.13744491781938,
+          "y": 260.65844621299925,
+          "w": 19.180054789275033,
+          "h": 24.43579195337321,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-7",
+          "role": "threat",
+          "x": 148.43884130173157,
+          "y": 251.66315882420272,
+          "w": 16.107526613255544,
+          "h": 21.051137129303214,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        }
+      ],
+      "inputs": [
+        {
+          "action": "steer",
+          "input": {
+            "type": "pointer",
+            "x": 39,
+            "y": 436,
+            "hold_ms": 220
+          }
+        },
+        {
+          "action": "steer",
+          "input": {
+            "type": "pointer",
+            "x": 354,
+            "y": 436,
+            "hold_ms": 220
+          }
+        },
+        {
+          "action": "pause",
+          "input": {
+            "type": "pointer",
+            "x": 355,
+            "y": 36
+          }
+        }
+      ],
+      "assets_loaded": [
+        "arena-kit-1",
+        "arena-kit-2",
+        "craft",
+        "crash-vfx",
+        "fonts-1",
+        "fonts-2",
+        "fonts-3",
+        "icons-1",
+        "icons-2",
+        "icons-3",
+        "icons-4",
+        "icons-5",
+        "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
+        "sky",
+        "ui-fanfare",
+        "ui-kit",
+        "ui-tap",
+        "wall",
+        "wordmark"
+      ],
+      "audio": {
+        "music": "music-drive",
+        "playing": true,
+        "level": 0.1002,
+        "muted": false
+      },
       "oracle": {
         "action": "steer",
         "input": {
@@ -310,16 +542,16 @@
       "state": "playing",
       "metrics": {
         "score": 50,
-        "best": 0
+        "best": 64
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 254.34048035842736,
-          "y": 462.2329084182346,
-          "w": 62.68599134500593,
-          "h": 50.496750061626926,
+          "x": 189.0349858620163,
+          "y": 463.3466807329443,
+          "w": 57.8620298033664,
+          "h": 51.078028861099654,
           "visible": true,
           "asset": "craft",
           "render": "asset"
@@ -327,10 +559,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 171.80466468574542,
-          "y": 387.7825263599114,
-          "w": 38.81243455110837,
-          "h": 73.29401223834697,
+          "x": 245.09597938837334,
+          "y": 390.1910232301862,
+          "w": 54.350095978238414,
+          "h": 73.98339790269921,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -338,10 +570,10 @@
         {
           "id": "wall-2",
           "role": "threat",
-          "x": 148.03280103962175,
-          "y": 326.32533416644947,
-          "w": 51.75805431059996,
-          "h": 49.623430459512065,
+          "x": 112.29465481930428,
+          "y": 327.4274244441618,
+          "w": 41.98867594303415,
+          "h": 49.76721311242687,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -349,10 +581,10 @@
         {
           "id": "wall-3",
           "role": "threat",
-          "x": 257.0706100629296,
-          "y": 295.28779127531465,
-          "w": 26.74457277454934,
-          "h": 37.584363885971015,
+          "x": 248.57084919008724,
+          "y": 295.62632249915185,
+          "w": 33.72450305011563,
+          "h": 37.64287534800167,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -360,10 +592,10 @@
         {
           "id": "wall-4",
           "role": "threat",
-          "x": 190.7999792186813,
-          "y": 275.18714981068825,
-          "w": 27.022447215487063,
-          "h": 29.969142085035116,
+          "x": 183.0643985563913,
+          "y": 275.5207506440452,
+          "w": 21.413435007559343,
+          "h": 30.023212934290996,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -371,10 +603,10 @@
         {
           "id": "wall-5",
           "role": "threat",
-          "x": 168.73915682484534,
-          "y": 262.25406551869554,
-          "w": 26.430199484807787,
-          "h": 25.07968351682723,
+          "x": 224.53869103327716,
+          "y": 262.5658768429654,
+          "w": 15.204357494002636,
+          "h": 25.137164694957846,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -382,10 +614,10 @@
         {
           "id": "wall-6",
           "role": "threat",
-          "x": 181.82528672497457,
-          "y": 252.7651540654191,
-          "w": 16.9217986444408,
-          "h": 21.474015243484757,
+          "x": 221.31907718084037,
+          "y": 252.95919315613583,
+          "w": 13.953719502955238,
+          "h": 21.528913123883967,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -433,142 +665,27 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
-      "oracle": {
-        "action": "steer",
-        "input": {
-          "type": "pointer",
-          "x": 39,
-          "y": 436,
-          "hold_ms": 220
-        }
-      }
-    },
-    "near-miss": {
-      "state": "playing",
-      "metrics": {
-        "score": 71,
-        "best": 65
+      "audio": {
+        "music": "music-drive",
+        "playing": true,
+        "level": 0.15,
+        "muted": false
       },
-      "entities": [
-        {
-          "id": "craft",
-          "role": "player",
-          "x": 168.3379351313411,
-          "y": 459.7526168904356,
-          "w": 57.71123710746497,
-          "h": 52.27911005244931,
-          "visible": true,
-          "asset": "craft",
-          "render": "asset"
-        },
-        {
-          "id": "wall-3",
-          "role": "threat",
-          "x": 85.47928496210359,
-          "y": 356.8564174100892,
-          "w": 51.350302911336186,
-          "h": 60.98027693170519,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-4",
-          "role": "threat",
-          "x": 77.07652212594128,
-          "y": 310.5343860880907,
-          "w": 47.37938465664075,
-          "h": 43.263398609359626,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-5",
-          "role": "threat",
-          "x": 202.61228487765663,
-          "y": 285.54442851158035,
-          "w": 30.203550460018903,
-          "h": 33.78717935786693,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-6",
-          "role": "threat",
-          "x": 224.6385432565848,
-          "y": 269.07397461169666,
-          "w": 20.441789050926502,
-          "h": 27.57405494773883,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-7",
-          "role": "threat",
-          "x": 213.13941465541564,
-          "y": 257.8592214654496,
-          "w": 23.323082946578438,
-          "h": 23.35934858745196,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        }
-      ],
-      "inputs": [
-        {
-          "action": "steer",
-          "input": {
-            "type": "pointer",
-            "x": 39,
-            "y": 436,
-            "hold_ms": 220
-          }
-        },
-        {
-          "action": "steer",
-          "input": {
-            "type": "pointer",
-            "x": 354,
-            "y": 436,
-            "hold_ms": 220
-          }
-        },
-        {
-          "action": "pause",
-          "input": {
-            "type": "pointer",
-            "x": 355,
-            "y": 36
-          }
-        }
-      ],
-      "assets_loaded": [
-        "arena-kit-1",
-        "arena-kit-2",
-        "craft",
-        "crash-vfx",
-        "fonts-1",
-        "fonts-2",
-        "fonts-3",
-        "icons-1",
-        "icons-2",
-        "icons-3",
-        "icons-4",
-        "icons-5",
-        "icons-6",
-        "sky",
-        "ui-kit",
-        "wall",
-        "wordmark"
-      ],
       "oracle": {
         "action": "steer",
         "input": {
@@ -582,28 +699,50 @@
     "crash": {
       "state": "lost",
       "metrics": {
-        "score": 89,
-        "best": 89
+        "score": 65,
+        "best": 65
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 97.83954350981494,
-          "y": 464.2724892050482,
-          "w": 60.62853051635861,
-          "h": 44.564946103031616,
+          "x": 146.92370486869493,
+          "y": 462.6159440615962,
+          "w": 57.95766094283576,
+          "h": 43.974961261902706,
           "visible": true,
           "asset": "craft",
           "render": "asset"
         },
         {
+          "id": "wall-2",
+          "role": "threat",
+          "x": 72.83920995781183,
+          "y": 434.17715212691706,
+          "w": 77.2327727367999,
+          "h": 91.20953406265568,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-3",
+          "role": "threat",
+          "x": 289.43207307411615,
+          "y": 346.6754988898193,
+          "w": 53.24921581612523,
+          "h": 57.152288512612074,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
           "id": "wall-4",
           "role": "threat",
-          "x": -0.9096425255716941,
-          "y": 437.55852351399085,
-          "w": 103.13324631826357,
-          "h": 93.30753863660834,
+          "x": 186.560170426961,
+          "y": 305.3507402107285,
+          "w": 29.50287996417015,
+          "h": 41.32622538602152,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -611,10 +750,10 @@
         {
           "id": "wall-5",
           "role": "threat",
-          "x": 235.60289367724985,
-          "y": 347.73280677108477,
-          "w": 53.28469982129499,
-          "h": 57.78825420247881,
+          "x": 237.01846942419314,
+          "y": 282.28521886779833,
+          "w": 20.154008900949464,
+          "h": 32.571926135614945,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -622,10 +761,10 @@
         {
           "id": "wall-6",
           "role": "threat",
-          "x": 255.0554295675327,
-          "y": 305.95858879678,
-          "w": 32.019533837351844,
-          "h": 41.64509928682179,
+          "x": 229.07086810247648,
+          "y": 266.8783984596605,
+          "w": 17.61678669032628,
+          "h": 26.760010368120447,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -633,32 +772,10 @@
         {
           "id": "wall-7",
           "role": "threat",
-          "x": 229.2450799655651,
-          "y": 282.56292477941724,
-          "w": 33.21956020256701,
-          "h": 32.763926233397285,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-8",
-          "role": "threat",
-          "x": 193.39367283508471,
-          "y": 267.0705867619915,
-          "w": 24.71148409564543,
-          "h": 26.879281051388716,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-9",
-          "role": "threat",
-          "x": 180.26186542270008,
-          "y": 256.4390080622034,
-          "w": 17.870155498579066,
-          "h": 22.855944970767894,
+          "x": 177.05582471286968,
+          "y": 256.2967188717141,
+          "w": 21.96158957621074,
+          "h": 22.786842720690856,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -688,38 +805,76 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
+      "audio": {
+        "music": "music-title",
+        "playing": true,
+        "level": 0.158,
+        "muted": false
+      },
       "oracle": null
     },
     "game-over": {
       "state": "lost",
       "metrics": {
-        "score": 89,
-        "best": 89
+        "score": 65,
+        "best": 65
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 97.71632336085976,
-          "y": 461.2473843006811,
-          "w": 60.70899653426865,
-          "h": 44.3241189652278,
+          "x": 146.94406205384712,
+          "y": 463.6145547779923,
+          "w": 57.933813285193764,
+          "h": 44.05298096316852,
           "visible": true,
           "asset": "craft",
           "render": "asset"
         },
         {
+          "id": "wall-2",
+          "role": "threat",
+          "x": 72.83920995781183,
+          "y": 434.17715212691706,
+          "w": 77.2327727367999,
+          "h": 91.20953406265568,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-3",
+          "role": "threat",
+          "x": 289.43207307411615,
+          "y": 346.6754988898193,
+          "w": 53.24921581612523,
+          "h": 57.152288512612074,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
           "id": "wall-4",
           "role": "threat",
-          "x": -0.9096425255716941,
-          "y": 437.55852351399085,
-          "w": 103.13324631826357,
-          "h": 93.30753863660834,
+          "x": 186.560170426961,
+          "y": 305.3507402107285,
+          "w": 29.50287996417015,
+          "h": 41.32622538602152,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -727,10 +882,10 @@
         {
           "id": "wall-5",
           "role": "threat",
-          "x": 235.60289367724985,
-          "y": 347.73280677108477,
-          "w": 53.28469982129499,
-          "h": 57.78825420247881,
+          "x": 237.01846942419314,
+          "y": 282.28521886779833,
+          "w": 20.154008900949464,
+          "h": 32.571926135614945,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -738,10 +893,10 @@
         {
           "id": "wall-6",
           "role": "threat",
-          "x": 255.0554295675327,
-          "y": 305.95858879678,
-          "w": 32.019533837351844,
-          "h": 41.64509928682179,
+          "x": 229.07086810247648,
+          "y": 266.8783984596605,
+          "w": 17.61678669032628,
+          "h": 26.760010368120447,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -749,32 +904,10 @@
         {
           "id": "wall-7",
           "role": "threat",
-          "x": 229.2450799655651,
-          "y": 282.56292477941724,
-          "w": 33.21956020256701,
-          "h": 32.763926233397285,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-8",
-          "role": "threat",
-          "x": 193.39367283508471,
-          "y": 267.0705867619915,
-          "w": 24.71148409564543,
-          "h": 26.879281051388716,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-9",
-          "role": "threat",
-          "x": 180.26186542270008,
-          "y": 256.4390080622034,
-          "w": 17.870155498579066,
-          "h": 22.855944970767894,
+          "x": 177.05582471286968,
+          "y": 256.2967188717141,
+          "w": 21.96158957621074,
+          "h": 22.786842720690856,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -804,27 +937,43 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
+      "audio": {
+        "music": "music-title",
+        "playing": true,
+        "level": 0.1999,
+        "muted": false
+      },
       "oracle": null
     },
     "retry-playing": {
       "state": "playing",
       "metrics": {
-        "score": 15,
-        "best": 89
+        "score": 16,
+        "best": 65
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 167.53018529792914,
-          "y": 462.53467115747276,
-          "w": 57.939629404141726,
-          "h": 43.80202908420807,
+          "x": 167.5103906633204,
+          "y": 460.8757685847736,
+          "w": 57.979218673359185,
+          "h": 43.672909830075696,
           "visible": true,
           "asset": "craft",
           "render": "asset"
@@ -832,10 +981,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 208.56222298516852,
-          "y": 257.1687399123855,
-          "w": 21.735043788522518,
-          "h": 23.097900401976858,
+          "x": 216.69372385721823,
+          "y": 257.54914874666605,
+          "w": 13.04920822658093,
+          "h": 23.240647359312902,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -883,11 +1032,27 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
+      "audio": {
+        "music": "music-drive",
+        "playing": true,
+        "level": 0.1229,
+        "muted": false
+      },
       "oracle": {
         "action": "steer",
         "input": {
@@ -901,17 +1066,17 @@
     "paused": {
       "state": "paused",
       "metrics": {
-        "score": 24,
-        "best": 89
+        "score": 22,
+        "best": 65
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 167.53252927933278,
-          "y": 462.7311240433273,
-          "w": 57.934941441334445,
-          "h": 43.817305780911454,
+          "x": 167.5423608516812,
+          "y": 463.5551562826769,
+          "w": 57.91527829663758,
+          "h": 43.8813523111445,
           "visible": true,
           "asset": "craft",
           "render": "asset"
@@ -919,10 +1084,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 210.8051816132257,
-          "y": 268.8103904807066,
-          "w": 25.91005992615831,
-          "h": 27.47248875630271,
+          "x": 219.134216010633,
+          "y": 265.15835771930006,
+          "w": 14.707264531294982,
+          "h": 26.098803932034116,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -930,10 +1095,10 @@
         {
           "id": "wall-2",
           "role": "threat",
-          "x": 152.28457964709438,
-          "y": 257.65100691628805,
-          "w": 20.289168513920686,
-          "h": 23.278871533288168,
+          "x": 185.07529882917055,
+          "y": 255.00162784913064,
+          "w": 12.588622838192947,
+          "h": 22.284956814389744,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -945,7 +1110,7 @@
           "input": {
             "type": "pointer",
             "x": 196,
-            "y": 390
+            "y": 389
           }
         }
       ],
@@ -963,11 +1128,27 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "music-drive",
+        "music-drive-layer",
+        "music-title",
+        "sfx-crash",
+        "sfx-engine",
+        "sfx-game-over",
+        "sfx-near-miss",
+        "sfx-pass",
         "sky",
+        "ui-fanfare",
         "ui-kit",
+        "ui-tap",
         "wall",
         "wordmark"
       ],
+      "audio": {
+        "music": "music-drive",
+        "playing": false,
+        "level": 0.0016,
+        "muted": true
+      },
       "oracle": null
     }
   }

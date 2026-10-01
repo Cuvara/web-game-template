@@ -2,6 +2,13 @@
 
 Frames of the built game, played - not rendered offline, not mocked.
 
+**Re-captured again 2026-10-02** for the audio branch (`dyCuong03/agent-game-audio`): the game
+now shows a sound toggle in the bottom-left corner on every screen, so every frame changed. Same
+method as below - a real golden 3D run (Factory lock `golden_ports` at this branch merged with
+`wgf-golden-content`, `bb4c79b`) built the game with its own assets step (art, fonts, music and
+sound from `../library/`), its `dist/` was served by `vite preview` and played by `capture.mjs`;
+`<viewport>/evidence.json` now also lists the audio files fetched.
+
 **Re-captured 2026-10-02** when the library's body face became Commissioner 500 (Latin +
 Cyrillic; Instrument Sans has no Cyrillic and failed `font.coverage` for `ru`): a real golden
 3D run (`WGF_GOLDEN=1 WGF_GOLDEN_KEEP=1 python3 -m unittest discover scripts/tests -p
