@@ -11,13 +11,10 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { LIVE_SDK, boot, expect, sdkCalls, test } from "./fixtures.js";
+import { LIVE_SDK, boot, expect, sdkCalls, test } from "../../../../tests/crazygames/fixtures.js";
 
-const OUT = resolve(import.meta.dirname, "../../build/crazygames-runtime.json");
-const DIST_INDEX = resolve(
-  import.meta.dirname,
-  "../../examples/crazygames-compliance-demo/dist/index.html",
-);
+const OUT = resolve(import.meta.dirname, "../../../../build/crazygames-runtime.json");
+const DIST_INDEX = resolve(import.meta.dirname, "../../dist/index.html");
 
 test("initial download up to the first gameplayStart", async ({ page, requests }, info) => {
   test.skip(info.project.name !== "desktop", "measured once");

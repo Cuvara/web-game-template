@@ -18,8 +18,11 @@ GameVui submission package        (examples/gamevui-compliance-demo → release/
 Email / contact form to the operator — by a person
 ```
 
-`createPlatform("gamevui")` keeps throwing, on purpose. Its message says an adapter must be
-written against the portal's own documentation, and there is none to write it against.
+There is no portal SDK to write an adapter against, so `gamevui` builds use
+`GameVuiPlatform` (`packages/platform-sdk/src/adapters/gamevui.ts`), a no-SDK adapter: local
+saves, pause on a hidden tab, and every ad `unsupported`. It loads nothing from GameVui.
+`pnpm build:platforms` builds it like any other platform into
+`build/platforms/gamevui/dist/`.
 
 ## What is not here, and why
 

@@ -22,7 +22,9 @@ async function setHidden(page: Page, hidden: boolean): Promise<void> {
   }, hidden);
 }
 
-test("stops the simulation while the tab is hidden, and resumes with it", async ({ page }) => {
+test("stops the simulation while the tab is hidden, and resumes with it @pause-resume", async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
 

@@ -106,15 +106,15 @@ The environment variable wins over the file, and both are validated identically 
 placeholder `your_game_id_here`. A malformed ID fails the build. `game_id` on any other
 platform fails the build too.
 
-| Condition                         | Behaviour                                                                                                                                                                                             |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Game ID configured                | SDK loaded at `initialize()`, which waits up to 5 s for `SDK_READY`                                                                                                                                   |
-| Game ID missing                   | build warns; `sdk:prepare` exits 1; at runtime the SDK is **never requested**, `sdkState: "not-configured"`, the game plays without ads                                                               |
-| Game ID malformed (at runtime)    | same as missing; `configProblem` says why (`createPlatform` is also reachable without the build-time check)                                                                                           |
-| SDK delayed                       | `initialize()` returns at the 5 s deadline (`sdkState: "unavailable"`); a later `SDK_READY` makes ads available                                                                                       |
-| SDK unavailable (blocked/offline) | `sdkState: "unavailable"`, ads refused `not-ready`, game plays                                                                                                                                        |
-| Initialization failure            | `SDK_ERROR` before ready → `sdkState: "error"`, ads refused `error`; the loader throwing → `unavailable`. A later `SDK_READY` recovers either way                                                     |
-| SDK already loaded by other code  | refused at once, its `SDK_OPTIONS` untouched: the SDK read its options once, so this adapter's events could never arrive. Do not paste the documented snippet into `index.html` — the adapter owns it |
+| Condition                         | Behaviour                                                                                                                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Game ID configured                | SDK loaded at `initialize()`, which waits up to 5 s for `SDK_READY`                                                                                                                                          |
+| Game ID missing                   | **build fails** (with `WGF_ALLOW_UNCONFIGURED_PORTAL=1`: builds, `portal_configured: false`, not releasable); `sdk:prepare` exits 1; at runtime the SDK is **never requested**, `sdkState: "not-configured"` |
+| Game ID malformed (at runtime)    | same as missing; `configProblem` says why (`createPlatform` is also reachable without the build-time check)                                                                                                  |
+| SDK delayed                       | `initialize()` returns at the 5 s deadline (`sdkState: "unavailable"`); a later `SDK_READY` makes ads available                                                                                              |
+| SDK unavailable (blocked/offline) | `sdkState: "unavailable"`, ads refused `not-ready`, game plays                                                                                                                                               |
+| Initialization failure            | `SDK_ERROR` before ready → `sdkState: "error"`, ads refused `error`; the loader throwing → `unavailable`. A later `SDK_READY` recovers either way                                                            |
+| SDK already loaded by other code  | refused at once, its `SDK_OPTIONS` untouched: the SDK read its options once, so this adapter's events could never arrive. Do not paste the documented snippet into `index.html` — the adapter owns it        |
 
 ## Advertising correctness
 
@@ -143,26 +143,29 @@ first; every timer is cleared when the request settles.
 
 ## Lifecycle seam
 
-No game code changes. `src/main.ts` passes the entry's `game_id` to `createPlatform` as
-`portalGameId` (ignored by every other adapter); `bindPlatform` maps `ad:start`/`ad:end` and
+No game code changes. `src/main.ts` passes the entry's `game_id` as `portalGameId`
+(`platformOptions(targetPlatform())`) to `createTargetPlatform`, which constructs
+`GameMonetizePlatform` for a `gamemonetize` build; `bindPlatform` maps `ad:start`/`ad:end` and
 `foreground:lost`/`foreground:gained` to the game's `ad` and `platform` pause reasons and to
 silence. This is exactly GameMonetize's mandatory setting 2 and 3: pause **and** mute on
-`SDK_GAME_PAUSE`, resume on `SDK_GAME_START`. Call `withAdBreak(game, platform, () =>
-platform.showInterstitial())` on the documented moments — play button, continue, new level,
-level complete — never during loading.
+`SDK_GAME_PAUSE`, resume on `SDK_GAME_START`. Game code calls `context.integration.interstitial(<placement id>)` (or
+`context.gameplay.naturalBreak(moment)`) on the documented moments — play button, continue,
+new level, level complete — never during loading; the Factory's integration plan maps the
+placement to the interstitial.
 
 ## Publishing and verification (manual; not automated here)
 
 1. Dashboard > My games > **Add game**; copy its **Game ID**.
-2. Place at least one interstitial in the game — `withAdBreak(game, platform, () =>
-platform.showInterstitial())` on the Play button, continue, new level or level complete.
+2. Place at least one interstitial in the game — `context.integration.interstitial(<placement id>)`
+   on the Play button, continue, new level or level complete.
    GameMonetize makes it mandatory ("you must call sdk.showBanner()"), and the untouched
    template places none: its boot scene has no ad. "Verify Game" most likely needs one ad to
    complete (the SDK reports `SDK_IMPLEMENTED` to the portal then — inferred from `sdk.js`).
 3. Build with the ID (`game_id` or `WGF_GAMEMONETIZE_GAME_ID`) and `ad_kinds: [interstitial]`;
    `pnpm sdk:prepare` must exit 0 — it fails a missing Game ID, declared rewarded ads, or no
    declared interstitial.
-4. `pnpm release:package --release r<n>` → `release/r<n>/gamemonetize.zip`, `index.html` at the
+4. `pnpm build:platforms && pnpm release:package --release r<n>` →
+   `release/r<n>/gamemonetize.zip`, `index.html` at the
    root, no source maps — the upload format GameMonetize documents.
 5. Upload it: Game Management > My games > the game > drop the zip.
 6. **Verify Game** in the dashboard — GameMonetize's check that the SDK is integrated.
@@ -213,10 +216,10 @@ loads and raises `SDK_READY`; whether it fills an ad on localhost is GameMonetiz
 
 ## Known limitations
 
-- **No Factory profile.** `core/reference/platforms/gamemonetize.yaml` does not exist in
-  web-game-factory; `gamemonetize@1.0.0` is pinned in configs by convention only, and release
-  validation (`pnpm assert`) has no GameMonetize assertions to evaluate. Values the adapter
-  implies for a profile: `ads: [interstitial]`, `rewarded_available: false`,
+- **Profile unverified.** The Factory carries a core profile `gamemonetize@1.0.0`
+  (`status: unverified`), vendored into a game's `config/platforms/` by Factory `init`; the
+  template itself has no `config/platforms/gamemonetize.yaml`, so `pnpm assert --platform
+gamemonetize` exits 2 here. Values the adapter implies for a profile: `ads: [interstitial]`, `rewarded_available: false`,
   `banner_available: false`, `loading_api: none`, `interstitial_min_interval_s: null`,
   `cloud_saves: false`, `auth: none`, upload = zip with `index.html` at the root, review =
   Verify Game + activation.
@@ -230,13 +233,9 @@ loads and raises `SDK_READY`; whether it fills an ad on localhost is GameMonetiz
 - **A preroll during `initialize()`** holds the foreground; the template's `bindPlatform` reads
   `platform.foreground` when it binds, so the game starts paused and resumes on
   `SDK_GAME_START`.
-- **Bundle contents.** A build through `createPlatform()` (the template's `src/main.ts`)
-  contains every adapter, so a GameMonetize build also carries the other portals' SDK URLs as
-  unused strings, and other portals' builds carry `api.gamemonetize.com` — as they already
-  carry Poki's and CrazyGames' URLs. Nothing requests them (the browser suites assert no
-  foreign request). Where a portal audits bundle text — Poki and CrazyGames do — construct the
-  adapter directly, as their compliance demos do; those builds contain no GameMonetize code
-  (checked).
+- **Bundle contents.** Since contract 2 each platform is built separately
+  (`pnpm build:platforms`) and a GameMonetize build contains only the GameMonetize adapter;
+  no other portal's build contains `api.gamemonetize.com`.
 - **Undocumented behaviour.** GameMonetize documents no error codes, no fill signal and no
   rate-limit signal. A refused premature call and a no-fill look the same (`SDK_GAME_START`
   alone), so both resolve `not-ready`, not `too-soon`. The timeouts (5 s init, 25 s ad start,

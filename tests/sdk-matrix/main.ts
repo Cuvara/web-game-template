@@ -9,7 +9,7 @@
 // drives it through.
 
 import { Game } from "@wgf/game-core";
-import { BootScene } from "../../src/game/boot-scene.js";
+import { ProbeScene } from "../support/probe-scene.js";
 import { bindPlatform, withAdBreak } from "../../src/platform/bind.js";
 import { createRenderer } from "../../src/rendering/create-renderer.js";
 import {
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   const binding = bindPlatform(game, platform, {
     onAudioMutedChange: (muted) => (hud.dataset["audioMuted"] = String(muted)),
   });
-  await game.changeScene(new BootScene({ renderer, hud }));
+  await game.changeScene(new ProbeScene({ renderer, hud }));
 
   platform.reportLoadingProgress(1);
   await platform.signalReady();

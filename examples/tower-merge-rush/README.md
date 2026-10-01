@@ -54,7 +54,7 @@ against a real portal.
   (`resolveMerges`, `dropLevelForMerges`, `canDropAt`, `hasLegalMove`, …). No PixiJS, no DOM,
   no platform. This is what the unit tests drive directly.
 - `src/rendering/board-view.ts` — the PixiJS view. Draw-only; reads a `Snapshot`, never mutates.
-- `src/app.ts` — the `Scene` that owns *when* the platform is called (all the wiring above).
+- `src/app.ts` — the `Scene` that owns _when_ the platform is called (all the wiring above).
 - `src/main.ts` — boot, the DOM HUD/screens, input, and the test hooks.
 
 ## Test hooks

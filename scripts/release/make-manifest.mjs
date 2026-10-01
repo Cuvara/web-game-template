@@ -10,6 +10,11 @@
 // whatever version of the profile happens to be current. That pin is what release
 // validation later judges the build against.
 //
+// Immutability is enforced, not just described: an existing manifest.json is never replaced
+// with different content (exit 1). Re-running with the same inputs is a no-op success — the
+// comparison ignores only the fields that record WHEN a run happened (produced_at, built_at,
+// frozen_at, the date in artifact_id, the CI run link) and the content_hash derived from them.
+//
 // Usage:
 //   node scripts/release/make-manifest.mjs --release r1 --version 1.0.0 \
 //     [--kind initial|content|hotfix|rollback] [--state draft|rc] [--freeze]
@@ -21,20 +26,46 @@ import { contentHash, isEntryPoint, parseArgs, readGameConfig, repoRoot } from "
 
 const RELEASE_ID = /^r[0-9]+$/;
 const SEMVER = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+const COMMIT_SHA = /^[0-9a-f]{40}$/;
 
-function commitSha(root) {
-  if (process.env["GITHUB_SHA"]) return process.env["GITHUB_SHA"];
-  try {
-    return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
-  } catch {
-    return "unknown";
+/** The template this repository was generated from; see release-manifest.schema.json. */
+export const TEMPLATE_REPOSITORY = "Cuvara/web-game-template";
+
+export class ManifestRefusal extends Error {}
+
+function refuse(message) {
+  throw new ManifestRefusal(message);
+}
+
+/**
+ * The commit being released: GITHUB_SHA in CI, else HEAD. A manifest pins a commit or it pins
+ * nothing, so there is no "unknown" fallback — outside a git work tree this refuses.
+ */
+export function commitSha(root, env = process.env) {
+  let sha = env["GITHUB_SHA"];
+  if (!sha) {
+    try {
+      sha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
+    } catch {
+      refuse("no commit to pin: not a git work tree and GITHUB_SHA is unset");
+    }
   }
+  if (!COMMIT_SHA.test(sha)) refuse(`"${sha}" is not a full commit sha`);
+  return sha;
 }
 
 function changelogFrom(root, args) {
-  if (args.changelog) return String(args.changelog).split("\n").filter(Boolean);
+  if (typeof args.changelog === "string") return args.changelog.split("\n").filter(Boolean);
   try {
-    const log = execFileSync("git", ["log", "-20", "--pretty=%s"], { cwd: root, encoding: "utf8" });
+    const log = execFileSync("git", ["log", "-20", "--pretty=%s"], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
     const lines = log
       .split("\n")
       .map((line) => line.trim())
@@ -47,42 +78,95 @@ function changelogFrom(root, args) {
   }
 }
 
+/**
+ * `template` for the manifest: which template, at which version, and where that version was
+ * read. package.json's `wgf.template.version` survives a game bumping its own version; the
+ * package version is the fallback for a repository that predates the marker. The contract
+ * number stays in package.json (`wgf.template.contract`) — the Factory's schema has no field
+ * for it.
+ */
+export function templateInfo(root) {
+  const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  const marked = pkg.wgf?.template?.version;
+  return typeof marked === "string"
+    ? { repository: TEMPLATE_REPOSITORY, version: marked, source: "package.json wgf.template" }
+    : { repository: TEMPLATE_REPOSITORY, version: String(pkg.version), source: "package.json" };
+}
+
+/** A package record as the manifest schema allows it; build details stay in packages.json. */
+function manifestPackage(record) {
+  const { platform_id, filename, size_mb, checksum, content_digest, files } = record;
+  return {
+    platform_id,
+    filename,
+    size_mb,
+    checksum,
+    ...(content_digest !== undefined ? { content_digest } : {}),
+    ...(files !== undefined ? { files } : {}),
+  };
+}
+
 /** wgf:<artifact-type>:<scope-slug>:<yyyymmdd>-<nn> */
 function artifactId(type, scope, date, sequence) {
   const stamp = date.toISOString().slice(0, 10).replace(/-/g, "");
   return `wgf:${type}:${scope}:${stamp}-${String(sequence).padStart(2, "0")}`;
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
+/** The manifest minus the fields that only say when it was produced. */
+export function comparable(manifest) {
+  const copy = JSON.parse(JSON.stringify(manifest));
+  if (copy.provenance) {
+    delete copy.provenance.produced_at;
+    delete copy.provenance.content_hash;
+    if (typeof copy.provenance.artifact_id === "string") {
+      copy.provenance.artifact_id = copy.provenance.artifact_id.replace(/:[0-9]{8}-/, ":-");
+    }
+  }
+  if (copy.build_ref) {
+    delete copy.build_ref.built_at;
+    delete copy.build_ref.ci_run_url;
+  }
+  delete copy.frozen_at;
+  return copy;
+}
+
+/** Build the manifest for `release/<releaseId>/` under `root`. Pure apart from reads. */
+export function buildManifest({ root, args, env = process.env, now = new Date() }) {
   const releaseId = args.release;
   const version = args.version;
-
-  if (!releaseId || !RELEASE_ID.test(releaseId)) {
-    console.error("--release must match ^r[0-9]+$ (r1, r2, ...)");
-    process.exit(2);
+  if (typeof releaseId !== "string" || !RELEASE_ID.test(releaseId)) {
+    refuse("--release must match ^r[0-9]+$ (r1, r2, ...)");
   }
-  if (!version || !SEMVER.test(version)) {
-    console.error("--version must be semver, e.g. 1.0.0");
-    process.exit(2);
+  if (typeof version !== "string" || !SEMVER.test(version)) {
+    refuse("--version must be semver, e.g. 1.0.0");
   }
 
-  const root = repoRoot();
   const gameConfig = readGameConfig(root);
-  const outDir = resolve(root, "release", releaseId);
-  const packagesPath = resolve(outDir, "packages.json");
-
-  if (!existsSync(packagesPath)) {
-    console.error(
-      `release/${releaseId}/packages.json is missing — run \`pnpm release:package\` first`,
+  if (version !== String(gameConfig.game.version)) {
+    refuse(
+      `--version ${version} is not game.version ${gameConfig.game.version} in game.config.yaml; ` +
+        `the manifest describes the build, and the build was made at game.version`,
     );
-    process.exit(1);
+  }
+
+  const packagesPath = resolve(root, "release", releaseId, "packages.json");
+  if (!existsSync(packagesPath)) {
+    refuse(`release/${releaseId}/packages.json is missing — run \`pnpm release:package\` first`);
   }
   const packages = JSON.parse(readFileSync(packagesPath, "utf8"));
 
-  const now = new Date();
+  const commit = commitSha(root, env);
+  for (const record of packages) {
+    const built = record.build?.commit_sha;
+    if (built && built !== commit) {
+      refuse(`${record.filename} was built from ${built}, but the release commit is ${commit}`);
+    }
+  }
+
   const state = args.state ?? "draft";
   const frozen = args.freeze === true || state === "rc";
+  const server = env["GITHUB_SERVER_URL"];
+  const repository = env["GITHUB_REPOSITORY"];
 
   const manifest = {
     provenance: {
@@ -105,31 +189,71 @@ function main() {
     version,
     kind: args.kind ?? "content",
     state,
-    commit_sha: commitSha(root),
+    commit_sha: commit,
     build_ref: {
       built_at: now.toISOString(),
-      ...(process.env["GITHUB_SERVER_URL"] && process.env["GITHUB_REPOSITORY"]
+      ...(server && repository
         ? {
-            url: `${process.env["GITHUB_SERVER_URL"]}/${process.env["GITHUB_REPOSITORY"]}/tree/${commitSha(root)}`,
-            ci_run_url: `${process.env["GITHUB_SERVER_URL"]}/${process.env["GITHUB_REPOSITORY"]}/actions/runs/${process.env["GITHUB_RUN_ID"]}`,
+            url: `${server}/${repository}/tree/${commit}`,
+            ci_run_url: `${server}/${repository}/actions/runs/${env["GITHUB_RUN_ID"]}`,
           }
         : {}),
     },
-    packages,
+    packages: packages.map(manifestPackage),
     target_platforms: gameConfig.platforms.map((entry) => ({
       id: entry.id,
       role: entry.role,
       profile_version: String(entry.profile).split("@")[1],
     })),
     changelog: changelogFrom(root, args),
+    template: templateInfo(root),
     ...(frozen ? { frozen_at: now.toISOString() } : {}),
   };
 
   manifest.provenance.content_hash = contentHash(manifest);
+  return manifest;
+}
 
-  writeFileSync(resolve(outDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
-  console.log(`wrote release/${releaseId}/manifest.json`);
-  console.log(`  state ${manifest.state}${frozen ? " (frozen)" : ""}`);
+/**
+ * Write the manifest unless one is already there. Returns "written" or "unchanged"; refuses
+ * when the existing manifest differs in anything but its timestamps.
+ */
+export function makeManifest({ root, args, env = process.env, now = new Date() }) {
+  const manifest = buildManifest({ root, args, env, now });
+  const path = resolve(root, "release", manifest.release_id, "manifest.json");
+  if (existsSync(path)) {
+    let existing;
+    try {
+      existing = JSON.parse(readFileSync(path, "utf8"));
+    } catch {
+      refuse(`release/${manifest.release_id}/manifest.json exists and is not readable JSON`);
+    }
+    if (JSON.stringify(comparable(existing)) === JSON.stringify(comparable(manifest))) {
+      return { manifest: existing, status: "unchanged" };
+    }
+    refuse(
+      `release/${manifest.release_id}/manifest.json already exists with different content. ` +
+        `A release manifest is immutable — cut a new release id instead of editing this one`,
+    );
+  }
+  writeFileSync(path, JSON.stringify(manifest, null, 2) + "\n");
+  return { manifest, status: "written" };
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  let result;
+  try {
+    result = makeManifest({ root: repoRoot(), args });
+  } catch (error) {
+    if (!(error instanceof ManifestRefusal)) throw error;
+    console.error(`release:manifest refused: ${error.message}`);
+    process.exit(1);
+  }
+  const { manifest, status } = result;
+  const verb = status === "written" ? "wrote" : "unchanged:";
+  console.log(`${verb} release/${manifest.release_id}/manifest.json`);
+  console.log(`  state ${manifest.state}${manifest.frozen_at ? " (frozen)" : ""}`);
   console.log(`  ${manifest.provenance.content_hash}`);
 }
 

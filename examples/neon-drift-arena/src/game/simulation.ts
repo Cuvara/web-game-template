@@ -265,9 +265,7 @@ export class Simulation {
   }
 
   #collides(obstacle: Obstacle): boolean {
-    return (
-      Math.abs(obstacle.x - this.#playerX) < obstacle.halfWidth + this.#o.playerHalfWidth
-    );
+    return Math.abs(obstacle.x - this.#playerX) < obstacle.halfWidth + this.#o.playerHalfWidth;
   }
 }
 

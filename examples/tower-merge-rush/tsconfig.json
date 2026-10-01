@@ -4,7 +4,7 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "vite.config.ts"],
+  "include": ["src", "tests", "*.config.ts"],
   "references": [
     { "path": "../../packages/game-core" },
     { "path": "../../packages/platform-sdk" },

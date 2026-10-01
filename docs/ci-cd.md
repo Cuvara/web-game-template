@@ -13,6 +13,10 @@ two are gates wearing a GitHub environment; the rest move artifacts around.
 | `campaign.yml`  | dispatch only                | gate **G7**                          |
 | `bootstrap.yml` | first push in a new repo     | one-time setup, then deletes itself  |
 
+Outside the seven, `crazygames.yml`, `yandex-demo.yml` and `gamevui-demo.yml` build, audit and
+browser-test the template's compliance examples, and `live-portal-validation.yml` runs the
+opt-in live SDK checks (`pnpm test:sdk:live`). They guard the adapters; none is a gate.
+
 ## The two channels
 
 **develop** — push to `develop`, get a Cloudflare Pages deployment. No gate, no release id,
@@ -27,26 +31,34 @@ build that proves nothing.
 
 ## Guards
 
-`ci_green` — lint, typecheck, unit, integration. Sits on three transitions in the title
-machine, so it stays fast and stays about the source.
+`ci_green` — lint, typecheck, unit, integration, SDK conformance and `pnpm sdk:check` (the
+boot wiring). Sits on three transitions in the title machine, so it stays fast and stays
+about the source. A separate `golden` job in `ci.yml` runs `scripts/verify/golden-check.mjs`
+when the checkout has golden ports (`examples/wgf-golden-shared`), so a template change that
+breaks the Factory's golden games fails in its own pull request.
 
-`verify_suite_green` — read at exactly one place, gate G5. Builds, runs the smoke suite
-against the built bundle, measures package facts, and evaluates each targeted platform's
-assertions. Everything in it runs against artifacts, never the dev server.
+`verify_suite_green` — read at exactly one place, gate G5. Builds, runs the smoke suite and
+the SDK browser matrix against the built bundle, measures package facts, and evaluates each
+targeted platform's assertions. Everything in it runs against artifacts, never the dev server.
+
+`release.yml` builds every platform separately (`pnpm build:platforms`) and re-measures each
+build before packaging it: a platform ships only its own adapter, so one `dist/` cannot be
+packaged for every portal.
 
 ## How a platform assertion is evaluated
 
-Each profile carries `assertions[]` like `{left: package.size_mb, op: lte, right: 100}`.
-Twelve distinct fact paths appear across the five profiles, and **every blocking one is
-measurable on a GitHub runner**. Three warnings need a proxy.
+Each profile carries `assertions[]` like `{left: package.size_mb, op: lte, right: 100}`,
+evaluated against facts measured on a GitHub runner; a few warnings need a proxy.
 
 Facts come from three places, and which is which matters:
 
-- **Static** — `size_mb` from `dist`, `locales` from the locale files actually in the
-  bundle, `platform_sdk` from the build target.
+- **Static** — `size_mb` from the platform's own build (`build/platforms/<id>/dist`, else
+  `dist/`), `locales` from the locale files actually in the bundle, `platform_sdk` from a
+  scan of the shipped files for every portal's SDK signature
+  (`packages/platform-sdk/sdk-signatures.json`): exactly one portal, `none`, or `mixed:…`.
 - **Runtime** — `insecure_requests`, `external_links`, `calls_loading_api`,
-  `mobile_supported`, `perf.*`, measured by the Playwright `verify` project driving the
-  built bundle. `perf.lowend_android_fps` is a CPU-throttled desktop run: a proxy for a
+  `mobile_supported`, `perf.*`, measured by the Playwright `verify` project driving each
+  platform's built bundle (`build/runtime-facts/<id>.json`). `perf.lowend_android_fps` is a CPU-throttled desktop run: a proxy for a
   low-end device, not a measurement of one, which is why that assertion is a warning.
 - **Declared** — `uses_banner_ads` and `uses_rewarded_ads` come from
   `monetization.ad_kinds` in `game.config.yaml`, not from observation. A run can prove an ad

@@ -99,13 +99,10 @@ test("scripted play increases the score", async ({ page }) => {
   await page.evaluate(() => window.__game.play());
 
   const start = await page.evaluate(() => window.__game.score);
-  await page.evaluate(
-    (step) => {
-      window.__game.steer(0);
-      for (let i = 0; i < 240; i++) window.__game.tick(step); // ~4 seconds of survival
-    },
-    STEP,
-  );
+  await page.evaluate((step) => {
+    window.__game.steer(0);
+    for (let i = 0; i < 240; i++) window.__game.tick(step); // ~4 seconds of survival
+  }, STEP);
   const after = await page.evaluate(() => window.__game.score);
   expect(after).toBeGreaterThan(start);
 });
@@ -114,17 +111,14 @@ test("a collision reaches game over", async ({ page }) => {
   await boot(page);
   await page.evaluate(() => window.__game.play());
 
-  await page.evaluate(
-    (step) => {
-      // Player is centred; drop a wide obstacle dead ahead and drive into it.
-      window.__game.steer(0);
-      window.__game.spawnObstacleAt(0, 1, 0.8);
-      for (let i = 0; i < 60 && window.__game.phase === "playing"; i++) {
-        window.__game.tick(step);
-      }
-    },
-    STEP,
-  );
+  await page.evaluate((step) => {
+    // Player is centred; drop a wide obstacle dead ahead and drive into it.
+    window.__game.steer(0);
+    window.__game.spawnObstacleAt(0, 1, 0.8);
+    for (let i = 0; i < 60 && window.__game.phase === "playing"; i++) {
+      window.__game.tick(step);
+    }
+  }, STEP);
 
   expect(await page.evaluate(() => window.__game.phase)).toBe("over");
 });
@@ -135,17 +129,14 @@ test("restart resets the run and score", async ({ page }) => {
   const firstRunId = await page.evaluate(() => window.__game.runId);
 
   // Build a substantial score, then crash.
-  await page.evaluate(
-    (step) => {
-      window.__game.steer(0);
-      for (let i = 0; i < 600; i++) window.__game.tick(step); // ~10 s of survival
-      window.__game.spawnObstacleAt(0, 1, 0.8);
-      for (let i = 0; i < 60 && window.__game.phase === "playing"; i++) {
-        window.__game.tick(step);
-      }
-    },
-    STEP,
-  );
+  await page.evaluate((step) => {
+    window.__game.steer(0);
+    for (let i = 0; i < 600; i++) window.__game.tick(step); // ~10 s of survival
+    window.__game.spawnObstacleAt(0, 1, 0.8);
+    for (let i = 0; i < 60 && window.__game.phase === "playing"; i++) {
+      window.__game.tick(step);
+    }
+  }, STEP);
   const crashScore = await page.evaluate(() => window.__game.score);
   expect(await page.evaluate(() => window.__game.phase)).toBe("over");
   expect(crashScore).toBeGreaterThan(50);
@@ -171,16 +162,13 @@ test("rewarded revive is declined gracefully on a platform with no ads", async (
   await boot(page);
   await page.evaluate(() => window.__game.play());
 
-  await page.evaluate(
-    (step) => {
-      window.__game.steer(0);
-      window.__game.spawnObstacleAt(0, 1, 0.8);
-      for (let i = 0; i < 60 && window.__game.phase === "playing"; i++) {
-        window.__game.tick(step);
-      }
-    },
-    STEP,
-  );
+  await page.evaluate((step) => {
+    window.__game.steer(0);
+    window.__game.spawnObstacleAt(0, 1, 0.8);
+    for (let i = 0; i < 60 && window.__game.phase === "playing"; i++) {
+      window.__game.tick(step);
+    }
+  }, STEP);
   expect(await page.evaluate(() => window.__game.phase)).toBe("over");
 
   // generic-web has no rewarded ad, so revive resolves false and the game stays over.

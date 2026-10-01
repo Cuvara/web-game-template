@@ -1,0 +1,11 @@
+# Generated or recorded verbatim; formatting them would change what they record.
+pnpm-lock.yaml
+docs/audits/
+# Build and test output (also git-ignored).
+dist/
+build/
+release/
+test-results/
+playwright-report/
+coverage/
+**/dist/

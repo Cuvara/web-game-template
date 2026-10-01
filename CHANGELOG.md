@@ -10,6 +10,191 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Scaling foundation
+
+Three example games already solve this three incompatible ways, and all three re-derive the
+same primitives: guard the zero-sized container, divide to get a scale, centre the remainder,
+convert a pointer coordinate back. `layoutViewport` from `@wgf/game-core` is a pure function
+from a design size and a viewport to one scale, one world rectangle and the offsets that
+centre it. Additive — contract stays `2`, no new dependency, no lifecycle of its own
+(`main.ts` already owns resize), and the shipped bundle is byte-identical because the export
+is unused and tree-shaken.
+
+#### Added
+
+- **`layoutViewport(options, size, insets?)`** — pure, so a game's geometry at every screen
+  shape it claims to support is unit-testable without a browser.
+- **`fit: "extend"` is the default**, not letterboxing. Poki asks a game to "scale to cover
+  the full canvas", and Yandex 5.9 counts black bars against a submission while 1.6.2.1
+  requires the canvas to fill the frame — so `extend` keeps the authored scale, never crops
+  the design rectangle, and grows the world on the axis with room to spare, bounded by
+  `minAspect` / `maxAspect`. `fit: "contain"` is there for a playfield that genuinely cannot
+  change shape.
+- **`toWorld` / `toCss` / `containsWorld`** — `toWorld` converts exactly what `Input.pointer`
+  reports, so the input and scaling foundations meet without either knowing about the other.
+  A press in a margin converts to a point outside the world rather than being clamped to an
+  edge the player never touched.
+- **`readSafeAreaInsets(host)` and `layout.safeArea`** — `env(safe-area-inset-*)` can only be
+  used in a declaration, never read from script, so a canvas-drawn HUD has no way to see a
+  notch. This puts the values on a hidden probe's padding and reads them back, removing the
+  probe in a `finally` so a read that throws cannot leave a growing pile of hidden divs.
+  `safeArea` reports the uncovered region in world units.
+- Guards: a zero-sized container (`display: none`, or read before layout) yields a scale of 1
+  rather than a division by zero; a design size that is not positive throws when it is passed.
+
+### Input foundation
+
+Every game rewrote the same layer — a held-key set, keydown/keyup on the window, pointer
+events on the canvas, a dispose list — and each one re-learned the two details that are only
+obvious after a portal rejection. `Input` from `@wgf/game-core` is engine-agnostic: no PixiJS,
+no Three.js, no Phaser. What an action _means_ stays game-owned; this reports which are held.
+Additive — contract stays `2`, no new dependency, no existing behaviour changes.
+
+#### Added
+
+- **`Input`** — named actions bound to `KeyboardEvent.code` values and/or the pointer.
+  `held()`, `axis(negative, positive)`, `consumePressed()`, `onPressed` / `onReleased`,
+  `clear()` and an idempotent `dispose()`.
+- **Physical keys, not characters.** Yandex 1.6.2.4 requires controls that survive a layout
+  change; `KeyA` is under A on QWERTY and under Q on AZERTY, which is what a WASD game means.
+- **`consumePressed(action)`** drains a one-shot press from the fixed `update()`, so a jump is
+  applied where the loop can reproduce it. `onPressed` fires from the browser event, between
+  frames — correct for menus, wrong for the simulation.
+- **Pause awareness** — pass `paused: () => game.paused` and gameplay actions stop firing
+  while an ad, a hidden tab or the pause menu holds the game. Input leaking through an ad
+  break is a listed rejection cause on more than one portal. The physical key stays tracked
+  underneath, so a control held across a break needs no fresh press; `whilePaused: true`
+  exempts the control that ends the pause.
+- **Page-scroll defaults cancelled** for space, the arrows and page up/down when an action
+  binds them (Yandex 1.10.2, Poki's HTML5 guide), overridable per binding.
+- **Pointer and touch through one path** — `{ down, x, y, fractionX, fractionY }` in the
+  surface's CSS pixels. Touch arrives as pointer events; there is no separate touch code.
+- **`bindElement(action, element)`** — an on-screen button as an extra press source, which is
+  how a keyboard game is played on a phone. Returns its own unsubscribe.
+- **Held keys dropped on blur.** A key held while focus leaves never gets its keyup, and the
+  player used to come back to a stuck control.
+
+### Phaser as a second 2D engine
+
+Released as [1.2.0] below, and merged back into main. Unchanged since: the engine-matrix
+suites (`ALL_ENGINES` in `scripts/_shared.mjs`, the SDK browser matrix) still cover `pixijs`
+and `threejs`, and the Factory does not yet offer `phaserjs` in a tech plan.
+
+### Three.js game foundation (`wgf.template.version` 1.2.0)
+
+A 3D title had to write its own asset loading, animation wiring, disposal, lights and camera
+before it could write any gameplay: `@wgf/three-framework` was the renderer and nothing else.
+It now ships that infrastructure. Additive — contract stays `2`, no game code changes, and 2D
+is untouched. Documented in [docs/threejs.md](docs/threejs.md).
+
+#### Added
+
+- **`ThreeAssets`** — one cache for `.glb`/`.gltf` and textures, load progress in `[0,1]` for
+  `context.reportLoadingProgress`, `instantiate()` that clones skinned models correctly
+  (`SkeletonUtils`), and a `dispose()` that frees what was loaded. Draco, KTX2 and meshopt are
+  configured by path and imported dynamically; no decoder ships with the template.
+- **`AnimationController`** — `AnimationMixer` driven by the loop's fixed `update(stepMs)`,
+  with crossfade, one-shot clips and a `finished` callback.
+- **`disposeObject3D(root, { keep })`** — frees geometry, materials, material textures and
+  skeletons once each, so a restart does not leak the level onto the GPU.
+- **`addDefaultLights(scene, options)`** — key plus hemisphere fill, optional shadow camera.
+- **Camera rigs** — `FollowCamera` (third person, frame-rate-independent damping),
+  `FirstPersonRig` (pointer lock; the game supplies the movement intent, not the rig),
+  `OrbitRig` (damped, no pan, distance-limited).
+- **`asThreeRenderer(context.renderer)`** — the narrowing every 3D game wrote by hand, with an
+  error that names `engine.type` in `game.config.yaml`.
+- **Renderer settings** — `setMaxPixelRatio`, `setShadows`, `setBackground`, `configureCamera`,
+  and `webgl` / `contextLost` accessors.
+- `docs/threejs.md`, including the Rapier recipe for a tech plan with
+  `architecture.physics: rapier` (a **game** dependency; the template ships no physics).
+
+#### Fixed
+
+- The Three.js renderer re-applies its pixel-ratio cap on every resize. Moving the window to a
+  screen with a different device pixel ratio previously kept the drawing buffer at the ratio
+  the page loaded with.
+- `ThreeRenderer.destroy()` disposes the scene graph, not just the `WebGLRenderer`, and forces
+  the context loss. Geometries, materials and textures used to survive a teardown.
+- A lost WebGL context (backgrounded mobile tab, GPU reset) is now recoverable: the renderer
+  prevents the default, pauses drawing, and resumes on `webglcontextrestored`. It previously
+  left the canvas black for the rest of the session.
+
+### 2D asset loading
+
+A 2D title had to write its own loading and progress arithmetic before it could draw anything,
+and a game that got the arithmetic wrong failed at portal submission rather than in CI.
+Additive — contract stays `2`, no game code changes, and 3D is untouched.
+
+#### Added
+
+- **`AssetManifest`** — what the game ships, declared as data in `src/assets/manifest.ts`
+  (game-owned) and grouped into bundles by when each is needed, so a build's payload is
+  reviewable without reading loader code.
+- **`AssetLoader`** from `@wgf/pixi-framework` — loads the named bundles through Pixi's own
+  `Assets` cache and reports combined progress in `[0,1]`, weighted by bundle size, never
+  decreasing, always ending at exactly 1. Hand `onProgress` straight to
+  `context.reportLoadingProgress`; profiles with `loading_api` reject a game that reports none
+  and `pnpm facts` counts the calls as `calls_loading_api`.
+- Manifest rules are checked when the loader is constructed: a duplicate alias, a repeated
+  bundle name or a missing `src` is a startup error naming the file, not a texture that
+  silently never appears.
+- `get()` / `texture()` throw and say which bundle to load rather than returning `undefined`,
+  and `texture()` refuses an alias the manifest declares as something other than an image. A
+  failed bundle names the bundle, its aliases and the backend's original message.
+- No new dependency: loading goes through the `pixi.js` the binding already carried.
+
+### 2.0.0-contract — Factory ↔ template contract 2
+
+The Factory ↔ template API is now written down and versioned:
+[docs/factory-contract.md](docs/factory-contract.md), contract number in `package.json`
+`wgf.template.contract` (`2`), template version in `wgf.template.version`. `package.json`
+`version` is unchanged until the release is cut. A title gains all of this by re-pinning; a
+game written against contract 1 needs its game code moved into `createGame` (below).
+
+#### Changed — breaking for games
+
+- **One entry point.** A game implements `createGame(context: GameContext): Promise<GameHandle>`
+  in `src/game/index.ts`. `src/main.ts` is template-owned and boots through `bootPlatform`,
+  installs `PlatformGameplay` with `INTEGRATION_PLAN`, and hands the game a wired
+  `GameContext`; games no longer build `BootScene` in `main.ts`.
+- **The Factory no longer patches the template.** `src/platform/gameplay.ts`,
+  `game-integration.ts`, `src/game/{context,integration}.ts` ship with the template; the
+  Factory `sdk` step regenerates `src/platform/integration-plan.ts` only. `pnpm sdk:check`
+  fails (exit 1, JSON report) when the boot wiring is gone.
+- **One build per platform.** `pnpm build:platforms` writes `build/platforms/<id>/dist/`,
+  `build.json` and `index.json` (with the Factory-compatible `dist_digest`). Each bundle
+  carries only its target's adapter and only its engine. `pnpm build` builds one target:
+  `WGF_TARGET_PLATFORM`, else the first required entry.
+- **Portal ids fail the build.** A y8 build without `app_id`, or a gamemonetize /
+  gamedistribution build without `game_id`, fails. `platforms[].app_id` / `game_id` may live
+  in `game.config.yaml` or come from `WGF_Y8_APP_ID`, `WGF_Y8_GAME_ID`,
+  `WGF_GAMEMONETIZE_GAME_ID`. `WGF_ALLOW_UNCONFIGURED_PORTAL=1` is the test-only escape
+  hatch (`portal_configured: false`, never releasable).
+- **Release packages each platform's own build.** `release:package` refuses a build that is
+  missing, stale against `HEAD`, unconfigured or edited since it was built; zips are
+  deterministic; `packages.json` records `content_digest` and `dist_digest`.
+  `release:manifest` never overwrites a manifest with different content and records
+  `template`.
+
+#### Added
+
+- `package.platform_sdk` is measured from the shipped files
+  (`packages/platform-sdk/sdk-signatures.json`); runtime facts per platform
+  (`build/runtime-facts/<id>.json`).
+- `window.__wgf__` probe gains `target`, `steps()`, `scene()`, `paused()`, `moments()`;
+  `#hud[data-scene|data-steps|data-engine|data-platform]` are published by `main.ts` for any
+  game. Inherited game-agnostic e2e specs carry `@aspect` tags.
+- `pnpm golden:check` assembles the Factory's golden ports (`examples/*/wgf-golden.port.json`)
+  and runs the inherited suites on them.
+- `AGENTS.md` and `CLAUDE.md`: the developer contract for coding agents in a game repository.
+
+#### Fixed — docs
+
+- `docs/development.md` no longer tells games to edit `packages/`; the platform docs, release
+  and production-build docs describe per-platform builds and packaging; the adapter table
+  lists all eight platforms; Y8, GameDistribution and GameMonetize have Factory core profiles
+  at `1.0.0` (marked unverified there).
+
 ## [1.2.0] — 2026-09-28
 
 Phaser as a second 2D engine. `engine.type` accepts `phaserjs` alongside `pixijs` and
