@@ -1,0 +1,295 @@
+{
+  "verdict": "PASS",
+  "commit": "3ec5539f2c18afaedb6dcacf56c29274d2387349",
+  "checks": [
+    {
+      "id": "probe.present",
+      "project": "desktop",
+      "required": true,
+      "summary": "window.__wgf__.play.snapshot() answered while the game started",
+      "status": "PASS"
+    },
+    {
+      "id": "probe.valid",
+      "project": "desktop",
+      "required": true,
+      "summary": "snapshots match the play-probe schema and carry the contract's metrics",
+      "status": "PASS",
+      "measured": {
+        "schema_problems": [],
+        "missing_metrics": []
+      }
+    },
+    {
+      "id": "start.playable",
+      "project": "desktop",
+      "required": true,
+      "summary": "play began 922 ms after navigation",
+      "status": "PASS",
+      "measured": 922,
+      "expected": "<= 5000 ms"
+    },
+    {
+      "id": "start.objective",
+      "project": "desktop",
+      "required": true,
+      "summary": "100% of the objective's words were on screen in the first 3 s of play",
+      "status": "PASS",
+      "measured": 1.0,
+      "expected": ">= 0.6 of the words of build_spec.experience.goal.statement",
+      "frames": ["first-session-1s"]
+    },
+    {
+      "id": "idle.grace",
+      "project": "desktop",
+      "required": true,
+      "summary": "with no input for 10000 ms, play was not lost",
+      "status": "PASS",
+      "expected": "not lost within 10000 ms without input"
+    },
+    {
+      "id": "act.acknowledged",
+      "project": "desktop",
+      "required": true,
+      "summary": "every action changed the frame: {'steer': 0.1488, 'pause': 0.1285}",
+      "status": "PASS",
+      "measured": {
+        "steer": 0.1488,
+        "pause": 0.1285
+      },
+      "expected": ">= 0.002 of pixels"
+    },
+    {
+      "id": "win.reachable",
+      "project": "desktop",
+      "required": true,
+      "summary": "good play raised score from 0 to 64",
+      "status": "PASS",
+      "measured": {
+        "reached": "lost",
+        "inputs": 14
+      }
+    },
+    {
+      "id": "lose.reachable",
+      "project": "desktop",
+      "required": true,
+      "summary": "bad play ended lost",
+      "status": "PASS",
+      "measured": "lost",
+      "frames": ["end-lost", "state-lost", "state-retry"]
+    },
+    {
+      "id": "restart.works",
+      "project": "desktop",
+      "required": true,
+      "summary": "retry (input:restart) returned to play in 5 ms",
+      "status": "PASS",
+      "measured": 5,
+      "expected": "<= 2000 ms, score reset"
+    },
+    {
+      "id": "entities.visible",
+      "project": "desktop",
+      "required": true,
+      "summary": "player, threats and goals are drawn on screen and large enough",
+      "status": "PASS",
+      "measured": {
+        "player": {
+          "samples": 384,
+          "visible": 384,
+          "visible_share": 1.0,
+          "median_area": 0.0208
+        },
+        "threat": {
+          "samples": 1511,
+          "visible": 1511,
+          "visible_share": 1.0,
+          "median_area": 0.0387
+        }
+      },
+      "expected": {
+        "min_area_fraction": 0.002,
+        "min_visible_share": 0.5
+      }
+    },
+    {
+      "id": "frames.readable",
+      "project": "desktop",
+      "required": true,
+      "summary": "frames during play are lit and have contrast",
+      "status": "PASS",
+      "measured": {
+        "first-session-1s": {
+          "mean_luminance": 26.86,
+          "contrast": 39.33,
+          "lit_share": 0.0911
+        },
+        "play-2s": {
+          "mean_luminance": 27.06,
+          "contrast": 39.49,
+          "lit_share": 0.0936
+        }
+      },
+      "expected": {
+        "lit_share": ">= 0.01 at luminance >= 64",
+        "mean_luminance": "<= 225",
+        "contrast": ">= 18"
+      },
+      "frames": ["first-session-1s", "play-2s"]
+    },
+    {
+      "id": "page.errors",
+      "project": "desktop",
+      "required": true,
+      "summary": "no page errors",
+      "status": "PASS",
+      "measured": []
+    },
+    {
+      "id": "probe.present",
+      "project": "mobile",
+      "required": true,
+      "summary": "window.__wgf__.play.snapshot() answered while the game started",
+      "status": "PASS"
+    },
+    {
+      "id": "probe.valid",
+      "project": "mobile",
+      "required": true,
+      "summary": "snapshots match the play-probe schema and carry the contract's metrics",
+      "status": "PASS",
+      "measured": {
+        "schema_problems": [],
+        "missing_metrics": []
+      }
+    },
+    {
+      "id": "start.playable",
+      "project": "mobile",
+      "required": true,
+      "summary": "play began 1868 ms after navigation",
+      "status": "PASS",
+      "measured": 1868,
+      "expected": "<= 5000 ms"
+    },
+    {
+      "id": "start.objective",
+      "project": "mobile",
+      "required": true,
+      "summary": "100% of the objective's words were on screen in the first 3 s of play",
+      "status": "PASS",
+      "measured": 1.0,
+      "expected": ">= 0.6 of the words of build_spec.experience.goal.statement",
+      "frames": ["first-session-1s"]
+    },
+    {
+      "id": "idle.grace",
+      "project": "mobile",
+      "required": true,
+      "summary": "with no input for 10000 ms, play was not lost",
+      "status": "PASS",
+      "expected": "not lost within 10000 ms without input"
+    },
+    {
+      "id": "act.acknowledged",
+      "project": "mobile",
+      "required": true,
+      "summary": "every action changed the frame: {'steer': 0.1172, 'pause': 0.1757}",
+      "status": "PASS",
+      "measured": {
+        "steer": 0.1172,
+        "pause": 0.1757
+      },
+      "expected": ">= 0.002 of pixels"
+    },
+    {
+      "id": "win.reachable",
+      "project": "mobile",
+      "required": true,
+      "summary": "good play raised score from 0 to 89",
+      "status": "PASS",
+      "measured": {
+        "reached": "lost",
+        "inputs": 15
+      }
+    },
+    {
+      "id": "lose.reachable",
+      "project": "mobile",
+      "required": true,
+      "summary": "bad play ended lost",
+      "status": "PASS",
+      "measured": "lost",
+      "frames": ["end-lost", "state-lost", "state-retry"]
+    },
+    {
+      "id": "restart.works",
+      "project": "mobile",
+      "required": true,
+      "summary": "retry (input:restart) returned to play in 12 ms",
+      "status": "PASS",
+      "measured": 12,
+      "expected": "<= 2000 ms, score reset"
+    },
+    {
+      "id": "entities.visible",
+      "project": "mobile",
+      "required": true,
+      "summary": "player, threats and goals are drawn on screen and large enough",
+      "status": "PASS",
+      "measured": {
+        "player": {
+          "samples": 335,
+          "visible": 335,
+          "visible_share": 1.0,
+          "median_area": 0.0118
+        },
+        "threat": {
+          "samples": 1287,
+          "visible": 1287,
+          "visible_share": 1.0,
+          "median_area": 0.0283
+        }
+      },
+      "expected": {
+        "min_area_fraction": 0.002,
+        "min_visible_share": 0.5
+      }
+    },
+    {
+      "id": "frames.readable",
+      "project": "mobile",
+      "required": true,
+      "summary": "frames during play are lit and have contrast",
+      "status": "PASS",
+      "measured": {
+        "first-session-1s": {
+          "mean_luminance": 27.13,
+          "contrast": 40.67,
+          "lit_share": 0.0895
+        },
+        "play-2s": {
+          "mean_luminance": 27.41,
+          "contrast": 40.34,
+          "lit_share": 0.0919
+        }
+      },
+      "expected": {
+        "lit_share": ">= 0.01 at luminance >= 64",
+        "mean_luminance": "<= 225",
+        "contrast": ">= 18"
+      },
+      "frames": ["first-session-1s", "play-2s"]
+    },
+    {
+      "id": "page.errors",
+      "project": "mobile",
+      "required": true,
+      "summary": "no page errors",
+      "status": "PASS",
+      "measured": []
+    }
+  ],
+  "failed_checks": []
+}

@@ -1,0 +1,64 @@
+"""The lead's production gate harness (~/wgf-runs/production-gate-2026-10-01/drive.py), adapted:
+the real PlayabilityStep then ProductionQualityStep from /tmp/wgf-int, on the overlaid golden
+3D game at its committed HEAD, with the golden run's design/scaffold and the asset-manifest the
+real AssetsStep wrote with the port's library configured.
+
+GAP: integration-2.6's AssetPipeline judges a library GLB as `skipped` ("a GLB is judged by its
+model inspection") - nothing runs that inspection for library files. With --assess, each model
+item's quality is set to the Factory's own model_quality.assess() of its delivered GLB(s) (the
+worst verdict across files), which is what the assets step should record. Without it, the
+manifest is passed exactly as the step wrote it."""
+import copy, glob, json, os, sys, types, subprocess
+os.chdir("/tmp/wgf-int"); sys.path.insert(0, "/tmp/wgf-int/scripts")
+from wgflib import procs
+from wgf_playability.step import PlayabilityStep
+from wgf_production.step import ProductionQualityStep
+from wgf_assets import model_quality
+RUN = sys.argv[1]; assess = "--assess" in sys.argv; reuse = "--reuse-play" in sys.argv
+G = "/tmp/wgf-g3d-ndrift/int/game"
+A = glob.glob("/tmp/wgf-g3d-ndrift/int/run/factory-store/workflows/*/artifacts")[0]
+commit = subprocess.check_output(["git", "-C", G, "rev-parse", "HEAD"], text=True).strip()
+proto = json.load(open(sorted(glob.glob(f"{A}/prototype-report/v*.json"))[-1]))
+proto = copy.deepcopy(proto); proto["build_ref"]["commit_sha"] = commit
+design = json.load(open(f"{A}/game-design/v1.json"))
+manifest = json.load(open("/tmp/wgf-g3d-ndrift/int/asset-manifest.json"))
+if assess:
+    identity = design["build_spec"].get("visual_identity")
+    for item in manifest["items"]:
+        glbs = [f for f in item.get("files") or [] if f["format"] == "glb"]
+        if not glbs: continue
+        results = [model_quality.assess(open(os.path.join(G, f["path"]), "rb").read(), role=item.get("role"),
+                   visual_identity=identity, kind=item["type"] if item["type"] in ("model", "environment") else "model",
+                   name=item["id"], author=(item.get("quality") or {}).get("author"))["quality"] for f in glbs]
+        worst = next((q for q in results if q["verdict"] == "fail"), results[0])
+        item["quality"] = dict(worst, assessed_by="wgf_assets.model_quality.assess (gate harness, see GAP)")
+        print("assessed", item["id"], [q["verdict"] for q in results], [q.get("primitive_only") for q in results])
+    json.dump(manifest, open(f"{RUN}-manifest-assessed.json", "w"), indent=1)
+docs = {"prototype-report": proto, "game-design": design,
+        "scaffold-record": json.load(open(f"{A}/scaffold-record/v1.json")), "asset-manifest": manifest}
+class Inputs:
+    def __init__(s, d): s.d = d; s.refs = {k: types.SimpleNamespace(content_hash=None) for k in d}
+    def __contains__(s, k): return k in s.d
+    def load(s, k): return s.d[k]
+class Log:
+    def __getattr__(s, n): return lambda *a, **k: print(n, a, k, file=sys.stderr)
+procs.install_signal_cleanup()
+os.makedirs(RUN, exist_ok=True)
+ctx = types.SimpleNamespace(config={"checkouts": os.path.dirname(G)}, run_dir=RUN, logger=Log(), visit=1, attempt=1, execution=1)
+if reuse:
+    report = json.load(open(f"{RUN}/playability-report.json"))
+else:
+    os.environ["WGF_GAME_REPO"] = G
+    play = PlayabilityStep(types.SimpleNamespace(params={}, id="playability")).execute(
+        Inputs({k: docs[k] for k in ("prototype-report", "game-design", "scaffold-record")}), ctx)
+    report = play.artifacts[0].content
+    json.dump(report, open(f"{RUN}/playability-report.json", "w"), indent=1)
+    print("playability:", play.outcome, report["verdict"], report["failed_checks"], report["records_dir"])
+docs["playability-report"] = report
+pq = ProductionQualityStep(types.SimpleNamespace(params={}, id="production-quality")).execute(
+    Inputs({k: docs[k] for k in ("playability-report", "asset-manifest", "game-design", "scaffold-record")}), ctx)
+out = pq.artifacts[0].content
+json.dump(out, open(f"{RUN}/production-quality-report.json", "w"), indent=1)
+print("production-quality:", pq.outcome, pq.route, out["verdict"], out["routes"])
+for c in out["checks"]:
+    print(f"  {c['status']:7} {c.get('project', '-'):7} {c['id']:20} [{c['route']}] {c['summary'][:220]}")

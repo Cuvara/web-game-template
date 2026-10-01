@@ -32,6 +32,14 @@ snapshot at each frame - each craft and wall entity with its manifest asset and
 `render: "asset"`, and `assets_loaded`. The one console error is the aborted portal SDK
 request.
 
-`playability-checks.json`: the Factory's playability bot (`scripts/wgf_playability/bot.spec.ts`,
-behind the Factory's refusing network proxy) on the same build, judged by the step's own
-analysis against the golden run's design - 24 of 24 checks pass.
+`production-gate/`: the Factory's production-quality gate (branch integration-2.6) run for
+real on this port - `gate.py.txt` is the harness (the lead's `drive.py`, adapted): a golden 3D
+run's game checkout and design, the port overlaid and committed, `public/assets/` written by the
+real `AssetsStep` with `library/` configured, then the real `PlayabilityStep` (bot on desktop
+1280x720 and Pixel 5, behind the refusing proxy) and `ProductionQualityStep`.
+`playability-report.json` (24/24 PASS), `production-quality-report.json` (PASS, both
+viewports), `asset-manifest.items.json`, and the state frames the gate measured the UI on
+(`<viewport>/state-*.png`). `production-quality-report.unassessed-manifest.json`: the same
+gate on the manifest exactly as the assets step wrote it - it fails only `assets.present`,
+because the step records a library GLB's quality as `skipped`; the harness fills that in with
+the Factory's own `model_quality.assess` (see the port README).

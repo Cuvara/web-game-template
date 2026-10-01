@@ -56,6 +56,7 @@ the Factory), mapped by the role the arena-dodge archetype gives each requiremen
 | environment (`arena-kit`) | `models/arena-track.glb` (floor, grid, lane lines, edge strips, guard rails, pylons with lights), `models/arena-skyline.glb` (sun, ridges, towers, beacons, horizon) | CC0-1.0                                                    |
 | icon (`icons`)            | `icons/*.svg` - play, pause, retry, menu, sound, ad                                                                                                                  | CC0-1.0                                                    |
 | font (`fonts`)            | Unbounded 800, Instrument Sans 500, JetBrains Mono 700 as subset WOFF2                                                                                               | OFL-1.1 (`fonts/OFL-*.txt`, shipped as `public/licenses/`) |
+| `sky`, `crash-vfx`        | `textures/sky.png` (the night gradient, the scene background), `textures/spark.png` (the crash burst's particle), drawn by `textures/make-textures.py`               | CC0-1.0                                                    |
 | `wordmark`, ui (`ui-kit`) | `ui/wordmark.svg` (outlined Unbounded glyphs, `ui/make-wordmark.py`), `ui/panel.svg` (9-slice card frame)                                                            | CC0-1.0                                                    |
 
 Each GLB is built from the model spec beside it (`models/*.model.json`) by the Factory's
@@ -79,4 +80,15 @@ required GLB was not fetched, or if the bundled faces are not loaded.
 `baseline/<desktop|mobile>/` holds screenshots of the built game played with real keyboard,
 mouse and touch input (title, playing, steer, close wall, near miss, crash, game over, retry,
 pause), the asset requests and probe snapshots behind them (`evidence.json`), and the
-Factory playability bot's verdict on the same build (`playability-checks.json`).
+Factory's production-quality gate on the same port (`production-gate/`, below).
+
+**The production gate.** `baseline/production-gate/` is the Factory's (integration-2.6) real
+`PlayabilityStep` then `ProductionQualityStep` on a golden 3D checkout with this port laid on
+and its assets written by the real `AssetsStep` with `library/` configured: playability 24/24,
+production quality PASS on desktop and mobile (assets present, loaded, referenced, rendered
+and visible; no primitives; UI targets, overlap, text contrast and size, styling, states).
+One Factory gap is bridged in that harness and recorded: the assets step leaves a library
+GLB's quality `skipped` (it runs no model inspection for library files), so the harness sets
+each model item's quality from the Factory's own `model_quality.assess` of the delivered GLB
+(all pass, `primitive_only: false`); with the step's manifest as written, the gate fails only
+`assets.present` for that reason (`production-quality-report.unassessed-manifest.json`).

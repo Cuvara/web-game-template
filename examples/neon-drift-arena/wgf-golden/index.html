@@ -51,12 +51,13 @@
         width: 100%;
         height: 100%;
       }
+      /* The template's probe element: the game's name in a quiet corner, legible. */
       #hud {
         position: absolute;
-        bottom: 4px;
+        bottom: max(4px, env(safe-area-inset-bottom));
         right: 8px;
-        opacity: 0.35;
-        font-size: 11px;
+        font-size: 12px;
+        color: #9a98b8;
         pointer-events: none;
       }
       #ui {
@@ -98,7 +99,7 @@
         align-items: center;
       }
       .hud-score small {
-        font: 700 11px/1 var(--font-body);
+        font: 700 12px/1 var(--font-body);
         letter-spacing: 0.24em;
         text-transform: uppercase;
         color: var(--cool);
@@ -263,7 +264,8 @@
       .card.kit {
         border: 24px solid transparent;
         border-image: var(--panel) 24 fill / 24px stretch;
-        background: none;
+        /* An opaque surface under the text, inside the frame's corners. */
+        background: var(--surface) padding-box;
         padding: 8px 10px;
         box-shadow: 0 0 28px rgba(255, 46, 136, 0.35);
       }
@@ -281,7 +283,7 @@
         align-items: center;
       }
       .stats small {
-        font: 700 11px/1 var(--font-body);
+        font: 700 12px/1 var(--font-body);
         letter-spacing: 0.24em;
         text-transform: uppercase;
         color: var(--cool);

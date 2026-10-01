@@ -9,7 +9,7 @@
 // variants (`arena-kit-1`). A model that is missing, fails to load, or is a placeholder is a
 // boot error - never an empty or boxed scene.
 
-import { type Group, type Object3D } from "three";
+import { type Group, type Object3D, SRGBColorSpace, type Texture, TextureLoader } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 interface ManifestEntry {
@@ -37,6 +37,8 @@ export interface ArenaAssets {
   readonly wall: LoadedModel;
   readonly track: LoadedModel;
   readonly skyline: LoadedModel;
+  /** The sky gradient (`sky`) and the crash burst's particle (`crash-vfx`), when delivered. */
+  readonly textures: { readonly sky: Texture | null; readonly spark: Texture | null };
   /** UI files by purpose: CSS-ready absolute URLs. */
   readonly ui: {
     readonly wordmark: string | null;
@@ -95,6 +97,17 @@ export async function loadArenaAssets(
   );
   const wordmark = entries.find(([id, e]) => id === "wordmark" && e.url);
   const panel = entries.find(([id, e]) => id === "ui-kit" && e.url && !e.placeholder);
+  const image = (id: string): [string, ManifestEntry] | undefined =>
+    entries.find(([key, e]) => key === id && e.url && !e.placeholder && e.format === "png");
+  const textureLoader = new TextureLoader();
+  const texture = async (id: string): Promise<Texture | null> => {
+    const found = image(id);
+    if (!found) return null;
+    const loadedTexture = await textureLoader.loadAsync(url(found[1]));
+    loadedTexture.colorSpace = SRGBColorSpace;
+    loaded.push(id);
+    return loadedTexture;
+  };
 
   let done = 0;
   const total = models.length + fonts.length;
@@ -141,6 +154,7 @@ export async function loadArenaAssets(
     });
   if (wordmark) loaded.push(wordmark[0]);
   if (panel) loaded.push(panel[0]);
+  const [sky, spark] = await Promise.all([texture("sky"), texture("crash-vfx")]);
 
   const pick = (name: string, role: string): LoadedModel => {
     const candidates = byRole.get(role) ?? [];
@@ -153,6 +167,7 @@ export async function loadArenaAssets(
     wall: pick("wall", "threat"),
     track: pick("arena-track", "environment"),
     skyline: pick("arena-skyline", "environment"),
+    textures: { sky, spark },
     ui: {
       wordmark: wordmark ? url(wordmark[1]) : null,
       panel: panel ? url(panel[1]) : null,

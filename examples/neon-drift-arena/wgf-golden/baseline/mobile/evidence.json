@@ -4,8 +4,8 @@
   "external_requests": "aborted, as in the game browser suite (a portal SDK script is never fetched)",
   "console_errors": ["console: Failed to load resource: net::ERR_FAILED"],
   "asset_responses": [
-    "200 /assets/index-153HLpX0.js",
-    "200 /assets/index-h0UlQdoc.js",
+    "200 /assets/index-D1nhyusT.js",
+    "200 /assets/index-CI81-Tpp.js",
     "200 /assets/assets.json",
     "200 /assets/environments/arena-kit-1.glb",
     "200 /assets/environments/arena-kit-2.glb",
@@ -14,6 +14,8 @@
     "200 /assets/fonts/fonts-2.woff2",
     "200 /assets/fonts/fonts-3.woff2",
     "200 /assets/fonts/fonts-1.woff2",
+    "200 /assets/textures/sky.png",
+    "200 /assets/vfx/crash-vfx.png",
     "200 /assets/icons/icons-1.svg",
     "200 /assets/ui/wordmark.svg",
     "200 /assets/icons/icons-2.svg",
@@ -32,6 +34,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -41,6 +44,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"
@@ -57,7 +61,7 @@
           "id": "craft",
           "role": "player",
           "x": 167.5,
-          "y": 460.9,
+          "y": 461.5,
           "w": 58.0,
           "h": 43.7,
           "visible": true,
@@ -68,9 +72,9 @@
           "id": "wall-1",
           "role": "threat",
           "x": 209.1,
-          "y": 280.8,
-          "w": 17.2,
-          "h": 32.0,
+          "y": 280.4,
+          "w": 17.1,
+          "h": 31.9,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -78,9 +82,9 @@
         {
           "id": "wall-2",
           "role": "threat",
-          "x": 186.5,
-          "y": 266.1,
-          "w": 27.5,
+          "x": 186.6,
+          "y": 265.8,
+          "w": 27.4,
           "h": 26.4,
           "visible": true,
           "asset": "wall",
@@ -89,10 +93,10 @@
         {
           "id": "wall-3",
           "role": "threat",
-          "x": 243.6,
-          "y": 255.7,
+          "x": 243.5,
+          "y": 255.6,
           "w": 16.0,
-          "h": 22.6,
+          "h": 22.5,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -102,6 +106,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -111,6 +116,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"
@@ -119,17 +125,17 @@
     "steer": {
       "state": "playing",
       "metrics": {
-        "score": 40,
+        "score": 39,
         "best": 0
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 204.4,
-          "y": 462.7,
-          "w": 57.9,
-          "h": 52.0,
+          "x": 204.3,
+          "y": 463.0,
+          "w": 57.8,
+          "h": 52.8,
           "visible": true,
           "asset": "craft",
           "render": "asset"
@@ -137,10 +143,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 203.6,
-          "y": 313.7,
-          "w": 23.6,
-          "h": 44.5,
+          "x": 203.7,
+          "y": 309.3,
+          "w": 22.7,
+          "h": 42.9,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -148,10 +154,10 @@
         {
           "id": "wall-2",
           "role": "threat",
-          "x": 177.2,
-          "y": 287.2,
-          "w": 35.9,
-          "h": 34.5,
+          "x": 178.1,
+          "y": 284.5,
+          "w": 34.8,
+          "h": 33.5,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -159,10 +165,10 @@
         {
           "id": "wall-3",
           "role": "threat",
-          "x": 251.7,
-          "y": 270.6,
-          "w": 20.1,
-          "h": 28.2,
+          "x": 250.6,
+          "y": 268.8,
+          "w": 19.6,
+          "h": 27.5,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -170,10 +176,82 @@
         {
           "id": "wall-4",
           "role": "threat",
-          "x": 198.3,
-          "y": 258.7,
-          "w": 21.4,
-          "h": 23.7,
+          "x": 198.4,
+          "y": 257.4,
+          "w": 21.0,
+          "h": 23.2,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        }
+      ],
+      "assets_loaded": [
+        "arena-kit-1",
+        "arena-kit-2",
+        "craft",
+        "crash-vfx",
+        "fonts-1",
+        "fonts-2",
+        "fonts-3",
+        "icons-1",
+        "icons-2",
+        "icons-3",
+        "icons-4",
+        "icons-5",
+        "icons-6",
+        "sky",
+        "ui-kit",
+        "wall",
+        "wordmark"
+      ]
+    },
+    "near-miss": {
+      "state": "playing",
+      "metrics": {
+        "score": 60,
+        "best": 54
+      },
+      "entities": [
+        {
+          "id": "craft",
+          "role": "player",
+          "x": 148.4,
+          "y": 462.6,
+          "w": 58.0,
+          "h": 49.3,
+          "visible": true,
+          "asset": "craft",
+          "render": "asset"
+        },
+        {
+          "id": "wall-2",
+          "role": "threat",
+          "x": 110.2,
+          "y": 361.1,
+          "w": 52.4,
+          "h": 62.7,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-3",
+          "role": "threat",
+          "x": 268.4,
+          "y": 313.6,
+          "w": 40.7,
+          "h": 44.5,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-4",
+          "role": "threat",
+          "x": 187.4,
+          "y": 286.8,
+          "w": 24.5,
+          "h": 34.3,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -181,9 +259,31 @@
         {
           "id": "wall-5",
           "role": "threat",
-          "x": 177.6,
-          "y": 250.3,
-          "w": 21.5,
+          "x": 230.8,
+          "y": 270.2,
+          "w": 17.2,
+          "h": 28.0,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-6",
+          "role": "threat",
+          "x": 224.8,
+          "y": 258.5,
+          "w": 15.5,
+          "h": 23.6,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-7",
+          "role": "threat",
+          "x": 178.6,
+          "y": 250.1,
+          "w": 19.7,
           "h": 20.5,
           "visible": true,
           "asset": "wall",
@@ -194,6 +294,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -203,6 +304,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"
@@ -211,120 +313,17 @@
     "close-wall": {
       "state": "playing",
       "metrics": {
-        "score": 52,
-        "best": 0
+        "score": 74,
+        "best": 64
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 256.7,
-          "y": 464.0,
-          "w": 62.8,
-          "h": 51.2,
-          "visible": true,
-          "asset": "craft",
-          "render": "asset"
-        },
-        {
-          "id": "wall-1",
-          "role": "threat",
-          "x": 164.9,
-          "y": 408.5,
-          "w": 43.2,
-          "h": 81.5,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-2",
-          "role": "threat",
-          "x": 142.1,
-          "y": 335.6,
-          "w": 55.6,
-          "h": 53.2,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-3",
-          "role": "threat",
-          "x": 258.6,
-          "y": 300.6,
-          "w": 28.2,
-          "h": 39.6,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-4",
-          "role": "threat",
-          "x": 189.4,
-          "y": 278.6,
-          "w": 28.2,
-          "h": 31.3,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-5",
-          "role": "threat",
-          "x": 166.9,
-          "y": 264.6,
-          "w": 27.4,
-          "h": 26.0,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-6",
-          "role": "threat",
-          "x": 180.7,
-          "y": 254.5,
-          "w": 17.4,
-          "h": 22.1,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        }
-      ],
-      "assets_loaded": [
-        "arena-kit-1",
-        "arena-kit-2",
-        "craft",
-        "fonts-1",
-        "fonts-2",
-        "fonts-3",
-        "icons-1",
-        "icons-2",
-        "icons-3",
-        "icons-4",
-        "icons-5",
-        "icons-6",
-        "ui-kit",
-        "wall",
-        "wordmark"
-      ]
-    },
-    "near-miss": {
-      "state": "playing",
-      "metrics": {
-        "score": 73,
-        "best": 0
-      },
-      "entities": [
-        {
-          "id": "craft",
-          "role": "player",
-          "x": 253.8,
-          "y": 461.4,
-          "w": 62.6,
-          "h": 51.1,
+          "x": 154.0,
+          "y": 460.1,
+          "w": 57.8,
+          "h": 51.9,
           "visible": true,
           "asset": "craft",
           "render": "asset"
@@ -332,10 +331,10 @@
         {
           "id": "wall-3",
           "role": "threat",
-          "x": 288.1,
-          "y": 378.3,
-          "w": 51.4,
-          "h": 69.7,
+          "x": 78.2,
+          "y": 381.7,
+          "w": 59.4,
+          "h": 70.6,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -343,10 +342,10 @@
         {
           "id": "wall-4",
           "role": "threat",
-          "x": 174.7,
-          "y": 320.6,
-          "w": 42.7,
-          "h": 47.4,
+          "x": 69.9,
+          "y": 322.7,
+          "w": 52.5,
+          "h": 47.9,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -354,10 +353,10 @@
         {
           "id": "wall-5",
           "role": "threat",
-          "x": 146.8,
-          "y": 291.5,
-          "w": 38.4,
-          "h": 36.2,
+          "x": 206.3,
+          "y": 292.7,
+          "w": 32.8,
+          "h": 36.5,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -365,10 +364,10 @@
         {
           "id": "wall-6",
           "role": "threat",
-          "x": 168.9,
-          "y": 273.1,
-          "w": 23.1,
-          "h": 29.1,
+          "x": 228.2,
+          "y": 273.8,
+          "w": 21.9,
+          "h": 29.4,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -376,10 +375,10 @@
         {
           "id": "wall-7",
           "role": "threat",
-          "x": 136.8,
-          "y": 260.6,
-          "w": 18.9,
-          "h": 24.4,
+          "x": 214.9,
+          "y": 261.2,
+          "w": 24.7,
+          "h": 24.6,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -387,10 +386,10 @@
         {
           "id": "wall-8",
           "role": "threat",
-          "x": 161.5,
-          "y": 251.5,
-          "w": 13.2,
-          "h": 21.0,
+          "x": 190.2,
+          "y": 251.9,
+          "w": 19.4,
+          "h": 21.1,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -400,6 +399,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -409,6 +409,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"
@@ -417,50 +418,28 @@
     "crash": {
       "state": "lost",
       "metrics": {
-        "score": 76,
-        "best": 76
+        "score": 100,
+        "best": 100
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 255.4,
-          "y": 462.7,
-          "w": 62.6,
-          "h": 44.7,
+          "x": 162.4,
+          "y": 463.6,
+          "w": 57.9,
+          "h": 43.9,
           "visible": true,
           "asset": "craft",
           "render": "asset"
         },
         {
-          "id": "wall-3",
-          "role": "threat",
-          "x": 300.2,
-          "y": 410.9,
-          "w": 61.6,
-          "h": 82.5,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-4",
-          "role": "threat",
-          "x": 169.6,
-          "y": 335.1,
-          "w": 47.7,
-          "h": 53.0,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
           "id": "wall-5",
           "role": "threat",
-          "x": 140.6,
-          "y": 299.8,
-          "w": 41.9,
-          "h": 39.4,
+          "x": 216.6,
+          "y": 426.4,
+          "w": 80.1,
+          "h": 88.0,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -468,10 +447,10 @@
         {
           "id": "wall-6",
           "role": "threat",
-          "x": 165.5,
-          "y": 278.4,
-          "w": 24.7,
-          "h": 31.2,
+          "x": 254.4,
+          "y": 342.4,
+          "w": 42.5,
+          "h": 55.5,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -479,10 +458,10 @@
         {
           "id": "wall-7",
           "role": "threat",
-          "x": 132.2,
-          "y": 264.4,
-          "w": 20.1,
-          "h": 25.8,
+          "x": 226.5,
+          "y": 303.8,
+          "w": 41.1,
+          "h": 40.7,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -490,10 +469,32 @@
         {
           "id": "wall-8",
           "role": "threat",
-          "x": 158.8,
-          "y": 254.3,
-          "w": 13.9,
-          "h": 22.0,
+          "x": 187.4,
+          "y": 280.7,
+          "w": 29.3,
+          "h": 32.0,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-9",
+          "role": "threat",
+          "x": 175.6,
+          "y": 266.0,
+          "w": 20.7,
+          "h": 26.4,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-10",
+          "role": "threat",
+          "x": 212.8,
+          "y": 255.4,
+          "w": 23.1,
+          "h": 22.4,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -503,6 +504,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -512,6 +514,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"
@@ -520,50 +523,28 @@
     "game-over": {
       "state": "lost",
       "metrics": {
-        "score": 76,
-        "best": 76
+        "score": 100,
+        "best": 100
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 255.4,
-          "y": 462.5,
-          "w": 62.6,
-          "h": 44.7,
+          "x": 162.4,
+          "y": 462.7,
+          "w": 57.9,
+          "h": 43.9,
           "visible": true,
           "asset": "craft",
           "render": "asset"
         },
         {
-          "id": "wall-3",
-          "role": "threat",
-          "x": 300.2,
-          "y": 410.9,
-          "w": 61.6,
-          "h": 82.5,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
-          "id": "wall-4",
-          "role": "threat",
-          "x": 169.6,
-          "y": 335.1,
-          "w": 47.7,
-          "h": 53.0,
-          "visible": true,
-          "asset": "wall",
-          "render": "asset"
-        },
-        {
           "id": "wall-5",
           "role": "threat",
-          "x": 140.6,
-          "y": 299.8,
-          "w": 41.9,
-          "h": 39.4,
+          "x": 216.6,
+          "y": 426.4,
+          "w": 80.1,
+          "h": 88.0,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -571,10 +552,10 @@
         {
           "id": "wall-6",
           "role": "threat",
-          "x": 165.5,
-          "y": 278.4,
-          "w": 24.7,
-          "h": 31.2,
+          "x": 254.4,
+          "y": 342.4,
+          "w": 42.5,
+          "h": 55.5,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -582,10 +563,10 @@
         {
           "id": "wall-7",
           "role": "threat",
-          "x": 132.2,
-          "y": 264.4,
-          "w": 20.1,
-          "h": 25.8,
+          "x": 226.5,
+          "y": 303.8,
+          "w": 41.1,
+          "h": 40.7,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -593,10 +574,32 @@
         {
           "id": "wall-8",
           "role": "threat",
-          "x": 158.8,
-          "y": 254.3,
-          "w": 13.9,
-          "h": 22.0,
+          "x": 187.4,
+          "y": 280.7,
+          "w": 29.3,
+          "h": 32.0,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-9",
+          "role": "threat",
+          "x": 175.6,
+          "y": 266.0,
+          "w": 20.7,
+          "h": 26.4,
+          "visible": true,
+          "asset": "wall",
+          "render": "asset"
+        },
+        {
+          "id": "wall-10",
+          "role": "threat",
+          "x": 212.8,
+          "y": 255.4,
+          "w": 23.1,
+          "h": 22.4,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -606,6 +609,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -615,6 +619,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"
@@ -624,14 +629,14 @@
       "state": "playing",
       "metrics": {
         "score": 15,
-        "best": 76
+        "best": 100
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
           "x": 167.5,
-          "y": 460.9,
+          "y": 461.0,
           "w": 58.0,
           "h": 43.7,
           "visible": true,
@@ -641,10 +646,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 216.5,
-          "y": 257.0,
-          "w": 16.4,
-          "h": 23.0,
+          "x": 208.6,
+          "y": 257.2,
+          "w": 21.7,
+          "h": 23.1,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -654,6 +659,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -663,6 +669,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"
@@ -671,15 +678,15 @@
     "paused": {
       "state": "paused",
       "metrics": {
-        "score": 22,
-        "best": 76
+        "score": 23,
+        "best": 100
       },
       "entities": [
         {
           "id": "craft",
           "role": "player",
-          "x": 167.6,
-          "y": 464.2,
+          "x": 167.5,
+          "y": 463.8,
           "w": 57.9,
           "h": 43.9,
           "visible": true,
@@ -689,10 +696,10 @@
         {
           "id": "wall-1",
           "role": "threat",
-          "x": 219.4,
-          "y": 266.2,
-          "w": 18.9,
-          "h": 26.5,
+          "x": 210.5,
+          "y": 267.2,
+          "w": 25.3,
+          "h": 26.9,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -700,10 +707,10 @@
         {
           "id": "wall-2",
           "role": "threat",
-          "x": 161.9,
-          "y": 255.7,
-          "w": 18.5,
-          "h": 22.6,
+          "x": 153.1,
+          "y": 256.5,
+          "w": 19.9,
+          "h": 22.8,
           "visible": true,
           "asset": "wall",
           "render": "asset"
@@ -713,6 +720,7 @@
         "arena-kit-1",
         "arena-kit-2",
         "craft",
+        "crash-vfx",
         "fonts-1",
         "fonts-2",
         "fonts-3",
@@ -722,6 +730,7 @@
         "icons-4",
         "icons-5",
         "icons-6",
+        "sky",
         "ui-kit",
         "wall",
         "wordmark"

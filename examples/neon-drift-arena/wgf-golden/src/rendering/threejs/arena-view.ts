@@ -332,8 +332,8 @@ export class ArenaView {
       burstGeometry,
       new PointsMaterial({
         color: DANGER,
-        size: 0.16,
-        map: this.#glow,
+        size: 0.22,
+        map: assets.textures.spark ?? this.#glow,
         blending: AdditiveBlending,
         depthWrite: false,
         transparent: true,
@@ -346,7 +346,7 @@ export class ArenaView {
 
   attach(scene: Scene, camera: PerspectiveCamera): void {
     scene.add(this.#root);
-    scene.background = skyTexture();
+    scene.background = this.#assets.textures.sky ?? skyTexture();
     scene.fog = new Fog(FOG, 16, 62);
     this.#camera = camera;
     this.#placeCamera(0, 0);

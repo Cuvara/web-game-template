@@ -58,6 +58,18 @@
       "files": ["ui/panel.svg"],
       "license": "CC0-1.0",
       "author": "web-game-template golden port (Neon Drift Arena): the ui-kit panel, a 9-slice frame (24 px corners) for the pause and result cards"
+    },
+    {
+      "requirement": "sky",
+      "files": ["textures/sky.png"],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena): textures/make-textures.py, the night gradient behind the skyline"
+    },
+    {
+      "requirement": "crash-vfx",
+      "files": ["textures/spark.png"],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena): textures/make-textures.py, the crash burst's particle"
     }
   ]
 }
