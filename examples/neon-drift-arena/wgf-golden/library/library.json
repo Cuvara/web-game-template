@@ -1,7 +1,7 @@
 {
   "library": {
     "id": "neon-drift-arena-golden",
-    "about": "Neon Drift Arena's production art for the Factory's golden 3D run, mapped by the role each asset_requirement of the arena-dodge archetype carries (player, threat, environment, icon, font) and by id for the wordmark. Models are GLBs the Factory's pinned Blender 4.5.14 built from the model specs beside them (models/*.model.json; build-models.sh rebuilds and inspects them). Read by the assets step through factory.assets.libraries."
+    "about": "Neon Drift Arena's production art for the Factory's golden 3D run, mapped by the role each asset_requirement of the arena-dodge archetype carries (player, threat, environment, icon, font) and by id for the wordmark. Models are GLBs the Factory's pinned Blender 4.5.14 built from the model specs beside them (models/*.model.json; build-models.sh rebuilds and inspects them). Read by the assets step through factory.assets.libraries. The music and sound effects (audio/) are composed as code (tools/audio-score.js) and rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs, CC0-1.0; where a cue layers a recording it is a CC0-1.0 Kenney sample kept beside it in audio/sources/ with its licence. audio/render-report.json holds each file's measured duration, RMS, peak and loop seam."
   },
   "items": [
     {
@@ -70,6 +70,88 @@
       "files": ["textures/spark.png"],
       "license": "CC0-1.0",
       "author": "web-game-template golden port (Neon Drift Arena): textures/make-textures.py, the crash burst's particle"
+    },
+    {
+      "requirement": "music-drive",
+      "files": ["audio/music-drive.ogg"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "Driving loop, base stem: synthwave in A minor, 112.5 BPM, 32 bars, 68.3 s, seamless; kick, gated snare, hats, pumping saw bass, pads."
+    },
+    {
+      "requirement": "music-drive-layer",
+      "files": ["audio/music-drive-layer.ogg"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "Driving loop, intensity stem: arpeggio, saw lead, open hats, claps, risers; same length, started in lock-step and faded in with speed."
+    },
+    {
+      "requirement": "music-title",
+      "files": ["audio/music-title.ogg"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "Title variant: pads, slow arpeggio and sub, 16 bars, 34.1 s, seamless."
+    },
+    {
+      "requirement": "sfx-engine",
+      "files": ["audio/sfx-engine.wav"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "Engine hum: a seamless 2 s loop (every partial completes whole cycles), re-pitched and filtered by speed and steering."
+    },
+    {
+      "requirement": "sfx-pass",
+      "files": ["audio/sfx-pass.wav"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "Wall passing: band-passed noise sweep."
+    },
+    {
+      "requirement": "sfx-near-miss",
+      "files": ["audio/sfx-near-miss.wav"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "Near miss: hard whoosh with a falling doppler zing."
+    },
+    {
+      "requirement": "sfx-crash",
+      "files": ["audio/sfx-crash.wav"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium); layers CC0-1.0 recordings by Kenney: Sci-Fi Sounds (https://kenney.nl/assets/sci-fi-sounds), Impact Sounds 1.0 (https://kenney.nl/assets/impact-sounds)",
+      "author": "Cuvara web-game-template contributors; recordings by Kenney Vleugels (www.kenney.nl)",
+      "notes": "Crash: recorded crunch, boom, metal and glass over a synthesized sub drop.",
+      "attribution": "Recordings by Kenney (www.kenney.nl), CC0-1.0 - credit appreciated, not required"
+    },
+    {
+      "requirement": "sfx-game-over",
+      "files": ["audio/sfx-game-over.wav"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "Game-over sting: falling saw line E-C-A ending in a tape-stop chord."
+    },
+    {
+      "requirement": "ui-fanfare",
+      "files": ["audio/ui-fanfare.wav"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium)",
+      "author": "Cuvara web-game-template contributors",
+      "notes": "New best / revive: synth brass stabs climbing into A major with an arpeggio."
+    },
+    {
+      "requirement": "ui-tap",
+      "files": ["audio/ui-tap.wav"],
+      "license": "CC0-1.0",
+      "source": "composed for web-game-template examples/neon-drift-arena/wgf-golden/library/tools/audio-score.js, rendered by examples/wgf-golden-shared/library/tools/audio/render.mjs (Web Audio in headless Chromium); layers CC0-1.0 recordings by Kenney: Interface Sounds (https://kenney.nl/assets/interface-sounds)",
+      "author": "Cuvara web-game-template contributors; recordings by Kenney Vleugels (www.kenney.nl)",
+      "notes": "Button select (recorded) with a short bright blip.",
+      "attribution": "Recordings by Kenney (www.kenney.nl), CC0-1.0 - credit appreciated, not required"
     }
   ]
 }

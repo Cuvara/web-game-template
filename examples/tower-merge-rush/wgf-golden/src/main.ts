@@ -7,7 +7,9 @@
 // own, unchanged, so the Factory's `sdk` step can route them through its integration.
 // Loading also brings in the design's art: public/assets/assets.json is fetched once, the
 // identity's fonts are bundled through @font-face and awaited, and the board's textures and
-// the overlay's images are loaded by asset id before the title screen shows.
+// the overlay's images are loaded by asset id before the title screen shows. The music and
+// sound effects (type music / sfx in the same manifest) load in the background after the
+// game is interactive, and nothing sounds before the player's first input.
 
 import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";
@@ -70,7 +72,18 @@ async function main(): Promise<void> {
   );
 
   const game = new Game();
-  const audio = new Audio();
+  const audio = new Audio({
+    music: 0.55,
+    mix: {
+      "ui-tap": 0.4,
+      "sfx-drop": 0.6,
+      "sfx-merge": 0.62,
+      "sfx-combo": 0.7,
+      "sfx-game-over": 0.85,
+      "sfx-reward": 0.75,
+      "ui-fanfare": 0.8,
+    },
+  });
   const binding = bindPlatform(game, platform, {
     onAudioMutedChange: (muted) => {
       audio.setPlatformMuted(muted);
@@ -80,6 +93,10 @@ async function main(): Promise<void> {
   const integration = new DefaultGameIntegration(game, platform);
 
   let presentedAt = -Infinity;
+  const click = (): void => {
+    audio.unlock();
+    audio.play("ui-tap", { vary: 30 });
+  };
   // Forward declaration: the Screens callbacks close over `app`, which is built after them.
   // eslint-disable-next-line prefer-const
   let app: App;
@@ -88,13 +105,33 @@ async function main(): Promise<void> {
     i18n,
     {
       begin: () => app.dropAnywhere(),
-      continue: () => void app.continue(),
-      double: () => void app.doubleScore(),
-      restart: () => void app.restart(),
-      pause: () => app.pauseMenu(),
-      resume: () => app.resumeMenu(),
+      continue: () => {
+        click();
+        void app.continue();
+      },
+      double: () => {
+        click();
+        void app.doubleScore();
+      },
+      restart: () => {
+        click();
+        void app.restart();
+      },
+      pause: () => {
+        click();
+        app.pauseMenu();
+      },
+      resume: () => {
+        app.resumeMenu();
+        click();
+      },
       toggleSound: () => {
+        // A button press unlocks sound like any first input; the tap is heard on the way in
+        // (before muting) and on the way back (after unmuting).
+        audio.unlock();
+        if (!audio.userMuted) click();
         audio.setUserMuted(!audio.userMuted);
+        if (!audio.userMuted) click();
         return !audio.userMuted;
       },
     },
@@ -166,7 +203,10 @@ async function main(): Promise<void> {
   });
   installGameHooks(app, game, platform);
   // After installProbe, which replaces window.__wgf__.
-  installPlayProbe({ app, game, surface: container, ui: uiRoot, view, assets });
+  installPlayProbe({ app, game, surface: container, ui: uiRoot, view, assets, audio });
+  // Sound streams in after the game is interactive: the play loop and the cues a first
+  // tap needs first, the rest behind them.
+  void audio.load(["music-loop", "sfx-drop", "sfx-merge", "ui-tap", "music-title"]);
 
   hud.dataset["ready"] = "true";
 }

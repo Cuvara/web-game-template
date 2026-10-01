@@ -70,7 +70,22 @@ async function main(): Promise<void> {
   const view = createArenaView(renderer, assets, { nearMiss: () => screens.nearMiss() });
 
   const game = new Game();
-  const audio = new Audio();
+  const audio = new Audio({
+    music: 0.5,
+    mix: {
+      "ui-tap": 0.4,
+      "sfx-engine": 0.22,
+      "sfx-pass": 0.35,
+      "sfx-near-miss": 0.6,
+      "sfx-crash": 0.9,
+      "sfx-game-over": 0.75,
+      "ui-fanfare": 0.75,
+    },
+  });
+  const click = (): void => {
+    audio.unlock();
+    audio.play("ui-tap", { vary: 30 });
+  };
   const binding = bindPlatform(game, platform, {
     onAudioMutedChange: (muted) => {
       audio.setPlatformMuted(muted);
@@ -84,10 +99,29 @@ async function main(): Promise<void> {
   let app: App;
   screens = new Screens(uiRoot, i18n, assets.ui, {
     play: () => app.play(),
-    revive: () => app.revive(),
-    restart: () => void app.restart(),
-    pause: () => app.pauseMenu(),
-    resume: () => app.resumeMenu(),
+    revive: () => {
+      click();
+      return app.revive();
+    },
+    restart: () => {
+      click();
+      void app.restart();
+    },
+    pause: () => {
+      click();
+      app.pauseMenu();
+    },
+    resume: () => {
+      app.resumeMenu();
+      click();
+    },
+    toggleSound: () => {
+      audio.unlock();
+      if (!audio.userMuted) click();
+      audio.setUserMuted(!audio.userMuted);
+      if (!audio.userMuted) click();
+      return !audio.userMuted;
+    },
   });
   app = new App({
     game,
@@ -156,7 +190,10 @@ async function main(): Promise<void> {
     project: (centre, size) => screenBounds(renderer, container, centre, size),
     drawing: view,
     assetsLoaded: () => assets.loaded,
+    audio,
   });
+  // Sound streams in after the game is interactive: the driving loop and its layer first.
+  void audio.load(["music-drive", "music-drive-layer", "sfx-engine", "ui-tap", "music-title"]);
 
   hud.dataset["ready"] = "true";
 }

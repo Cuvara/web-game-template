@@ -13,6 +13,7 @@
 // bounding box of their drawn meshes - and `assets_loaded` lists every manifest id loaded.
 
 import type { Game } from "@wgf/game-core";
+import type { AudioProbe } from "../audio/audio.js";
 import type { App } from "./app.js";
 
 type Input =
@@ -52,6 +53,8 @@ export interface PlayProbeOptions {
   readonly drawing: ProbeDrawing;
   /** Manifest ids loaded so far (rendering/threejs/assets.ts). */
   readonly assetsLoaded: () => readonly string[];
+  /** The audio service (audio/audio.ts): what plays, the output level, the sounds it decoded. */
+  readonly audio: { probe(): AudioProbe; readonly loaded: string[] };
 }
 
 /** A steer is held: the craft slides while the pointer is down (input/steering.ts). */
@@ -71,7 +74,7 @@ function centre(element: Element | null): Input | null {
 }
 
 export function installPlayProbe(options: PlayProbeOptions): void {
-  const { app, game, surface, ui, project, drawing, assetsLoaded } = options;
+  const { app, game, surface, ui, project, drawing, assetsLoaded, audio } = options;
   const withOracle = new URLSearchParams(location.search).has("wgf-probe");
 
   const button = (id: string, action: string): Move | null => {
@@ -172,7 +175,8 @@ export function installPlayProbe(options: PlayProbeOptions): void {
       metrics: { score: app.score, best: app.best },
       entities,
       inputs,
-      assets_loaded: [...assetsLoaded()],
+      assets_loaded: [...new Set([...assetsLoaded(), ...audio.loaded])].sort(),
+      audio: audio.probe(),
       ...(withOracle ? { oracle } : {}),
     };
   };

@@ -11,6 +11,7 @@
 // without art - and `assets_loaded` lists every runtime asset id the game has loaded.
 
 import type { Game } from "@wgf/game-core";
+import type { AudioProbe } from "../audio/audio.js";
 import type { App } from "./app.js";
 import { COLUMNS } from "./rules.js";
 
@@ -45,6 +46,8 @@ export interface PlayProbeOptions {
   readonly view: EntitySource;
   /** The runtime asset manifest's loader: the ids it has loaded. */
   readonly assets: { readonly loaded: string[] };
+  /** The audio service (audio/audio.ts): what plays, the output level, the sounds it decoded. */
+  readonly audio: { probe(): AudioProbe; readonly loaded: string[] };
 }
 
 function centre(element: Element | null): Input | null {
@@ -59,7 +62,7 @@ function centre(element: Element | null): Input | null {
 }
 
 export function installPlayProbe(options: PlayProbeOptions): void {
-  const { app, game, surface, ui, view, assets } = options;
+  const { app, game, surface, ui, view, assets, audio } = options;
   const withOracle = new URLSearchParams(location.search).has("wgf-probe");
 
   const button = (action: string, name: string): Move | null => {
@@ -143,7 +146,8 @@ export function installPlayProbe(options: PlayProbeOptions): void {
       },
       entities,
       inputs,
-      assets_loaded: assets.loaded,
+      assets_loaded: [...new Set([...assets.loaded, ...audio.loaded])].sort(),
+      audio: audio.probe(),
       ...(withOracle ? { oracle } : {}),
     };
   };

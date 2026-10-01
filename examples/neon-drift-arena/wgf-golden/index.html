@@ -342,6 +342,26 @@
         width: 52px;
         height: 52px;
       }
+      button.sound {
+        position: absolute;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        left: max(12px, env(safe-area-inset-left));
+        padding: 0;
+        width: 52px;
+        height: 52px;
+      }
+      button.sound.off .icon {
+        opacity: 0.45;
+      }
+      button.sound.off::after {
+        content: "";
+        position: absolute;
+        width: 30px;
+        height: 3px;
+        background: currentColor;
+        transform: rotate(-45deg);
+      }
+      button.sound .label,
       button.pause .label {
         position: absolute;
         width: 1px;

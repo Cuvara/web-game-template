@@ -6,7 +6,7 @@
 // Dressed in the design's identity kit (neon-night): the bundled faces (index.html's
 // --font-* stacks, loaded by rendering/threejs/assets.ts), the title wordmark and the icon
 // glyphs from the runtime asset manifest, and in-run feedback - a near-miss call-out and a
-// crash flash.
+// crash flash. A sound toggle sits in the bottom-left corner on every screen.
 
 import type { I18n } from "../core/i18n.js";
 import type { AppView } from "../game/app.js";
@@ -17,6 +17,8 @@ export interface ScreenActions {
   restart(): void;
   pause(): void;
   resume(): void;
+  /** Flip the player's own sound setting; returns whether sound is now on. */
+  toggleSound(): boolean;
 }
 
 /** UI art from the runtime asset manifest: absolute URLs, or null when not delivered. */
@@ -89,7 +91,9 @@ export class Screens {
           <button id="restart" class="primary">${icon("retry")}${t("over.restart")}</button>
           <button id="revive" class="square" hidden>${icon("ad")}${t("over.revive")}</button>
         </div>
-      </div>`;
+      </div>
+      <button id="sound" class="sound square" aria-pressed="true" aria-label="${t("hud.sound")}"
+        title="${t("hud.sound")}">${icon("sound")}<span class="label">${t("hud.sound")}</span></button>`;
 
     const find = <T extends HTMLElement>(id: string): T => {
       const found = root.querySelector<T>(`#${id}`);
@@ -116,6 +120,12 @@ export class Screens {
     find("restart").addEventListener("click", () => {
       this.#note.textContent = "";
       actions.restart();
+    });
+    const sound = find<HTMLButtonElement>("sound");
+    sound.addEventListener("click", () => {
+      const on = actions.toggleSound();
+      sound.setAttribute("aria-pressed", String(on));
+      sound.classList.toggle("off", !on);
     });
     this.#revive.addEventListener("click", () => {
       void actions.revive().then((granted) => {

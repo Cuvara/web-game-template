@@ -55,3 +55,31 @@ screenshots of the title, play, a merge, pause, a near-full track, game over and
 captured from a production build by `baseline/capture.mjs` through real input, with the play
 probe's snapshots and every `/assets/` request the game made. Neither `library/` nor
 `baseline/` belongs in a game repository.
+
+## Music and sound
+
+`library/audio/` holds the game's music and sound effects, mapped in `library.json` by the
+design's `build_spec.audio` ids and imported by the assets step like the art. They are
+composed as code - `library/tools/audio-score.js`, rendered by
+`examples/wgf-golden-shared/library/tools/audio/render.mjs` in headless Chromium (Web Audio
+offline: synthesized drums, bass, electric piano, marimba, lead, reverb, ducking, a mastering
+chain), CC0-1.0 - and two cues layer CC0 Kenney recordings kept in `library/audio/sources/`.
+
+| id              | file                      | what                                                                                |
+| --------------- | ------------------------- | ----------------------------------------------------------------------------------- |
+| `music-loop`    | `audio/music-loop.ogg`    | the play loop: swung pop-funk, F major, 120 BPM, 32 bars, 64 s, seamless (Ogg Opus) |
+| `music-title`   | `audio/music-title.ogg`   | the title variant, 96 BPM without the kit, 40 s                                     |
+| `sfx-drop`      | `audio/sfx-drop.wav`      | a piece landing (Kenney knock + sub thump)                                          |
+| `sfx-merge`     | `audio/sfx-merge.wav`     | the merge pop, tuned to F; pitched up the scale per tower level                     |
+| `sfx-combo`     | `audio/sfx-combo.wav`     | the cascade stinger                                                                 |
+| `sfx-game-over` | `audio/sfx-game-over.wav` | the game-over sting (music ducks under it)                                          |
+| `sfx-reward`    | `audio/sfx-reward.wav`    | the reward chime                                                                    |
+| `ui-fanfare`    | `audio/ui-fanfare.wav`    | a new best                                                                          |
+| `ui-tap`        | `audio/ui-tap.wav`        | buttons (Kenney click + tuned tick)                                                 |
+
+`src/audio/audio.ts` (shared) plays them: nothing before the first input, silent under the
+platform mute, an ad, a pause or the sound toggle; title and play music crossfade; stings
+duck the music. The play probe reports `audio` - the music playing and the master output's
+measured RMS. `library/audio/render-report.json` is each file's measured duration, RMS, peak
+and loop seam. Re-render: `node examples/wgf-golden-shared/library/tools/audio/render.mjs
+examples/tower-merge-rush/wgf-golden/library` from a checkout with dependencies installed.

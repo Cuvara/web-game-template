@@ -92,3 +92,32 @@ GLB's quality `skipped` (it runs no model inspection for library files), so the 
 each model item's quality from the Factory's own `model_quality.assess` of the delivered GLB
 (all pass, `primitive_only: false`); with the step's manifest as written, the gate fails only
 `assets.present` for that reason (`production-quality-report.unassessed-manifest.json`).
+
+## Music and sound
+
+`library/audio/` holds the game's music and sound effects, mapped in `library.json` by the
+design's `build_spec.audio` ids and imported by the assets step like the art. They are
+composed as code - `library/tools/audio-score.js`, rendered by
+`examples/wgf-golden-shared/library/tools/audio/render.mjs` in headless Chromium (Web Audio
+offline), CC0-1.0 - and the crash and the UI tap layer CC0 Kenney recordings kept in
+`library/audio/sources/`.
+
+| id                  | file                          | what                                                                                   |
+| ------------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `music-drive`       | `audio/music-drive.ogg`       | the driving loop's base stem: synthwave, A minor, 112.5 BPM, 32 bars, 68.3 s, seamless |
+| `music-drive-layer` | `audio/music-drive-layer.ogg` | its intensity stem (arpeggio, lead, open hats, claps, risers), same length             |
+| `music-title`       | `audio/music-title.ogg`       | the title variant: pads, slow arpeggio, sub, 34.1 s                                    |
+| `sfx-engine`        | `audio/sfx-engine.wav`        | a seamless 2 s engine loop                                                             |
+| `sfx-pass`          | `audio/sfx-pass.wav`          | a wall going past                                                                      |
+| `sfx-near-miss`     | `audio/sfx-near-miss.wav`     | a near miss: hard whoosh and doppler zing                                              |
+| `sfx-crash`         | `audio/sfx-crash.wav`         | the crash (Kenney crunch, boom, metal, glass + sub drop)                               |
+| `sfx-game-over`     | `audio/sfx-game-over.wav`     | the game-over sting                                                                    |
+| `ui-fanfare`        | `audio/ui-fanfare.wav`        | a new best, a revive                                                                   |
+| `ui-tap`            | `audio/ui-tap.wav`            | buttons (Kenney select + blip)                                                         |
+
+`src/game/app.ts` drives it: both stems start in lock-step; as the speed rises the base's
+low-pass opens and the layer fades in; the engine is re-pitched by speed and filtered and
+panned by steering; every wall passing the craft whooshes, harder for a near miss; the crash
+and the sting play over ducked music, which then crossfades to the title variant. A sound
+toggle sits bottom-left on every screen. The play probe reports `audio` (the music playing
+and the master output's measured RMS).

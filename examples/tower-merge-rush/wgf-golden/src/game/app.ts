@@ -8,7 +8,10 @@
 //     platform.showRewarded / withAdBreak directly; the seam's default implementation now
 //     does that, and the Factory's `sdk` step rewires it without this file changing.
 //   - the scene publishes its id and a step counter to #hud (the template's probe contract);
-//   - the personal best is persisted through the seam, and audio cues are triggered.
+//   - the personal best is persisted through the seam, and audio cues are triggered: the
+//     title and play music crossfade with the state, a drop thuds, a merge pops a step
+//     further up the F major scale per tower level, a cascade adds a stinger, and the game
+//     over sting plays with the music ducked under it.
 //
 // The pure rules live in game/rules.ts; the Pixi drawing in rendering/pixijs/board-view.ts.
 
@@ -21,6 +24,10 @@ import { MergeGame, type Snapshot } from "./rules.js";
 // docs/development/report.json - so the integration can read them from the source.
 
 const SAVE_BEST = "best";
+
+// The merge pop is tuned to F; a merge into level n plays it n - 2 steps up the major scale.
+const SCALE = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19];
+const semitones = (n: number): number => Math.pow(2, n / 12);
 
 export interface Hud {
   setState(state: Snapshot["state"]): void;
@@ -80,6 +87,7 @@ export class App implements Scene {
   async load(): Promise<void> {
     const saved = Number(await this.#o.integration.load(SAVE_BEST));
     this.#best = Number.isFinite(saved) && saved > 0 ? Math.floor(saved) : 0;
+    this.#o.audio.music("music-title");
   }
 
   // --- Scene ------------------------------------------------------------------------------
@@ -117,14 +125,37 @@ export class App implements Scene {
     if (this.#merge.state === "start") {
       this.#merge.begin();
       this.#syncGameplay();
+      this.#o.audio.music("music-loop", { fade: 0.8 });
     }
     if (this.#merge.state !== "playing") return;
 
     const result = this.#merge.dropAt(col);
     if (!result.placed) return;
-    this.#o.audio.play(result.merges > 0 ? "merge" : "tap");
+    this.#dropSounds(result.merges, result.gained, col);
     if (result.over) void this.#onOver();
     this.#render();
+  }
+
+  /** The drop's thud; a pop per merge, climbing the scale; a stinger for a cascade. */
+  #dropSounds(merges: number, gained: number, col: number): void {
+    const audio = this.#o.audio;
+    const pan = (col / 6 - 0.5) * 0.6;
+    audio.play("sfx-drop", { vary: 40, pan });
+    if (merges === 0) return;
+    // A merge into level n scores n; a cascade's steps each climb one level.
+    const top = Math.max(2, Math.round(gained / merges) + Math.floor(merges / 2));
+    for (let step = 0; step < merges; step++) {
+      const level = Math.max(2, top - (merges - 1 - step));
+      const note = SCALE[Math.min(level - 2, SCALE.length - 1)] ?? 0;
+      audio.play("sfx-merge", { rate: semitones(note), delay: 0.06 + step * 0.11, pan, vary: 8 });
+    }
+    if (merges >= 2) {
+      audio.sting("sfx-combo", {
+        delay: 0.06 + merges * 0.11,
+        rate: semitones(Math.min(merges - 2, 5) * 2),
+        duckTo: 0.6,
+      });
+    }
   }
 
   /** A plain tap with no column drops into the first open column. */
@@ -141,6 +172,7 @@ export class App implements Scene {
       this.#continued = true;
       this.#merge.continueRun();
       this.#syncGameplay();
+      this.#o.audio.music("music-loop", { fade: 0.8 });
       this.#o.hud.setNote(null);
       this.#render();
       return true;
@@ -180,6 +212,7 @@ export class App implements Scene {
     }
     this.#merge.reset();
     this.#continued = false;
+    this.#o.audio.music("music-title", { fade: 1.2 });
     this.#o.hud.setNote(null);
     this.#syncGameplay();
     this.#render();
@@ -204,7 +237,11 @@ export class App implements Scene {
 
   async #onOver(): Promise<void> {
     this.#syncGameplay();
-    this.#o.audio.play("over");
+    const newBest = this.#merge.score > this.#best && this.#merge.score > 0;
+    // The sting over a ducked loop, then the calmer title variant under the result card.
+    this.#o.audio.sting("sfx-game-over", { delay: 0.25, duckTo: 0.2 });
+    if (newBest) this.#o.audio.sting("ui-fanfare", { delay: 2.2, duckTo: 0.3 });
+    this.#o.audio.music("music-title", { fade: 3 });
     this.#o.integration.track("run_over", { score: this.#merge.score, merges: this.#merge.merges });
     await this.#recordBest();
     this.#showOver();
@@ -229,7 +266,7 @@ export class App implements Scene {
     this.#o.hud.setBusy(true);
     try {
       const granted = await offer();
-      if (granted) this.#o.audio.play("reward");
+      if (granted) this.#o.audio.sting("sfx-reward", { duckTo: 0.5 });
       return granted;
     } finally {
       this.#o.hud.setBusy(false);
