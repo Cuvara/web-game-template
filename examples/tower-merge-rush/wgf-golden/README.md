@@ -30,3 +30,28 @@ now. The Factory's `playability` step builds the game and plays it through real 
 key input at those positions, on a desktop and a mobile viewport, and holds what it sees to
 the design's experience contract. Each port also shows the design's objective on screen
 during play.
+
+**The art.** The port draws the design's production art, never procedural stand-ins: every
+tower, the track frame, the backdrop, the merge burst and streak, the title wordmark, the icon
+set, the ui-kit card and both bundled fonts (Bungee display, Figtree body) are loaded through
+the runtime asset manifest, `public/assets/assets.json`, which the Factory's `assets` step
+writes. `src/assets/runtime-assets.ts` fetches it once at boot and resolves each asset by the
+design's id, else by its role; `src/rendering/pixijs/art.ts` loads the board's textures and
+`src/rendering/pixijs/tower-view.ts` draws them, with the merge feedback (drop bounce, merge
+pop, burst, confetti, cascade streak, points). A build with no manifest - the greybox, before
+the assets step - draws the same layout in primitives, and the play probe says so: each
+entity carries `asset` and `render`, and the snapshot lists `assets_loaded`. The browser spec's
+art test fails on any entity drawn as a primitive, with no asset, or by a placeholder, and on
+any manifest file the game never fetched.
+
+`library/` is the art itself, as an asset library the Factory reads (`library.json`, mapped by
+the drop-merge design's requirement ids and, for any other id, by role): eight tower SVGs in
+the design's riso-arcade identity, the frame, backdrop, effects, ui-kit, wordmark and icons
+(CC0-1.0, written by `library/tools/make_art.py`), and the two OFL-1.1 fonts as subset WOFF2
+with their licences. A golden run points `factory.assets.libraries` at it.
+
+`baseline/` is the visual regression baseline: desktop (1280x720) and mobile (Pixel 5, touch)
+screenshots of the title, play, a merge, pause, a near-full track, game over and a retry,
+captured from a production build by `baseline/capture.mjs` through real input, with the play
+probe's snapshots and every `/assets/` request the game made. Neither `library/` nor
+`baseline/` belongs in a game repository.

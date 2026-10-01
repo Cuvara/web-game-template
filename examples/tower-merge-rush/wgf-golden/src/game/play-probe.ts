@@ -6,13 +6,30 @@
 // agent-written. Read-only: a snapshot never changes the game, and the playability step
 // only ever acts through real pointer and key input at the positions listed here.
 // `oracle` - the drop that merges now - is computed only when the page URL carries
-// `wgf-probe=1`; a shipped build never computes it.
+// `wgf-probe=1`; a shipped build never computes it. Each tower says what draws it - the
+// runtime asset id and `render: "asset"`, or `render: "primitive"` with no asset in a build
+// without art - and `assets_loaded` lists every runtime asset id the game has loaded.
 
 import type { Game } from "@wgf/game-core";
 import type { App } from "./app.js";
 import { COLUMNS } from "./rules.js";
 
 type Input = { type: "pointer"; x: number; y: number } | { type: "key"; key: string };
+/** What draws a column's tower, and where: the board view answers (rendering/pixijs). */
+export interface EntitySource {
+  describe(
+    col: number,
+    level: number,
+  ): {
+    asset: string | null;
+    render: "asset" | "primitive";
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null;
+}
+
 interface Move {
   action: string;
   input: Input;
@@ -25,18 +42,9 @@ export interface PlayProbeOptions {
   readonly surface: HTMLElement;
   /** The UI root, whose buttons are the title, pause and result screens' inputs. */
   readonly ui: HTMLElement;
-}
-
-/** The track's geometry, as rendering/pixijs/board-view.ts lays it out (gap 8, 92% wide). */
-function cellRect(
-  width: number,
-  height: number,
-  col: number,
-): { x: number; y: number; size: number } {
-  const gap = 8;
-  const cell = Math.min((width * 0.92 - gap * (COLUMNS - 1)) / COLUMNS, height * 0.4);
-  const track = cell * COLUMNS + gap * (COLUMNS - 1);
-  return { x: (width - track) / 2 + col * (cell + gap), y: (height - cell) / 2, size: cell };
+  readonly view: EntitySource;
+  /** The runtime asset manifest's loader: the ids it has loaded. */
+  readonly assets: { readonly loaded: string[] };
 }
 
 function centre(element: Element | null): Input | null {
@@ -51,7 +59,7 @@ function centre(element: Element | null): Input | null {
 }
 
 export function installPlayProbe(options: PlayProbeOptions): void {
-  const { app, game, surface, ui } = options;
+  const { app, game, surface, ui, view, assets } = options;
   const withOracle = new URLSearchParams(location.search).has("wgf-probe");
 
   const button = (action: string, name: string): Move | null => {
@@ -83,17 +91,19 @@ export function installPlayProbe(options: PlayProbeOptions): void {
             : "playing";
     const r = surface.getBoundingClientRect();
     const entities = merge.board.flatMap((level, col) => {
-      if (level === null) return [];
-      const cell = cellRect(r.width, r.height, col);
+      const drawn = level === null ? null : view.describe(col, level);
+      if (!drawn) return [];
       return [
         {
           id: `tower-${col}`,
           role: "target",
-          x: r.left + cell.x,
-          y: r.top + cell.y,
-          w: cell.size,
-          h: cell.size,
+          x: Math.round(r.left + drawn.x),
+          y: Math.round(r.top + drawn.y),
+          w: Math.round(drawn.w),
+          h: Math.round(drawn.h),
           visible: true,
+          asset: drawn.asset,
+          render: drawn.render,
         },
       ];
     });
@@ -133,6 +143,7 @@ export function installPlayProbe(options: PlayProbeOptions): void {
       },
       entities,
       inputs,
+      assets_loaded: assets.loaded,
       ...(withOracle ? { oracle } : {}),
     };
   };

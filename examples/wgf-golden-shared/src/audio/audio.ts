@@ -22,6 +22,7 @@ export class Audio {
   #unlocked = false;
   #platformMuted = false;
   #paused = false;
+  #userMuted = false;
 
   /** The first player input unlocks sound; browsers refuse audio before one anyway. */
   unlock(): void {
@@ -37,8 +38,17 @@ export class Audio {
     this.#paused = paused;
   }
 
+  /** The player's own sound toggle, beside the platform's say. */
+  setUserMuted(muted: boolean): void {
+    this.#userMuted = muted;
+  }
+
+  get userMuted(): boolean {
+    return this.#userMuted;
+  }
+
   get audible(): boolean {
-    return this.#unlocked && !this.#platformMuted && !this.#paused;
+    return this.#unlocked && !this.#platformMuted && !this.#paused && !this.#userMuted;
   }
 
   play(cue: Cue): void {

@@ -1,0 +1,139 @@
+{
+  "base": "http://localhost:4310/",
+  "requests": [
+    {
+      "url": "/assets/assets.json",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/fonts/fonts-1.woff2",
+      "status": 200,
+      "type": "font"
+    },
+    {
+      "url": "/assets/fonts/fonts-2.woff2",
+      "status": 200,
+      "type": "font"
+    },
+    {
+      "url": "/assets/ui/ui-kit.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/ui/wordmark.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/icons/icons-1.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/icons/icons-2.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/icons/icons-3.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/icons/icons-4.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/icons/icons-5.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/icons/icons-6.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/sprites/pieces-2.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-3.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-4.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-6.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/vfx/merge-vfx-1.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-5.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/vfx/merge-vfx-2.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/ui/track-frame.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/backgrounds/backdrop.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-1.svg",
+      "status": 200,
+      "type": "fetch"
+    },
+    {
+      "url": "/assets/sprites/pieces-1.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/sprites/pieces-2.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/sprites/pieces-3.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/sprites/pieces-4.svg",
+      "status": 200,
+      "type": "image"
+    },
+    {
+      "url": "/assets/sprites/pieces-1.svg",
+      "status": 200,
+      "type": "image"
+    }
+  ],
+  "errors": [
+    "request failed: https://game-cdn.poki.com/scripts/v2/poki-sdk.js",
+    "Failed to load resource: net::ERR_FAILED"
+  ]
+}
