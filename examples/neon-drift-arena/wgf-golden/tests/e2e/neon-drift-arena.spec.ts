@@ -6,6 +6,10 @@
 // aborted, so a portal SDK script is never fetched: the game must cope without it, and the
 // suite never touches the network. It never reads pixels: the deterministic probe exposes
 // score, state and the pure-sim hooks, so play is scripted and asserted exactly.
+//
+// The production-art guard (last test) fails the build when the arena regresses to cubes: the
+// craft or a wall drawn as a primitive or from no manifest asset, a required GLB not fetched,
+// a placeholder or box-sized model in the runtime asset manifest, or the bundled faces absent.
 
 import { expect, test, type Page } from "@playwright/test";
 
@@ -173,4 +177,82 @@ test("plays on every viewport @responsive", async ({ page }, info) => {
   }, STEP);
   expect(await page.evaluate(() => (window as unknown as W).__game.phase)).toBe("playing");
   expect(info.project.name).toBeTruthy();
+});
+
+interface ProbeEntity {
+  id: string;
+  role: string;
+  visible: boolean;
+  w: number;
+  h: number;
+  asset?: string | null;
+  render?: string;
+}
+interface PlaySnapshot {
+  state: string;
+  entities: ProbeEntity[];
+  assets_loaded?: string[];
+}
+interface RuntimeEntry {
+  type: string;
+  url?: string;
+  placeholder?: boolean;
+  model?: { triangles?: number };
+}
+type P = { __wgf__: { play: { snapshot(): PlaySnapshot } } };
+
+test("the craft and the walls are the production models, fetched and drawn @assets @art", async ({
+  page,
+}) => {
+  const fetched = new Map<string, number>();
+  page.on("response", (r) => {
+    if (r.url().includes("/assets/")) fetched.set(new URL(r.url()).pathname, r.status());
+  });
+  await boot(page);
+  await page.evaluate(() => (window as unknown as W).__game.play());
+  await page.evaluate((step) => {
+    (window as unknown as W).__game.spawnObstacleAt(0, 12, 0.6);
+    (window as unknown as W).__game.tick(step);
+  }, STEP);
+  // A rendered frame after the spawn: the wall is drawn, not only simulated.
+  await page.waitForFunction(() =>
+    (window as unknown as P).__wgf__.play
+      .snapshot()
+      .entities.some((e) => e.role === "threat" && e.visible),
+  );
+  const snapshot = await page.evaluate(() => (window as unknown as P).__wgf__.play.snapshot());
+  const craft = snapshot.entities.filter((e) => e.role === "player");
+  const walls = snapshot.entities.filter((e) => e.role === "threat");
+  expect(craft).toHaveLength(1);
+  expect(walls.length).toBeGreaterThan(0);
+  for (const entity of [...craft, ...walls]) {
+    expect(entity.render, `${entity.id} is drawn as ${entity.render}`).toBe("asset");
+    expect(entity.asset, `${entity.id} names no manifest asset`).toBeTruthy();
+    expect(snapshot.assets_loaded).toContain(entity.asset);
+    expect(entity.visible).toBe(true);
+  }
+
+  const manifest = (await page.evaluate(async () =>
+    (await fetch(new URL("assets/assets.json", document.baseURI))).json(),
+  )) as { assets: Record<string, RuntimeEntry> };
+  const required = new Set([craft[0]?.asset ?? "", ...walls.map((w) => w.asset ?? "")]);
+  for (const id of required) {
+    const entry = manifest.assets[id];
+    expect(entry, `assets.json has no ${id}`).toBeTruthy();
+    expect(entry?.placeholder ?? false, `${id} is a placeholder`).toBe(false);
+    expect(entry?.url ?? "").toMatch(/\.glb$/);
+    // A cube is 12 triangles; the craft and the wall are modelled (hundreds).
+    expect(entry?.model?.triangles ?? 0, `${id} is box-sized`).toBeGreaterThan(200);
+    const path = new URL(entry?.url ?? "", new URL("assets/assets.json", page.url())).pathname;
+    expect(fetched.get(path), `${path} was not fetched`).toBe(200);
+  }
+  // Every GLB the manifest lists for the arena's environment was fetched as well.
+  for (const id of snapshot.assets_loaded ?? []) {
+    const entry = manifest.assets[id];
+    if (!entry?.url?.endsWith(".glb")) continue;
+    const path = new URL(entry.url, new URL("assets/assets.json", page.url())).pathname;
+    expect(fetched.get(path), `${path} was not fetched`).toBe(200);
+  }
+  expect(await page.evaluate(() => document.fonts.check('16px "NDA Display"'))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('16px "NDA Body"'))).toBe(true);
 });

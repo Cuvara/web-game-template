@@ -1,0 +1,795 @@
+{
+  "items": [
+    {
+      "id": "craft",
+      "type": "model",
+      "role": "player",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:role-player-0",
+        "author": "web-game-template golden port (Neon Drift Arena); model spec models/craft.model.json, built with Blender 4.5.14 through web-game-factory scripts/wgf-model.py"
+      },
+      "files": [
+        {
+          "path": "public/assets/models/craft.glb",
+          "format": "glb",
+          "bytes": 116480,
+          "content_hash": "sha256:cc90e966c985899a40ae4fd1cb9ed11b7e77ae07ce0c0db82cb4540c549515ff"
+        }
+      ],
+      "model": {
+        "triangles": 1754,
+        "vertices": 3810,
+        "nodes": 22,
+        "meshes": 21,
+        "materials": ["glass", "hull-dark", "paint", "trim", "metal", "glow"],
+        "textures": [],
+        "animations": [],
+        "lods": [],
+        "skins": 0,
+        "extensions_used": ["KHR_materials_emissive_strength"],
+        "extensions_required": [],
+        "collision": {
+          "node": "craft_collision",
+          "shape": "box",
+          "triangles": 12
+        },
+        "bounds": {
+          "min": [-0.602, -0.0011, -0.75],
+          "max": [0.602, 0.3686, 0.75]
+        },
+        "dimensions": [1.2041, 0.3698, 1.5]
+      },
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "model.valid",
+            "status": "pass",
+            "summary": "loads: structure, references, transforms and declarations hold"
+          },
+          {
+            "id": "model.parts",
+            "status": "pass",
+            "summary": "20 piece(s) in 20 mesh node(s)"
+          },
+          {
+            "id": "model.triangles",
+            "status": "pass",
+            "summary": "1754 triangles"
+          },
+          {
+            "id": "model.normals",
+            "status": "pass",
+            "summary": "every visible primitive carries vertex normals"
+          },
+          {
+            "id": "model.palette",
+            "status": "pass",
+            "summary": "palette colours #16162a, #2ef2ff, #edebff, #ff2e88"
+          },
+          {
+            "id": "model.bounds",
+            "status": "pass",
+            "summary": "[1.2041, 0.3698, 1.5] m"
+          },
+          {
+            "id": "model.primitive",
+            "status": "pass",
+            "summary": "20 pieces (box, cone, cylinder, modelled): modelled or composed"
+          }
+        ],
+        "primitive_only": false,
+        "parts": 20,
+        "triangles": 1754,
+        "colors": 5,
+        "author": "library:neon-drift-arena-golden:role-player-0",
+        "assessed_by": "wgf_assets.model_quality.assess (gate harness, see GAP)"
+      }
+    },
+    {
+      "id": "arena-kit",
+      "type": "environment",
+      "role": "environment",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:role-environment-2",
+        "author": "web-game-template golden port (Neon Drift Arena); model specs models/arena-track.model.json and models/arena-skyline.model.json, built with Blender 4.5.14 through web-game-factory scripts/wgf-model.py"
+      },
+      "files": [
+        {
+          "path": "public/assets/environments/arena-kit-1.glb",
+          "format": "glb",
+          "bytes": 79796,
+          "content_hash": "sha256:10d0527cd289fa73de582109ba7fdae5735db02333135e2adc83e13b38d8e0ab"
+        },
+        {
+          "path": "public/assets/environments/arena-kit-2.glb",
+          "format": "glb",
+          "bytes": 58344,
+          "content_hash": "sha256:c45f33d3d7fa83a3d6cee9381d2eb59ddd174ba76dc66a72a4356a61cc514053"
+        }
+      ],
+      "model": {
+        "triangles": 1062,
+        "vertices": 2532,
+        "nodes": 24,
+        "meshes": 23,
+        "materials": ["lane", "edge", "grid", "grid-line", "rail", "light"],
+        "textures": [
+          {
+            "format": "png",
+            "width": 64,
+            "height": 64
+          }
+        ],
+        "animations": [],
+        "lods": [],
+        "skins": 0,
+        "extensions_used": ["KHR_materials_emissive_strength"],
+        "extensions_required": [],
+        "bounds": {
+          "min": [-5.24, 0.0, -5.0],
+          "max": [5.24, 2.4, 5.0]
+        },
+        "dimensions": [10.48, 2.4, 10.0]
+      },
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "model.valid",
+            "status": "pass",
+            "summary": "loads: structure, references, transforms and declarations hold"
+          },
+          {
+            "id": "model.parts",
+            "status": "pass",
+            "summary": "23 piece(s) in 23 mesh node(s)"
+          },
+          {
+            "id": "model.triangles",
+            "status": "pass",
+            "summary": "1062 triangles"
+          },
+          {
+            "id": "model.normals",
+            "status": "pass",
+            "summary": "every visible primitive carries vertex normals"
+          },
+          {
+            "id": "model.palette",
+            "status": "pass",
+            "summary": "palette colours #16162a, #2ef2ff, #edebff"
+          },
+          {
+            "id": "model.bounds",
+            "status": "pass",
+            "summary": "[10.48, 2.4, 10.0] m"
+          },
+          {
+            "id": "model.primitive",
+            "status": "pass",
+            "summary": "23 pieces (box, modelled, plane): modelled or composed"
+          }
+        ],
+        "primitive_only": false,
+        "parts": 23,
+        "triangles": 1062,
+        "colors": 4,
+        "author": "library:neon-drift-arena-golden:role-environment-2",
+        "assessed_by": "wgf_assets.model_quality.assess (gate harness, see GAP)"
+      }
+    },
+    {
+      "id": "wall",
+      "type": "model",
+      "role": "threat",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:role-threat-1",
+        "author": "web-game-template golden port (Neon Drift Arena); model spec models/wall.model.json, built with Blender 4.5.14 through web-game-factory scripts/wgf-model.py"
+      },
+      "files": [
+        {
+          "path": "public/assets/models/wall.glb",
+          "format": "glb",
+          "bytes": 44424,
+          "content_hash": "sha256:9344839f783e7a2447a1d9fedc30b32b542a6a1e6171145792bf361a518119ac"
+        }
+      ],
+      "model": {
+        "triangles": 548,
+        "vertices": 1216,
+        "nodes": 19,
+        "meshes": 18,
+        "materials": ["frame", "neon", "ink", "lamp", "hazard"],
+        "textures": [],
+        "animations": [],
+        "lods": [],
+        "skins": 0,
+        "extensions_used": ["KHR_materials_emissive_strength"],
+        "extensions_required": [],
+        "collision": {
+          "node": "wall_collision",
+          "shape": "box",
+          "triangles": 12
+        },
+        "bounds": {
+          "min": [-0.5, 0.0, -0.2315],
+          "max": [0.5, 1.0972, 0.2315]
+        },
+        "dimensions": [1.0, 1.0972, 0.463]
+      },
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "model.valid",
+            "status": "pass",
+            "summary": "loads: structure, references, transforms and declarations hold"
+          },
+          {
+            "id": "model.parts",
+            "status": "pass",
+            "summary": "17 piece(s) in 17 mesh node(s)"
+          },
+          {
+            "id": "model.triangles",
+            "status": "pass",
+            "summary": "548 triangles"
+          },
+          {
+            "id": "model.normals",
+            "status": "pass",
+            "summary": "every visible primitive carries vertex normals"
+          },
+          {
+            "id": "model.palette",
+            "status": "pass",
+            "summary": "palette colours #0b0b12, #16162a, #ffb020, #ffffff"
+          },
+          {
+            "id": "model.bounds",
+            "status": "pass",
+            "summary": "[1.0, 1.0972, 0.463] m"
+          },
+          {
+            "id": "model.primitive",
+            "status": "pass",
+            "summary": "17 pieces (box, cylinder, modelled): modelled or composed"
+          }
+        ],
+        "primitive_only": false,
+        "parts": 17,
+        "triangles": 548,
+        "colors": 4,
+        "author": "library:neon-drift-arena-golden:role-threat-1",
+        "assessed_by": "wgf_assets.model_quality.assess (gate harness, see GAP)"
+      }
+    },
+    {
+      "id": "crash-vfx",
+      "type": "vfx",
+      "role": "vfx",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:crash-vfx",
+        "author": "web-game-template golden port (Neon Drift Arena): textures/make-textures.py, the crash burst's particle"
+      },
+      "files": [
+        {
+          "path": "public/assets/vfx/crash-vfx.png",
+          "format": "png",
+          "bytes": 2085,
+          "content_hash": "sha256:8bbed33d95e47f0db62de3a240e1f3fcc27a6597e4fb4c447be1272a54e576dd",
+          "width": 64,
+          "height": 64
+        }
+      ],
+      "model": null,
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "raster.decodes",
+            "status": "pass",
+            "summary": "64x64 PNG"
+          },
+          {
+            "id": "raster.not-flat",
+            "status": "pass",
+            "summary": "56 distinct opaque colour(s); the bar is 2"
+          },
+          {
+            "id": "raster.alpha",
+            "status": "pass",
+            "summary": "alpha present, 52.8% transparent; a cut-out needs an alpha channel"
+          }
+        ],
+        "primitive_only": false,
+        "parts": null,
+        "colors": 56,
+        "author": "library:neon-drift-arena-golden:crash-vfx"
+      }
+    },
+    {
+      "id": "sky",
+      "type": "texture",
+      "role": "background",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:sky",
+        "author": "web-game-template golden port (Neon Drift Arena): textures/make-textures.py, the night gradient behind the skyline"
+      },
+      "files": [
+        {
+          "path": "public/assets/textures/sky.png",
+          "format": "png",
+          "bytes": 847,
+          "content_hash": "sha256:0f9dd850f271ee843e9fc0c1408bc938ccdce666e296ef5c4dcaac7a91c39ada",
+          "width": 16,
+          "height": 512
+        }
+      ],
+      "model": null,
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "raster.decodes",
+            "status": "pass",
+            "summary": "16x512 PNG"
+          },
+          {
+            "id": "raster.not-flat",
+            "status": "pass",
+            "summary": "176 distinct opaque colour(s); the bar is 2"
+          }
+        ],
+        "primitive_only": false,
+        "parts": null,
+        "colors": 176,
+        "author": "library:neon-drift-arena-golden:sky"
+      }
+    },
+    {
+      "id": "ui-kit",
+      "type": "ui",
+      "role": "ui",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:role-ui-6",
+        "author": "web-game-template golden port (Neon Drift Arena): the ui-kit panel, a 9-slice frame (24 px corners) for the pause and result cards"
+      },
+      "files": [
+        {
+          "path": "public/assets/ui/ui-kit.svg",
+          "format": "svg",
+          "bytes": 432,
+          "content_hash": "sha256:08a787af2054afe57617d9e7d8990f098e6bcadcf033200db054cce747851a86",
+          "width": 96,
+          "height": 96
+        }
+      ],
+      "model": null,
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "4 drawing element(s); the bar for ui is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "4 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "96x96"
+          }
+        ],
+        "primitive_only": false,
+        "parts": 4,
+        "colors": 4,
+        "author": "library:neon-drift-arena-golden:role-ui-6"
+      }
+    },
+    {
+      "id": "icons",
+      "type": "icon",
+      "role": "icon",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:role-icon-3",
+        "author": "web-game-template golden port (Neon Drift Arena), drawn by hand on a 48 px grid"
+      },
+      "files": [
+        {
+          "path": "public/assets/icons/icons-1.svg",
+          "format": "svg",
+          "bytes": 240,
+          "content_hash": "sha256:ecba49f1d5cba28ea1dd393ee6fddde87688e3fe85230c5b4f2fa722eefd9b98",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "path": "public/assets/icons/icons-2.svg",
+          "format": "svg",
+          "bytes": 217,
+          "content_hash": "sha256:b061a263f540b62ea1249ebcbb9a709d636e666ceb739055111129b4b9fb590b",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "path": "public/assets/icons/icons-3.svg",
+          "format": "svg",
+          "bytes": 236,
+          "content_hash": "sha256:5f4ce6bac522d756fd2b46e79a434ee9812a60699b409f8eb8dbcafcd99803f6",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "path": "public/assets/icons/icons-4.svg",
+          "format": "svg",
+          "bytes": 262,
+          "content_hash": "sha256:b9e93555142f1dcee38513cb1b8f5c57c6daac699d90c2b46f4fdf1c5583f276",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "path": "public/assets/icons/icons-5.svg",
+          "format": "svg",
+          "bytes": 242,
+          "content_hash": "sha256:4db52a7af169d02c3cd1d6893073706f3968515bbc6af57c7dbd073f18c2c085",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "path": "public/assets/icons/icons-6.svg",
+          "format": "svg",
+          "bytes": 227,
+          "content_hash": "sha256:8859be1fef0e2853989b960b56f0cb2e045b5e098441802a7bb54840f7cbc79c",
+          "width": 48,
+          "height": 48
+        }
+      ],
+      "model": null,
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "icons-1: well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "icons-1: no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "icons-1: 2 drawing element(s); the bar for icon is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "icons-1: 1 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "icons-1: 48x48, aspect 1.00; the spec's 48x48 is 1.00"
+          },
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "icons-2: well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "icons-2: no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "icons-2: 2 drawing element(s); the bar for icon is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "icons-2: 1 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "icons-2: 48x48, aspect 1.00; the spec's 48x48 is 1.00"
+          },
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "icons-3: well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "icons-3: no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "icons-3: 2 drawing element(s); the bar for icon is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "icons-3: 1 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "icons-3: 48x48, aspect 1.00; the spec's 48x48 is 1.00"
+          },
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "icons-4: well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "icons-4: no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "icons-4: 3 drawing element(s); the bar for icon is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "icons-4: 1 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "icons-4: 48x48, aspect 1.00; the spec's 48x48 is 1.00"
+          },
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "icons-5: well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "icons-5: no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "icons-5: 2 drawing element(s); the bar for icon is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "icons-5: 1 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "icons-5: 48x48, aspect 1.00; the spec's 48x48 is 1.00"
+          },
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "icons-6: well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "icons-6: no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "icons-6: 2 drawing element(s); the bar for icon is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "icons-6: 1 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "icons-6: 48x48, aspect 1.00; the spec's 48x48 is 1.00"
+          }
+        ],
+        "primitive_only": false,
+        "parts": 2,
+        "colors": 1,
+        "author": "library:neon-drift-arena-golden:role-icon-3"
+      }
+    },
+    {
+      "id": "fonts",
+      "type": "font",
+      "role": "font",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "OFL-1.1",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:role-font-4",
+        "source_url": "https://github.com/google/fonts/tree/main/ofl",
+        "author": "The Unbounded Project Authors; The Instrument Sans Project Authors; The JetBrains Mono Project Authors. Instanced (800 / 500 / 700) and subset to Latin and Cyrillic as WOFF2; licence texts fonts/OFL-*.txt",
+        "attribution": "Unbounded, Instrument Sans and JetBrains Mono: SIL Open Font License 1.1; copyright notices and licence texts in public/licenses/OFL-*.txt"
+      },
+      "files": [
+        {
+          "path": "public/assets/fonts/fonts-1.woff2",
+          "format": "woff2",
+          "bytes": 24584,
+          "content_hash": "sha256:1dc7d062df9c0ca4f33509f08d1180c0915e794b878be043fffbf648a1bd7ad2"
+        },
+        {
+          "path": "public/assets/fonts/fonts-2.woff2",
+          "format": "woff2",
+          "bytes": 15160,
+          "content_hash": "sha256:b3e73aa14b18285a07827afb0d1fd02a22497f03b3d076e3082d0354dc324836"
+        },
+        {
+          "path": "public/assets/fonts/fonts-3.woff2",
+          "format": "woff2",
+          "bytes": 10560,
+          "content_hash": "sha256:e7212b0f95927cbf583057dcc6398cb0c2d966f0f7069c44f03fb20d7eb67744"
+        }
+      ],
+      "model": null,
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "font.format",
+            "status": "pass",
+            "summary": "public/assets/fonts/fonts-1.woff2: woff2 font"
+          },
+          {
+            "id": "font.header",
+            "status": "pass",
+            "summary": "public/assets/fonts/fonts-1.woff2: flavour b'\\x00\\x01\\x00\\x00', 16 tables, declared 24584 bytes of 24584"
+          },
+          {
+            "id": "font.format",
+            "status": "pass",
+            "summary": "public/assets/fonts/fonts-2.woff2: woff2 font"
+          },
+          {
+            "id": "font.header",
+            "status": "pass",
+            "summary": "public/assets/fonts/fonts-2.woff2: flavour b'\\x00\\x01\\x00\\x00', 16 tables, declared 15160 bytes of 15160"
+          },
+          {
+            "id": "font.format",
+            "status": "pass",
+            "summary": "public/assets/fonts/fonts-3.woff2: woff2 font"
+          },
+          {
+            "id": "font.header",
+            "status": "pass",
+            "summary": "public/assets/fonts/fonts-3.woff2: flavour b'\\x00\\x01\\x00\\x00', 16 tables, declared 10560 bytes of 10560"
+          }
+        ],
+        "primitive_only": null,
+        "parts": null,
+        "colors": null,
+        "author": "library:neon-drift-arena-golden:role-font-4"
+      }
+    },
+    {
+      "id": "wordmark",
+      "type": "ui",
+      "role": "ui",
+      "status": "delivered",
+      "placeholder": false,
+      "production_ready": true,
+      "license": "CC0-1.0",
+      "origin": {
+        "kind": "library",
+        "library_id": "neon-drift-arena-golden:wordmark",
+        "author": "web-game-template golden port (Neon Drift Arena); ui/make-wordmark.py outlines Unbounded 800 (OFL-1.1) glyphs"
+      },
+      "files": [
+        {
+          "path": "public/assets/ui/wordmark.svg",
+          "format": "svg",
+          "bytes": 8773,
+          "content_hash": "sha256:c13544685f0569137c2e84059591d8d13e73cfc59988f9cd496cd5947e8aadb0",
+          "width": 640,
+          "height": 220
+        }
+      ],
+      "model": null,
+      "quality": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "id": "svg.well-formed",
+            "status": "pass",
+            "summary": "well-formed <svg> with a viewBox"
+          },
+          {
+            "id": "svg.safe",
+            "status": "pass",
+            "summary": "no script, handler, embedded raster or external reference"
+          },
+          {
+            "id": "svg.not-primitive",
+            "status": "pass",
+            "summary": "5 drawing element(s); the bar for ui is 2"
+          },
+          {
+            "id": "svg.palette",
+            "status": "pass",
+            "summary": "3 colour(s), 0 off the palette"
+          },
+          {
+            "id": "svg.dimensions",
+            "status": "pass",
+            "summary": "640x220"
+          }
+        ],
+        "primitive_only": false,
+        "parts": 5,
+        "colors": 3,
+        "author": "library:neon-drift-arena-golden:wordmark"
+      }
+    }
+  ]
+}

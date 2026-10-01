@@ -1,0 +1,118 @@
+{
+  "parts": [
+    {
+      "id": "foot",
+      "shape": "box",
+      "size": [0.24, 0.07, 0.5],
+      "position": [0.42, 0.035, 0],
+      "mirror": "x",
+      "material": "frame"
+    },
+    {
+      "id": "post",
+      "shape": "box",
+      "size": [0.13, 1.0, 0.24],
+      "position": [0.42, 0.55, 0],
+      "taper": [0.8, 0.85],
+      "bevel": 0.025,
+      "mirror": "x",
+      "material": "frame"
+    },
+    {
+      "id": "post-trim",
+      "shape": "box",
+      "size": [0.03, 0.8, 0.02],
+      "position": [0.42, 0.55, 0.125],
+      "mirror": "x",
+      "material": "neon"
+    },
+    {
+      "id": "beam",
+      "shape": "box",
+      "size": [1.0, 0.13, 0.26],
+      "position": [0, 1.0, 0],
+      "bevel": 0.03,
+      "material": "frame"
+    },
+    {
+      "id": "beam-trim",
+      "shape": "box",
+      "size": [0.84, 0.035, 0.02],
+      "position": [0, 1.0, 0.135],
+      "material": "neon"
+    },
+    {
+      "id": "sill",
+      "shape": "box",
+      "size": [0.86, 0.09, 0.2],
+      "position": [0, 0.1, 0],
+      "material": "frame"
+    },
+    {
+      "id": "panel",
+      "shape": "box",
+      "size": [0.72, 0.74, 0.07],
+      "position": [0, 0.55, 0],
+      "material": "hazard"
+    },
+    {
+      "id": "chevron",
+      "shape": "cone",
+      "size": [0.34, 0.2, 0.04],
+      "position": [0, 0.6, 0.045],
+      "rotation": [0, 0, 180],
+      "segments": 3,
+      "material": "ink"
+    },
+    {
+      "id": "hazard-bar",
+      "shape": "box",
+      "size": [0.6, 0.07, 0.03],
+      "position": [0, 0.3, 0.045],
+      "material": "ink"
+    },
+    {
+      "id": "hazard-bar-top",
+      "shape": "box",
+      "size": [0.6, 0.07, 0.03],
+      "position": [0, 0.82, 0.045],
+      "material": "ink"
+    },
+    {
+      "id": "lamp-base",
+      "shape": "cylinder",
+      "size": [0.16, 0.05, 0.16],
+      "position": [0.42, 1.09, 0],
+      "segments": 8,
+      "mirror": "x",
+      "material": "frame"
+    },
+    {
+      "id": "lamp",
+      "shape": "cylinder",
+      "size": [0.1, 0.09, 0.1],
+      "position": [0.42, 1.14, 0],
+      "mirror": "x",
+      "material": "lamp",
+      "segments": 8
+    }
+  ],
+  "materials": [
+    { "id": "frame", "color": "#16162A", "metallic": 0.6, "roughness": 0.4 },
+    {
+      "id": "hazard",
+      "color": "#FFB020",
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emissive": "#FFB020",
+      "emissive_strength": 0.45
+    },
+    { "id": "neon", "color": "#FFB020", "emissive": "#FFB020", "emissive_strength": 3 },
+    { "id": "lamp", "color": "#FFFFFF", "emissive": "#FFB020", "emissive_strength": 5 },
+    { "id": "ink", "color": "#0B0B12", "roughness": 0.6 }
+  ],
+  "pivot": "base-center",
+  "fit": { "size": 1.0, "axis": "x" },
+  "collision": { "shape": "box" },
+  "budget": { "max_triangles": 1000, "max_texture_edge": 256 }
+}

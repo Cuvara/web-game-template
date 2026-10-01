@@ -6,9 +6,27 @@
     <title>Neon Drift Arena</title>
     <!--
       GOLDEN-RUN REPLAY: the template's index.html with the overlay of
-      examples/neon-drift-arena/index.html, written by the Factory's replay developer.
+      examples/neon-drift-arena/index.html, written by the Factory's replay developer, dressed
+      in the design's neon-night identity kit.
     -->
     <style>
+      /*
+        The neon-night identity kit: ground #0B0B12, surface #16162A, ink #EDEBFF,
+        signal #FF2E88 (the player, the primary action), cool #2EF2FF, danger #FFB020.
+        The faces are the bundled OFL fonts the runtime asset manifest lists, registered by
+        src/rendering/threejs/assets.ts before the title screen shows.
+      */
+      :root {
+        --ground: #0b0b12;
+        --surface: #16162a;
+        --ink: #edebff;
+        --signal: #ff2e88;
+        --cool: #2ef2ff;
+        --danger: #ffb020;
+        --font-display: "NDA Display", "NDA Body", sans-serif;
+        --font-body: "NDA Body", "NDA Display", sans-serif;
+        --font-numeric: "NDA Numeric", "NDA Display", monospace;
+      }
       html,
       body {
         margin: 0;
@@ -16,14 +34,9 @@
         height: 100%;
         overflow: hidden;
         overscroll-behavior: none;
-        background: #05060f;
-        color: #eaf6ff;
-        font:
-          16px/1.4 system-ui,
-          -apple-system,
-          "Segoe UI",
-          Roboto,
-          sans-serif;
+        background: var(--ground);
+        color: var(--ink);
+        font: 500 16px/1.4 var(--font-body);
         user-select: none;
         -webkit-user-select: none;
         -webkit-tap-highlight-color: transparent;
@@ -38,12 +51,13 @@
         width: 100%;
         height: 100%;
       }
+      /* The template's probe element: the game's name in a quiet corner, legible. */
       #hud {
         position: absolute;
-        bottom: 4px;
+        bottom: max(4px, env(safe-area-inset-bottom));
         right: 8px;
-        opacity: 0.4;
-        font-size: 11px;
+        font-size: 12px;
+        color: #9a98b8;
         pointer-events: none;
       }
       #ui {
@@ -51,28 +65,125 @@
         inset: 0;
         pointer-events: none;
       }
-      #score-hud {
+      [hidden] {
+        display: none !important;
+      }
+      .hud {
         position: absolute;
         top: max(10px, env(safe-area-inset-top));
-        left: max(12px, env(safe-area-inset-left));
-        right: max(12px, env(safe-area-inset-right));
+        left: max(14px, env(safe-area-inset-left));
+        right: max(14px, env(safe-area-inset-right));
+        height: 52px;
+      }
+      .hud-best {
+        position: absolute;
+        left: 0;
+        top: 6px;
+        font: 700 13px/1 var(--font-body);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(237, 235, 255, 0.7);
+      }
+      .hud-best b {
+        font: 700 18px/1 var(--font-numeric);
+        color: var(--ink);
+        margin-left: 4px;
+      }
+      .hud-score {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
         display: flex;
-        gap: 16px;
-        font-weight: 700;
+        flex-direction: column;
+        align-items: center;
+      }
+      .hud-score small {
+        font: 700 12px/1 var(--font-body);
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--cool);
+      }
+      .hud-score b {
+        font: 700 34px/1.1 var(--font-numeric);
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
         text-shadow:
-          0 0 8px #0af,
-          0 1px 2px #000;
+          0 0 12px rgba(46, 242, 255, 0.55),
+          0 2px 0 #000;
       }
       .objective {
         position: absolute;
-        top: calc(max(10px, env(safe-area-inset-top)) + 32px);
+        top: calc(max(10px, env(safe-area-inset-top)) + 60px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: calc(100% - 28px);
+        box-sizing: border-box;
+        margin: 0;
+        padding: 6px 14px;
+        border: 2px solid rgba(46, 242, 255, 0.45);
+        background: rgba(11, 11, 18, 0.62);
+        text-align: center;
+        font: 500 14px/1.35 var(--font-body);
+        color: var(--ink);
+      }
+      .callout {
+        position: absolute;
         left: 0;
         right: 0;
-        max-width: none;
-        padding: 0 14px;
+        bottom: 26%;
+        margin: 0;
         text-align: center;
-        font-size: 15px;
-        text-shadow: 0 1px 2px #000;
+        font: 800 clamp(22px, 5vmin, 40px) / 1 var(--font-display);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--cool);
+        text-shadow:
+          0 0 14px var(--cool),
+          0 2px 0 #000;
+      }
+      .callout.pop {
+        animation: pop 1000ms ease-out both;
+      }
+      @keyframes pop {
+        0% {
+          opacity: 0;
+          transform: scale(0.7);
+        }
+        18% {
+          opacity: 1;
+          transform: scale(1.08);
+        }
+        70% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-18px);
+        }
+      }
+      .crash-flash {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 50% 70%,
+          rgba(255, 176, 32, 0.55),
+          rgba(255, 46, 136, 0.25) 45%,
+          transparent 75%
+        );
+      }
+      .crash-flash.go {
+        animation: flash 600ms ease-out both;
+      }
+      @keyframes flash {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
       }
       .screen {
         position: absolute;
@@ -81,52 +192,198 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 16px;
-        padding: 24px;
+        gap: 18px;
+        padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
         box-sizing: border-box;
         text-align: center;
-        background: rgba(5, 6, 15, 0.72);
+        background: linear-gradient(180deg, rgba(11, 11, 18, 0.25), rgba(11, 11, 18, 0.7));
         pointer-events: auto;
+        animation: enter 120ms ease-out both;
       }
-      [hidden] {
-        display: none !important;
+      @keyframes enter {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+      }
+      /* The crash plays out (burst, flash, shake) before the result card fades in. */
+      .screen[data-screen="over"] {
+        animation: enter 160ms ease-out 650ms both;
+      }
+      .screen.title {
+        justify-content: flex-end;
+        padding-bottom: max(12vh, 40px);
+        background:
+          repeating-linear-gradient(0deg, rgba(237, 235, 255, 0.04) 0 1px, transparent 1px 4px),
+          linear-gradient(180deg, rgba(11, 11, 18, 0) 35%, rgba(11, 11, 18, 0.85));
+      }
+      h1,
+      h2 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--ink);
       }
       h1 {
-        margin: 0;
-        font-size: clamp(30px, 8vmin, 60px);
-        color: #33ffd6;
-        text-shadow: 0 0 18px #0fffce;
+        font-size: clamp(30px, 7vmin, 64px);
       }
-      p {
+      h2 {
+        font-size: 32px;
+        text-shadow: 0 0 16px rgba(255, 46, 136, 0.6);
+      }
+      .wordmark img {
+        display: block;
+        width: min(78vw, 620px);
+        height: auto;
+        filter: drop-shadow(0 0 14px rgba(255, 46, 136, 0.75));
+      }
+      .tagline {
         margin: 0;
-        max-width: 34em;
-        color: #b7c7e0;
+        max-width: 30em;
+        font-size: 16px;
+        color: rgba(237, 235, 255, 0.82);
+        text-shadow: 0 1px 2px #000;
+      }
+      .card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        min-width: min(320px, 86vw);
+        padding: 26px 28px;
+        box-sizing: border-box;
+        background: rgba(22, 22, 42, 0.92);
+        border: 2px solid var(--signal);
+        box-shadow:
+          0 0 24px rgba(255, 46, 136, 0.45),
+          inset 0 0 0 1px rgba(237, 235, 255, 0.06);
+      }
+      .card.kit {
+        border: 24px solid transparent;
+        border-image: var(--panel) 24 fill / 24px stretch;
+        /* An opaque surface under the text, inside the frame's corners. */
+        background: var(--surface) padding-box;
+        padding: 8px 10px;
+        box-shadow: 0 0 28px rgba(255, 46, 136, 0.35);
+      }
+      .result {
+        margin-top: 18vh;
+      }
+      .stats {
+        display: flex;
+        gap: 28px;
+      }
+      .stats p {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .stats small {
+        font: 700 12px/1 var(--font-body);
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--cool);
+      }
+      .stats b {
+        font: 700 40px/1.15 var(--font-numeric);
+        font-variant-numeric: tabular-nums;
       }
       button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
         pointer-events: auto;
-        min-width: 44px;
-        min-height: 44px;
+        min-width: 48px;
+        min-height: 48px;
         padding: 12px 26px;
-        border: 0;
-        border-radius: 12px;
-        font: inherit;
-        font-weight: 800;
-        color: #05060f;
-        background: #33ffd6;
+        border: 2px solid var(--ink);
+        border-radius: 0;
+        font: 800 16px/1 var(--font-display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--ink);
+        background: rgba(22, 22, 42, 0.85);
         cursor: pointer;
+        transition:
+          transform 120ms ease-out,
+          box-shadow 120ms ease-out;
       }
-      button.secondary {
-        background: #ff5cf0;
+      button:active {
+        transform: scale(0.96);
+      }
+      button:focus-visible {
+        outline: 3px solid var(--cool);
+        outline-offset: 3px;
+      }
+      button.primary {
+        min-height: 60px;
+        padding: 16px 40px;
+        border: 0;
+        border-radius: 28px;
+        font-size: clamp(16px, 4.6vw, 20px);
+        color: var(--ground);
+        background: var(--signal);
+        box-shadow: 0 0 22px rgba(255, 46, 136, 0.7);
+      }
+      button.primary:hover {
+        box-shadow: 0 0 32px rgba(255, 46, 136, 0.95);
       }
       button.pause {
         position: absolute;
-        top: max(6px, env(safe-area-inset-top));
-        right: 8px;
-        padding: 6px 12px;
+        top: max(10px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+        padding: 0;
+        width: 52px;
+        height: 52px;
+      }
+      button.pause .label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+      }
+      .icon {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        flex: none;
+        background: currentColor;
+        -webkit-mask: var(--icon) center / contain no-repeat;
+        mask: var(--icon) center / contain no-repeat;
+      }
+      /* Landscape: the title sits above the craft, which waits on the track below it. */
+      @media (min-aspect-ratio: 1/1) {
+        .screen.title {
+          padding-bottom: max(24vh, 40px);
+        }
+      }
+      /* Phones: portal chrome (a back pill) sits top-left, so the best score moves beside the
+         pause button, and the objective drops below both. */
+      @media (max-width: 600px) {
+        .hud-best {
+          left: auto;
+          right: 64px;
+          top: 6px;
+          text-align: right;
+        }
+        .hud-best b {
+          display: block;
+          margin: 4px 0 0;
+        }
+        .card {
+          padding: 22px 18px;
+        }
       }
       .note {
         min-height: 1.4em;
-        color: #ffb3b3;
+        color: var(--danger);
       }
     </style>
   </head>

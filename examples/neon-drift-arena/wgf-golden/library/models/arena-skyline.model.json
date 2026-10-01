@@ -1,0 +1,145 @@
+{
+  "parts": [
+    {
+      "id": "sun",
+      "shape": "cylinder",
+      "size": [26, 0.2, 26],
+      "position": [0, 9, -14],
+      "rotation": [90, 0, 0],
+      "segments": 40,
+      "material": "sun"
+    },
+    {
+      "id": "sun-band-a",
+      "shape": "box",
+      "size": [27, 0.7, 0.3],
+      "position": [0, 4.5, -13.7],
+      "material": "night"
+    },
+    {
+      "id": "sun-band-b",
+      "shape": "box",
+      "size": [27, 1.0, 0.3],
+      "position": [0, 7.5, -13.7],
+      "material": "night"
+    },
+    {
+      "id": "peak-a",
+      "shape": "cone",
+      "size": [34, 13, 12],
+      "position": [-26, 6.5, -6],
+      "segments": 5,
+      "material": "ridge"
+    },
+    {
+      "id": "peak-b",
+      "shape": "cone",
+      "size": [28, 9, 10],
+      "position": [-10, 4.5, -2],
+      "segments": 4,
+      "material": "ridge-near"
+    },
+    {
+      "id": "peak-c",
+      "shape": "cone",
+      "size": [38, 15, 12],
+      "position": [24, 7.5, -8],
+      "segments": 5,
+      "material": "ridge"
+    },
+    {
+      "id": "peak-d",
+      "shape": "cone",
+      "size": [24, 8, 10],
+      "position": [11, 4, -1],
+      "segments": 4,
+      "material": "ridge-near"
+    },
+    {
+      "id": "tower-a",
+      "shape": "box",
+      "size": [3.2, 16, 3.2],
+      "position": [-44, 8, 2],
+      "taper": [0.7, 0.7],
+      "bevel": 0.3,
+      "material": "tower"
+    },
+    {
+      "id": "tower-b",
+      "shape": "box",
+      "size": [2.6, 22, 2.6],
+      "position": [-38, 11, 4],
+      "taper": [0.55, 0.55],
+      "bevel": 0.25,
+      "material": "tower"
+    },
+    {
+      "id": "tower-c",
+      "shape": "box",
+      "size": [3.6, 12, 3.6],
+      "position": [40, 6, 3],
+      "taper": [0.8, 0.8],
+      "bevel": 0.3,
+      "material": "tower"
+    },
+    {
+      "id": "tower-d",
+      "shape": "box",
+      "size": [2.4, 19, 2.4],
+      "position": [46, 9.5, 1],
+      "taper": [0.6, 0.6],
+      "bevel": 0.25,
+      "material": "tower"
+    },
+    {
+      "id": "beacon-a",
+      "shape": "icosphere",
+      "size": [0.9, 0.9, 0.9],
+      "position": [-38, 22.4, 4],
+      "material": "beacon"
+    },
+    {
+      "id": "beacon-b",
+      "shape": "icosphere",
+      "size": [0.9, 0.9, 0.9],
+      "position": [46, 19.4, 1],
+      "material": "beacon"
+    },
+    {
+      "id": "horizon",
+      "shape": "box",
+      "size": [140, 0.25, 0.4],
+      "position": [0, 0, 6],
+      "material": "horizon"
+    }
+  ],
+  "materials": [
+    { "id": "sun", "color": "#FF2E88", "emissive": "#FF2E88", "emissive_strength": 1.4 },
+    { "id": "night", "color": "#0B0B12", "roughness": 1 },
+    {
+      "id": "ridge",
+      "color": "#16162A",
+      "roughness": 0.9,
+      "emissive": "#2A1240",
+      "emissive_strength": 1
+    },
+    {
+      "id": "ridge-near",
+      "color": "#0B0B12",
+      "roughness": 0.9,
+      "emissive": "#1A0E2E",
+      "emissive_strength": 1
+    },
+    {
+      "id": "tower",
+      "color": "#16162A",
+      "metallic": 0.4,
+      "roughness": 0.5,
+      "texture": { "pattern": "stripes", "size": 64, "color2": "#2EF2FF", "repeat": 12 }
+    },
+    { "id": "beacon", "color": "#FFFFFF", "emissive": "#FF2E88", "emissive_strength": 6 },
+    { "id": "horizon", "color": "#2EF2FF", "emissive": "#2EF2FF", "emissive_strength": 2 }
+  ],
+  "pivot": "origin",
+  "budget": { "max_triangles": 6000, "max_texture_edge": 256 }
+}

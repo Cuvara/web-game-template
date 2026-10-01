@@ -1,0 +1,22 @@
+{
+  "verdict": "FAIL",
+  "failed": ["assets.present"],
+  "routes": ["assets"],
+  "checks": [
+    {
+      "id": "assets.present",
+      "status": "FAIL",
+      "required": true,
+      "summary": "quality not pass: arena-kit, craft, wall",
+      "route": "assets",
+      "measured": {
+        "missing": [],
+        "placeholder": [],
+        "quality_not_pass": ["arena-kit", "craft", "wall"],
+        "ok": 6
+      },
+      "expected": "every required-tier asset: a manifest item, placeholder false, quality.verdict pass",
+      "assets": ["arena-kit", "craft", "wall"]
+    }
+  ]
+}

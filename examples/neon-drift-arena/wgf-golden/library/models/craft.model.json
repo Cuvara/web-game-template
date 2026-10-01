@@ -1,0 +1,150 @@
+{
+  "parts": [
+    {
+      "id": "hull",
+      "shape": "box",
+      "size": [0.42, 0.2, 1.0],
+      "position": [0, 0.1, -0.05],
+      "taper": [0.62, 0.8],
+      "bevel": 0.035,
+      "material": "paint"
+    },
+    {
+      "id": "nose",
+      "shape": "cone",
+      "size": [0.36, 0.48, 0.16],
+      "position": [0, 0.17, 0.7],
+      "rotation": [90, 0, 0],
+      "segments": 8,
+      "material": "paint"
+    },
+    {
+      "id": "keel",
+      "shape": "box",
+      "size": [0.26, 0.08, 1.05],
+      "position": [0, 0.03, -0.02],
+      "taper": [1.25, 1.0],
+      "bevel": 0.02,
+      "material": "hull-dark"
+    },
+    {
+      "id": "canopy",
+      "shape": "sphere",
+      "size": [0.26, 0.17, 0.5],
+      "position": [0, 0.24, 0.12],
+      "segments": 14,
+      "material": "glass"
+    },
+    {
+      "id": "canopy-frame",
+      "shape": "box",
+      "size": [0.3, 0.05, 0.12],
+      "position": [0, 0.22, -0.16],
+      "taper": [0.7, 0.7],
+      "bevel": 0.012,
+      "material": "hull-dark"
+    },
+    {
+      "id": "wing",
+      "shape": "box",
+      "size": [0.5, 0.045, 0.46],
+      "position": [0.4, 0.08, -0.2],
+      "rotation": [0, -22, -7],
+      "taper": [1.0, 0.7],
+      "bevel": 0.012,
+      "mirror": "x",
+      "material": "paint"
+    },
+    {
+      "id": "wing-trim",
+      "shape": "box",
+      "size": [0.46, 0.022, 0.04],
+      "position": [0, 0.03, 0.2],
+      "mirror": "x",
+      "material": "trim",
+      "parent": "wing"
+    },
+    {
+      "id": "fin",
+      "shape": "box",
+      "size": [0.04, 0.26, 0.32],
+      "position": [0.22, 0.02, -0.08],
+      "rotation": [-10, 0, 6],
+      "taper": [1.0, 0.45],
+      "bevel": 0.01,
+      "mirror": "x",
+      "material": "hull-dark",
+      "parent": "wing"
+    },
+    {
+      "id": "tail",
+      "shape": "box",
+      "size": [0.05, 0.24, 0.34],
+      "position": [0, 0.2, -0.42],
+      "rotation": [-15, 0, 0],
+      "taper": [1.0, 0.5],
+      "bevel": 0.012,
+      "material": "paint"
+    },
+    {
+      "id": "thruster",
+      "shape": "cylinder",
+      "size": [0.17, 0.34, 0.17],
+      "position": [0.17, 0.11, -0.52],
+      "rotation": [90, 0, 0],
+      "segments": 12,
+      "bevel": 0.015,
+      "mirror": "x",
+      "material": "metal"
+    },
+    {
+      "id": "thruster-ring",
+      "shape": "cylinder",
+      "size": [0.2, 0.04, 0.2],
+      "position": [0.17, 0.11, -0.66],
+      "rotation": [90, 0, 0],
+      "segments": 12,
+      "mirror": "x",
+      "material": "trim"
+    },
+    {
+      "id": "thruster-glow",
+      "shape": "cone",
+      "size": [0.13, 0.16, 0.13],
+      "position": [0.17, 0.11, -0.77],
+      "rotation": [-90, 0, 0],
+      "segments": 10,
+      "mirror": "x",
+      "material": "glow"
+    },
+    {
+      "id": "side-strip",
+      "shape": "box",
+      "size": [0.025, 0.03, 0.62],
+      "position": [0.19, 0.12, 0.02],
+      "rotation": [0, 4, 0],
+      "mirror": "x",
+      "material": "trim"
+    }
+  ],
+  "materials": [
+    { "id": "paint", "color": "#FF2E88", "metallic": 0.35, "roughness": 0.35 },
+    { "id": "hull-dark", "color": "#16162A", "metallic": 0.5, "roughness": 0.45 },
+    {
+      "id": "glass",
+      "color": "#2EF2FF",
+      "metallic": 0.1,
+      "roughness": 0.1,
+      "opacity": 0.82,
+      "emissive": "#2EF2FF",
+      "emissive_strength": 0.6
+    },
+    { "id": "metal", "color": "#8A8AA3", "metallic": 0.9, "roughness": 0.3 },
+    { "id": "trim", "color": "#EDEBFF", "emissive": "#FF2E88", "emissive_strength": 2.5 },
+    { "id": "glow", "color": "#2EF2FF", "emissive": "#2EF2FF", "emissive_strength": 4 }
+  ],
+  "pivot": "base-center",
+  "fit": { "size": 1.5, "axis": "z" },
+  "collision": { "shape": "box" },
+  "budget": { "max_triangles": 3000 }
+}
