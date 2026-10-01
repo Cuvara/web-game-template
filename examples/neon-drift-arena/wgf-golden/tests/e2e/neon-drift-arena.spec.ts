@@ -262,3 +262,39 @@ test("the craft and the walls are the production models, fetched and drawn @asse
   expect(await page.evaluate(() => document.fonts.check('16px "NDA Display"'))).toBe(true);
   expect(await page.evaluate(() => document.fonts.check('16px "NDA Body"'))).toBe(true);
 });
+
+// Sound: nothing before the first input; in a run the driving music is audible - the probe's
+// level is measured from the master output - and the sound toggle silences it. A build whose
+// manifest has no music (a greybox) has nothing to hear.
+test("plays the driving music in a run and the sound toggle silences it @audio", async ({
+  page,
+}) => {
+  const manifestResponse = await page.request.get("/assets/assets.json");
+  const isManifest =
+    manifestResponse.ok() && (manifestResponse.headers()["content-type"] ?? "").includes("json");
+  const manifest = isManifest
+    ? ((await manifestResponse.json()) as { assets: Record<string, RuntimeEntry> })
+    : { assets: {} as Record<string, RuntimeEntry> };
+  test.skip(
+    !Object.values(manifest.assets).some((a) => a.type === "music"),
+    "no music in public/assets/assets.json",
+  );
+  await boot(page);
+  type Audio = { music: string | null; playing: boolean; level: number; muted: boolean };
+  const audio = (): Promise<Audio> =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as { __wgf__: { play: { snapshot(): { audio: Audio } } } }
+        ).__wgf__.play.snapshot().audio,
+    );
+  expect((await audio()).level).toBe(0);
+  await page.locator("#play").click();
+  await expect.poll(async () => (await audio()).music, { timeout: 15_000 }).toBe("music-drive");
+  await expect.poll(async () => (await audio()).level, { timeout: 10_000 }).toBeGreaterThan(0.005);
+  await page.locator("#sound").click();
+  await expect.poll(async () => (await audio()).level, { timeout: 5_000 }).toBeLessThan(0.001);
+  expect((await audio()).muted).toBe(true);
+  await page.locator("#sound").click();
+  await expect.poll(async () => (await audio()).level, { timeout: 10_000 }).toBeGreaterThan(0.005);
+});

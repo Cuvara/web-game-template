@@ -141,11 +141,9 @@ export class Audio {
       return;
     }
     const ids = Object.keys(this.#entries).filter((id) => this.#isAudio(id));
-    const ordered = [
-      ...first.filter((id) => ids.includes(id)),
-      ...ids.filter((id) => !first.includes(id)),
-    ];
-    for (const id of ordered) await this.#buffer(id);
+    // The ones the first input needs, together; then the rest, together.
+    await Promise.all(first.filter((id) => ids.includes(id)).map((id) => this.#buffer(id)));
+    await Promise.all(ids.map((id) => this.#buffer(id)));
   }
 
   /** Ids of the audio assets decoded so far (the play probe's assets_loaded). */

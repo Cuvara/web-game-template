@@ -203,12 +203,25 @@ test("draws every tower from the runtime asset manifest and loads all of it @loa
   }
 
   // Every asset with a file was requested and loaded (a counted asset's own entry is its
-  // first drawing, so its drawings stand for it).
-  for (const [id, entry] of Object.entries(manifest.assets)) {
-    if (!entry.url) continue;
+  // first drawing, so its drawings stand for it). Sound streams in after the game is
+  // interactive, so the last of it may still be arriving: wait for it, then hold it all.
+  const withFiles = Object.entries(manifest.assets).filter(([, entry]) => entry.url);
+  const loadedNow = (): Promise<string[]> =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as { __wgf__: { play: { snapshot(): { assets_loaded: string[] } } } }
+        ).__wgf__.play.snapshot().assets_loaded,
+    );
+  await expect
+    .poll(loadedNow, { timeout: 30_000 })
+    .toEqual(expect.arrayContaining(withFiles.map(([id]) => id)));
+  const loaded = await loadedNow();
+  for (const [id, entry] of withFiles) {
     expect(fetched, `${entry.url} (${id}) was never fetched`).toContain(`/assets/${entry.url}`);
-    expect(snap.assets_loaded, `${id} is not in the probe's assets_loaded`).toContain(id);
+    expect(loaded, `${id} is not in the probe's assets_loaded`).toContain(id);
   }
+  expect(snap.assets_loaded.length).toBeGreaterThan(0);
 
   // The UI is set in the bundled faces, never a system fallback.
   const faces = await page.evaluate(() =>
@@ -221,4 +234,41 @@ test("draws every tower from the runtime asset manifest and loads all of it @loa
     .evaluate((el) => getComputedStyle(el).fontFamily);
   expect(family).toContain("wgf-display");
   expect(errors).toEqual([]);
+});
+
+// Sound: nothing before the first input; after it the play music is audible - the probe's
+// level is measured from the master output - and the platform mute (a window blur) silences
+// it. A build whose manifest has no music (a greybox) has nothing to hear.
+test("plays its music after the first input and falls silent under the platform mute @audio", async ({
+  page,
+}) => {
+  const manifestResponse = await page.request.get("/assets/assets.json");
+  const isManifest =
+    manifestResponse.ok() && (manifestResponse.headers()["content-type"] ?? "").includes("json");
+  const manifest = isManifest
+    ? ((await manifestResponse.json()) as { assets: Record<string, { type: string }> })
+    : { assets: {} };
+  test.skip(
+    !Object.values(manifest.assets).some((a) => a.type === "music"),
+    "no music in public/assets/assets.json",
+  );
+  await open(page);
+  type Audio = { music: string | null; playing: boolean; level: number; muted: boolean };
+  const audio = (): Promise<Audio> =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as { __wgf__: { play: { snapshot(): { audio: Audio } } } }
+        ).__wgf__.play.snapshot().audio,
+    );
+  expect((await audio()).playing).toBe(false);
+  expect((await audio()).level).toBe(0);
+  await page.locator('[data-action="play"]').click();
+  await expect.poll(async () => (await audio()).music, { timeout: 15_000 }).toBe("music-loop");
+  await expect.poll(async () => (await audio()).level, { timeout: 10_000 }).toBeGreaterThan(0.005);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect.poll(async () => (await audio()).level, { timeout: 5_000 }).toBeLessThan(0.001);
+  expect((await audio()).muted).toBe(true);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect.poll(async () => (await audio()).level, { timeout: 10_000 }).toBeGreaterThan(0.005);
 });
