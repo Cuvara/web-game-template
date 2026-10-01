@@ -5,6 +5,9 @@
 // examples/neon-drift-arena in place of the template boot scene - ported by the Factory's
 // golden-run replay developer, not written by an agent. The boot lines are the template's
 // own, unchanged, so the Factory's `sdk` step can route them through its integration.
+// Loading is real: the production models, fonts and UI art come through the runtime asset
+// manifest (public/assets/assets.json) before the title screen shows, and a missing or
+// placeholder model fails the boot visibly instead of drawing boxes.
 
 import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";
@@ -19,7 +22,7 @@ import { Input } from "./input/steering.js";
 import { bindPlatform } from "./platform/bind.js";
 import { DefaultGameIntegration } from "./platform/default-integration.js";
 import { createRenderer } from "./rendering/create-renderer.js";
-import { createArenaView, screenBounds } from "./rendering/threejs/arena.js";
+import { createArenaView, loadArenaAssets, screenBounds } from "./rendering/threejs/arena.js";
 import { Screens } from "./ui/screens.js";
 
 function element(id: string): HTMLElement {
@@ -55,7 +58,14 @@ async function main(): Promise<void> {
     height: container.clientHeight || window.innerHeight,
     background: 0x05060f,
   });
-  const view = createArenaView(renderer);
+  const assets = await loadArenaAssets(document.baseURI, (fraction) =>
+    platform.reportLoadingProgress(0.6 + 0.2 * fraction),
+  );
+  document.documentElement.dataset["fonts"] = "loaded";
+  // Forward declaration: the view's feedback reaches the screens, built below.
+  // eslint-disable-next-line prefer-const
+  let screens: Screens;
+  const view = createArenaView(renderer, assets, { nearMiss: () => screens.nearMiss() });
 
   const game = new Game();
   const audio = new Audio();
@@ -70,7 +80,7 @@ async function main(): Promise<void> {
   // Forward declaration: the Screens callbacks close over `app`, which is built after them.
   // eslint-disable-next-line prefer-const
   let app: App;
-  const screens = new Screens(uiRoot, i18n, {
+  screens = new Screens(uiRoot, i18n, assets.ui, {
     play: () => app.play(),
     revive: () => app.revive(),
     restart: () => void app.restart(),
@@ -102,13 +112,14 @@ async function main(): Promise<void> {
   });
 
   await app.load();
-  platform.reportLoadingProgress(0.8);
+  platform.reportLoadingProgress(0.85);
   await game.changeScene(app);
 
   const resize = (): void => {
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
     renderer.resize(width, height);
+    view.frame(width / Math.max(1, height));
     app.render();
   };
   resize();
@@ -141,6 +152,8 @@ async function main(): Promise<void> {
     surface: container,
     ui: uiRoot,
     project: (centre, size) => screenBounds(renderer, container, centre, size),
+    drawing: view,
+    assetsLoaded: () => assets.loaded,
   });
 
   hud.dataset["ready"] = "true";

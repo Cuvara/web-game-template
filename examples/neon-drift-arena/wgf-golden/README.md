@@ -33,3 +33,50 @@ during play.
 Neon Drift Arena's port adds an opening grace (`src/game/app.ts`): until the player first
 steers in a run, a wall that reaches the craft passes through it, so a first-time player is
 never failed for not moving yet.
+
+## Production art: models, not boxes
+
+The port draws with production assets, and fails when it regresses to cubes. Nothing in the
+game builds a mesh for the craft or a wall: `src/rendering/threejs/assets.ts` reads the
+Factory's runtime asset manifest (`public/assets/assets.json`), loads every listed GLB with
+three.js's `GLTFLoader` and the fonts with `FontFace`, and `src/rendering/threejs/arena-view.ts`
+draws the scene from them - the craft, one clone of the wall segment per wall, the track
+modules (tiled and scrolled at the simulation's speed), the skyline, hemisphere / key / rim
+lights, fog, a gradient sky, additive glow on thrusters, lamps and pylons, a crash burst and
+flash, and a "close call" call-out on a near miss. A model missing from the manifest, a
+placeholder, or a GLB that fails to load is a visible boot error.
+
+`library/` is the art, as a Factory asset library (`library.json`, docs/assets-module.md in
+the Factory), mapped by the role the arena-dodge archetype gives each requirement:
+
+| Role                      | Files                                                                                                                                                                | Licence                                                    |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| player (`craft`)          | `models/craft.glb` - hull, nose, keel, canopy, swept wings with trim, wing fins, tail, twin thrusters with emissive nozzles                                          | CC0-1.0                                                    |
+| threat (`wall`)           | `models/wall.glb` - posts, beam, sill, feet, a lit amber hazard panel with chevron and bars, neon trim, warning lamps                                                | CC0-1.0                                                    |
+| environment (`arena-kit`) | `models/arena-track.glb` (floor, grid, lane lines, edge strips, guard rails, pylons with lights), `models/arena-skyline.glb` (sun, ridges, towers, beacons, horizon) | CC0-1.0                                                    |
+| icon (`icons`)            | `icons/*.svg` - play, pause, retry, menu, sound, ad                                                                                                                  | CC0-1.0                                                    |
+| font (`fonts`)            | Unbounded 800, Instrument Sans 500, JetBrains Mono 700 as subset WOFF2                                                                                               | OFL-1.1 (`fonts/OFL-*.txt`, shipped as `public/licenses/`) |
+| `wordmark`, ui (`ui-kit`) | `ui/wordmark.svg` (outlined Unbounded glyphs, `ui/make-wordmark.py`), `ui/panel.svg` (9-slice card frame)                                                            | CC0-1.0                                                    |
+
+Each GLB is built from the model spec beside it (`models/*.model.json`) by the Factory's
+pinned Blender (4.5) through `scripts/wgf-model.py build --twice` (byte-identical), and held to
+the Factory's model quality bars for its role (`wgf-model.py inspect`: craft and wall
+`primitive_only: false`, verdict pass). `library/build-models.sh` rebuilds and inspects all
+four. The runtime manifest comes from the Factory's asset CLI:
+
+```bash
+python3 <factory>/scripts/wgf-assets.py build --design <game-design.json> --root <game> \
+  --library <game>/library --dimension 3d
+```
+
+**The guard.** The play probe reports, for the craft and every wall, the manifest asset that
+draws it and `render` - `"asset"` only when every drawn mesh descends from a loaded GLB's root
+(the build stamps `wgf_asset` on it), else `"primitive"` with `asset: null` - and lists
+`assets_loaded`. The browser spec's last test fails if the craft or a wall is a primitive or
+names no asset, if its manifest entry is a placeholder or box-sized (12 triangles), if a
+required GLB was not fetched, or if the bundled faces are not loaded.
+
+`baseline/<desktop|mobile>/` holds screenshots of the built game played with real keyboard,
+mouse and touch input (title, playing, steer, close wall, near miss, crash, game over, retry,
+pause), the asset requests and probe snapshots behind them (`evidence.json`), and the
+Factory playability bot's verdict on the same build (`playability-checks.json`).

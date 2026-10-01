@@ -1,0 +1,63 @@
+{
+  "library": {
+    "id": "neon-drift-arena-golden",
+    "about": "Neon Drift Arena's production art for the Factory's golden 3D run, mapped by the role each asset_requirement of the arena-dodge archetype carries (player, threat, environment, icon, font) and by id for the wordmark. Models are GLBs the Factory's pinned Blender 4.5.14 built from the model specs beside them (models/*.model.json; build-models.sh rebuilds and inspects them). Read by the assets step through factory.assets.libraries."
+  },
+  "items": [
+    {
+      "role": "player",
+      "files": ["models/craft.glb"],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena); model spec models/craft.model.json, built with Blender 4.5.14 through web-game-factory scripts/wgf-model.py"
+    },
+    {
+      "role": "threat",
+      "files": ["models/wall.glb"],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena); model spec models/wall.model.json, built with Blender 4.5.14 through web-game-factory scripts/wgf-model.py"
+    },
+    {
+      "role": "environment",
+      "files": ["models/arena-track.glb", "models/arena-skyline.glb"],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena); model specs models/arena-track.model.json and models/arena-skyline.model.json, built with Blender 4.5.14 through web-game-factory scripts/wgf-model.py"
+    },
+    {
+      "role": "icon",
+      "files": [
+        "icons/play.svg",
+        "icons/pause.svg",
+        "icons/retry.svg",
+        "icons/menu.svg",
+        "icons/sound.svg",
+        "icons/ad.svg"
+      ],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena), drawn by hand on a 48 px grid"
+    },
+    {
+      "role": "font",
+      "files": [
+        "fonts/unbounded-800.woff2",
+        "fonts/instrument-sans-500.woff2",
+        "fonts/jetbrains-mono-700.woff2"
+      ],
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/tree/main/ofl",
+      "author": "The Unbounded Project Authors; The Instrument Sans Project Authors; The JetBrains Mono Project Authors. Instanced (800 / 500 / 700) and subset to Latin and Cyrillic as WOFF2; licence texts fonts/OFL-*.txt",
+      "attribution": "Unbounded, Instrument Sans and JetBrains Mono: SIL Open Font License 1.1; copyright notices and licence texts in public/licenses/OFL-*.txt"
+    },
+    {
+      "requirement": "wordmark",
+      "files": ["ui/wordmark.svg"],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena); ui/make-wordmark.py outlines Unbounded 800 (OFL-1.1) glyphs"
+    },
+    {
+      "role": "ui",
+      "files": ["ui/panel.svg"],
+      "license": "CC0-1.0",
+      "author": "web-game-template golden port (Neon Drift Arena): the ui-kit panel, a 9-slice frame (24 px corners) for the pause and result cards"
+    }
+  ]
+}

@@ -7,6 +7,10 @@
 // only ever acts through real pointer and key input at the positions listed here. `oracle`
 // - the steer that keeps the craft out of the next wall - is computed only when the page URL
 // carries `wgf-probe=1`; a shipped build never computes it.
+//
+// Each entity says what draws it: the runtime asset id (public/assets/assets.json) and
+// `render: "asset"` - the craft and every wall are the production GLBs, measured by the
+// bounding box of their drawn meshes - and `assets_loaded` lists every manifest id loaded.
 
 import type { Game } from "@wgf/game-core";
 import type { App } from "./app.js";
@@ -19,6 +23,22 @@ interface Move {
   input: Input;
 }
 type Bounds = { x: number; y: number; w: number; h: number; inFront: boolean };
+type Vec3 = [number, number, number];
+
+/** An entity as the drawing layer drew it: world box, and the manifest asset drawing it. */
+interface Drawn {
+  centre: Vec3;
+  size: Vec3;
+  asset: string | null;
+  render: "asset" | "primitive";
+}
+
+/** What the drawing layer (rendering/threejs/arena-view.ts) tells the probe. */
+export interface ProbeDrawing {
+  craft(): Drawn;
+  /** Null before the wall's first frame. */
+  wall(id: number): Drawn | null;
+}
 
 export interface PlayProbeOptions {
   readonly app: App;
@@ -28,7 +48,10 @@ export interface PlayProbeOptions {
   /** The UI root, whose buttons are the menu, pause and result screens' inputs. */
   readonly ui: HTMLElement;
   /** Screen bounds of an arena box (rendering/threejs/arena.ts screenBounds). */
-  readonly project: (centre: [number, number, number], size: [number, number, number]) => Bounds;
+  readonly project: (centre: Vec3, size: Vec3) => Bounds;
+  readonly drawing: ProbeDrawing;
+  /** Manifest ids loaded so far (rendering/threejs/assets.ts). */
+  readonly assetsLoaded: () => readonly string[];
 }
 
 /** A steer is held: the craft slides while the pointer is down (input/steering.ts). */
@@ -48,7 +71,7 @@ function centre(element: Element | null): Input | null {
 }
 
 export function installPlayProbe(options: PlayProbeOptions): void {
-  const { app, game, surface, ui, project } = options;
+  const { app, game, surface, ui, project, drawing, assetsLoaded } = options;
   const withOracle = new URLSearchParams(location.search).has("wgf-probe");
 
   const button = (id: string, action: string): Move | null => {
@@ -69,11 +92,13 @@ export function installPlayProbe(options: PlayProbeOptions): void {
     };
   };
 
-  const entity = (id: string, role: string, b: Bounds): Record<string, unknown> => {
+  const entity = (id: string, role: string, drawn: Drawn): Record<string, unknown> => {
+    const b = project(drawn.centre, drawn.size);
     const r = surface.getBoundingClientRect();
     const onScreen =
       b.inFront && b.x + b.w > r.left && b.y + b.h > r.top && b.x < r.right && b.y < r.bottom;
-    return { id, role, x: b.x, y: b.y, w: b.w, h: b.h, visible: onScreen };
+    const { asset, render } = drawn;
+    return { id, role, x: b.x, y: b.y, w: b.w, h: b.h, visible: onScreen, asset, render };
   };
 
   const snapshot = (): unknown => {
@@ -88,15 +113,19 @@ export function installPlayProbe(options: PlayProbeOptions): void {
             : "playing";
     const entities: Record<string, unknown>[] = [];
     if (sim && app.phase !== "menu") {
-      entities.push(entity("craft", "player", project([sim.playerX, 0, 0], [0.9, 0.6, 1.4])));
+      entities.push(entity("craft", "player", drawing.craft()));
       for (const wall of sim.obstacles) {
-        entities.push(
-          entity(
-            `wall-${wall.id}`,
-            "threat",
-            project([wall.x, 0, -wall.z], [wall.halfWidth * 2, 1, 1]),
-          ),
-        );
+        // A wall spawned since the last frame is not drawn yet: where, and as what, it will
+        // be - the same as the walls already drawn.
+        const drawn = drawing.wall(wall.id) ?? {
+          ...(sim.obstacles.map((o) => drawing.wall(o.id)).find((d) => d) ?? {
+            asset: null,
+            render: "primitive" as const,
+          }),
+          centre: [wall.x, 0.24, -wall.z] as Vec3,
+          size: [wall.halfWidth * 2, 1.48, 0.46] as Vec3,
+        };
+        entities.push(entity(`wall-${wall.id}`, "threat", drawn));
       }
     }
     const inputs: Move[] = [];
@@ -143,6 +172,7 @@ export function installPlayProbe(options: PlayProbeOptions): void {
       metrics: { score: app.score, best: app.best },
       entities,
       inputs,
+      assets_loaded: [...assetsLoaded()],
       ...(withOracle ? { oracle } : {}),
     };
   };
