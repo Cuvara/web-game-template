@@ -9,11 +9,6 @@
       "to": "src/game/simulation.ts"
     },
     {
-      "from": "src/game/arena-view.ts",
-      "to": "src/rendering/threejs/arena-view.ts",
-      "replace": [["from \"./simulation.js\"", "from \"../../game/simulation.js\""]]
-    },
-    {
       "from": "src/input.ts",
       "to": "src/input/steering.ts"
     },

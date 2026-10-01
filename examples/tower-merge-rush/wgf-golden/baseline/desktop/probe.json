@@ -1,0 +1,706 @@
+{
+  "title": {
+    "state": "title",
+    "metrics": {
+      "score": 0,
+      "best": 0,
+      "next-piece": 1,
+      "merges": 0
+    },
+    "entities": [],
+    "inputs": [
+      {
+        "action": "play",
+        "input": {
+          "type": "pointer",
+          "x": 640,
+          "y": 484
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-10",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "pieces-7",
+      "pieces-8",
+      "pieces-9",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "gameplay": {
+    "state": "playing",
+    "metrics": {
+      "score": 33,
+      "best": 0,
+      "next-piece": 2,
+      "merges": 7
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 51,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-1",
+        "role": "target",
+        "x": 221,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-3",
+        "render": "asset"
+      },
+      {
+        "id": "tower-2",
+        "role": "target",
+        "x": 390,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-2",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 640,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 823,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 1006,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 1189,
+          "y": 360
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 1246,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-10",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "pieces-7",
+      "pieces-8",
+      "pieces-9",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "merge": {
+    "state": "playing",
+    "metrics": {
+      "score": 47,
+      "best": 0,
+      "next-piece": 3,
+      "merges": 10
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 51,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 274,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 457,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 640,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 823,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 1006,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 1189,
+          "y": 360
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 1246,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-10",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "pieces-7",
+      "pieces-8",
+      "pieces-9",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "paused": {
+    "state": "paused",
+    "metrics": {
+      "score": 47,
+      "best": 0,
+      "next-piece": 3,
+      "merges": 10
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 51,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "resume",
+        "input": {
+          "type": "pointer",
+          "x": 640,
+          "y": 381
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-10",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "pieces-7",
+      "pieces-8",
+      "pieces-9",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "near-full": {
+    "state": "playing",
+    "metrics": {
+      "score": 174,
+      "best": 0,
+      "next-piece": 4,
+      "merges": 22
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 51,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-7",
+        "render": "asset"
+      },
+      {
+        "id": "tower-1",
+        "role": "target",
+        "x": 221,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-2",
+        "role": "target",
+        "x": 390,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-3",
+        "role": "target",
+        "x": 559,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      },
+      {
+        "id": "tower-4",
+        "role": "target",
+        "x": 729,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-6",
+        "role": "target",
+        "x": 1067,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 1006,
+          "y": 360
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 1246,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-10",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "pieces-7",
+      "pieces-8",
+      "pieces-9",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "game-over": {
+    "state": "lost",
+    "metrics": {
+      "score": 273,
+      "best": 273,
+      "next-piece": 4,
+      "merges": 32
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 51,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-7",
+        "render": "asset"
+      },
+      {
+        "id": "tower-1",
+        "role": "target",
+        "x": 221,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-2",
+        "role": "target",
+        "x": 390,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-3",
+        "role": "target",
+        "x": 559,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-7",
+        "render": "asset"
+      },
+      {
+        "id": "tower-4",
+        "role": "target",
+        "x": 729,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-5",
+        "role": "target",
+        "x": 898,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      },
+      {
+        "id": "tower-6",
+        "role": "target",
+        "x": 1067,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "restart",
+        "input": {
+          "type": "pointer",
+          "x": 640,
+          "y": 467
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-10",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "pieces-7",
+      "pieces-8",
+      "pieces-9",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "retry-playing": {
+    "state": "playing",
+    "metrics": {
+      "score": 2,
+      "best": 273,
+      "next-piece": 1,
+      "merges": 0
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 51,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-1",
+        "render": "asset"
+      },
+      {
+        "id": "tower-3",
+        "role": "target",
+        "x": 559,
+        "y": 215,
+        "w": 161,
+        "h": 274,
+        "visible": true,
+        "asset": "pieces-1",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 274,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 457,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 823,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 1006,
+          "y": 360
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 1189,
+          "y": 360
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 1246,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-10",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "pieces-7",
+      "pieces-8",
+      "pieces-9",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  }
+}

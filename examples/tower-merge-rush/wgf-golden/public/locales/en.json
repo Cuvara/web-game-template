@@ -6,7 +6,8 @@
   "title.play": "Play",
   "hud.score": "Score",
   "hud.best": "Best",
-  "hud.next": "Next lvl",
+  "hud.next": "Next",
+  "hud.objective": "Drop pieces so matching ones merge - keep the columns from filling up.",
   "hud.pause": "Pause",
   "pause.heading": "Paused",
   "pause.resume": "Resume",
@@ -17,5 +18,6 @@
   "over.double": "Double score (ad)",
   "over.restart": "Play again",
   "note.no-ad": "No ad available right now.",
-  "note.not-completed": "No reward - the ad was not completed."
+  "note.not-completed": "No reward - the ad was not completed.",
+  "hud.sound": "Sound"
 }

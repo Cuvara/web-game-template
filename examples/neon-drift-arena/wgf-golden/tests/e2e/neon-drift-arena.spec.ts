@@ -6,6 +6,10 @@
 // aborted, so a portal SDK script is never fetched: the game must cope without it, and the
 // suite never touches the network. It never reads pixels: the deterministic probe exposes
 // score, state and the pure-sim hooks, so play is scripted and asserted exactly.
+//
+// The production-art guard (last test) fails the build when the arena regresses to cubes: the
+// craft or a wall drawn as a primitive or from no manifest asset, a required GLB not fetched,
+// a placeholder or box-sized model in the runtime asset manifest, or the bundled faces absent.
 
 import { expect, test, type Page } from "@playwright/test";
 
@@ -29,7 +33,7 @@ interface GameProbe {
   paused(): boolean;
 }
 
-/** window, as the game's main.ts extends it. Local, so no global declaration
+/** window, as the game's src/game/index.ts extends it. Local, so no global declaration
  * collides with the template examples' own suites in one typecheck. */
 type W = { __game: GameProbe };
 
@@ -47,6 +51,8 @@ async function boot(page: Page): Promise<{ errors: string[] }> {
 
 async function crash(page: Page): Promise<void> {
   await page.evaluate((step) => {
+    // A first steer ends the run's opening grace (game/app.ts), as a player's would.
+    (window as unknown as W).__game.steer(1);
     (window as unknown as W).__game.steer(0);
     (window as unknown as W).__game.spawnObstacleAt(0, 1, 0.8);
     for (let i = 0; i < 60 && (window as unknown as W).__game.phase === "playing"; i++)
@@ -171,4 +177,124 @@ test("plays on every viewport @responsive", async ({ page }, info) => {
   }, STEP);
   expect(await page.evaluate(() => (window as unknown as W).__game.phase)).toBe("playing");
   expect(info.project.name).toBeTruthy();
+});
+
+interface ProbeEntity {
+  id: string;
+  role: string;
+  visible: boolean;
+  w: number;
+  h: number;
+  asset?: string | null;
+  render?: string;
+}
+interface PlaySnapshot {
+  state: string;
+  entities: ProbeEntity[];
+  assets_loaded?: string[];
+}
+interface RuntimeEntry {
+  type: string;
+  url?: string;
+  placeholder?: boolean;
+  model?: { triangles?: number };
+}
+type P = { __wgf__: { play: { snapshot(): PlaySnapshot } } };
+
+// A build with no runtime manifest at all is the greybox, before the assets step: there is no
+// art to hold it to, and the test says so.
+test("the craft and the walls are the production models, fetched and drawn @assets @art", async ({
+  page,
+}) => {
+  const manifestResponse = await page.request.get("/assets/assets.json");
+  const isManifest =
+    manifestResponse.ok() && (manifestResponse.headers()["content-type"] ?? "").includes("json");
+  test.skip(!isManifest, "no public/assets/assets.json: a greybox build has no art");
+  const fetched = new Map<string, number>();
+  page.on("response", (r) => {
+    if (r.url().includes("/assets/")) fetched.set(new URL(r.url()).pathname, r.status());
+  });
+  await boot(page);
+  await page.evaluate(() => (window as unknown as W).__game.play());
+  await page.evaluate((step) => {
+    (window as unknown as W).__game.spawnObstacleAt(0, 12, 0.6);
+    (window as unknown as W).__game.tick(step);
+  }, STEP);
+  // A rendered frame after the spawn: the wall is drawn, not only simulated.
+  await page.waitForFunction(() =>
+    (window as unknown as P).__wgf__.play
+      .snapshot()
+      .entities.some((e) => e.role === "threat" && e.visible),
+  );
+  const snapshot = await page.evaluate(() => (window as unknown as P).__wgf__.play.snapshot());
+  const craft = snapshot.entities.filter((e) => e.role === "player");
+  const walls = snapshot.entities.filter((e) => e.role === "threat");
+  expect(craft).toHaveLength(1);
+  expect(walls.length).toBeGreaterThan(0);
+  for (const entity of [...craft, ...walls]) {
+    expect(entity.render, `${entity.id} is drawn as ${entity.render}`).toBe("asset");
+    expect(entity.asset, `${entity.id} names no manifest asset`).toBeTruthy();
+    expect(snapshot.assets_loaded).toContain(entity.asset);
+    expect(entity.visible).toBe(true);
+  }
+
+  const manifest = (await page.evaluate(async () =>
+    (await fetch(new URL("assets/assets.json", document.baseURI))).json(),
+  )) as { assets: Record<string, RuntimeEntry> };
+  const required = new Set([craft[0]?.asset ?? "", ...walls.map((w) => w.asset ?? "")]);
+  for (const id of required) {
+    const entry = manifest.assets[id];
+    expect(entry, `assets.json has no ${id}`).toBeTruthy();
+    expect(entry?.placeholder ?? false, `${id} is a placeholder`).toBe(false);
+    expect(entry?.url ?? "").toMatch(/\.glb$/);
+    // A cube is 12 triangles; the craft and the wall are modelled (hundreds).
+    expect(entry?.model?.triangles ?? 0, `${id} is box-sized`).toBeGreaterThan(200);
+    const path = new URL(entry?.url ?? "", new URL("assets/assets.json", page.url())).pathname;
+    expect(fetched.get(path), `${path} was not fetched`).toBe(200);
+  }
+  // Every GLB the manifest lists for the arena's environment was fetched as well.
+  for (const id of snapshot.assets_loaded ?? []) {
+    const entry = manifest.assets[id];
+    if (!entry?.url?.endsWith(".glb")) continue;
+    const path = new URL(entry.url, new URL("assets/assets.json", page.url())).pathname;
+    expect(fetched.get(path), `${path} was not fetched`).toBe(200);
+  }
+  expect(await page.evaluate(() => document.fonts.check('16px "NDA Display"'))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('16px "NDA Body"'))).toBe(true);
+});
+
+// Sound: nothing before the first input; in a run the driving music is audible - the probe's
+// level is measured from the master output - and the sound toggle silences it. A build whose
+// manifest has no music (a greybox) has nothing to hear.
+test("plays the driving music in a run and the sound toggle silences it @audio", async ({
+  page,
+}) => {
+  const manifestResponse = await page.request.get("/assets/assets.json");
+  const isManifest =
+    manifestResponse.ok() && (manifestResponse.headers()["content-type"] ?? "").includes("json");
+  const manifest = isManifest
+    ? ((await manifestResponse.json()) as { assets: Record<string, RuntimeEntry> })
+    : { assets: {} as Record<string, RuntimeEntry> };
+  test.skip(
+    !Object.values(manifest.assets).some((a) => a.type === "music"),
+    "no music in public/assets/assets.json",
+  );
+  await boot(page);
+  type Audio = { music: string | null; playing: boolean; level: number; muted: boolean };
+  const audio = (): Promise<Audio> =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as { __wgf__: { play: { snapshot(): { audio: Audio } } } }
+        ).__wgf__.play.snapshot().audio,
+    );
+  expect((await audio()).level).toBe(0);
+  await page.locator("#play").click();
+  await expect.poll(async () => (await audio()).music, { timeout: 15_000 }).toBe("music-drive");
+  await expect.poll(async () => (await audio()).level, { timeout: 10_000 }).toBeGreaterThan(0.005);
+  await page.locator("#sound").click();
+  await expect.poll(async () => (await audio()).level, { timeout: 5_000 }).toBeLessThan(0.001);
+  expect((await audio()).muted).toBe(true);
+  await page.locator("#sound").click();
+  await expect.poll(async () => (await audio()).level, { timeout: 10_000 }).toBeGreaterThan(0.005);
 });

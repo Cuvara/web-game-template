@@ -80,14 +80,21 @@ function copyRepository(root, target) {
   }
 }
 
-function copyOverlay(from, to) {
+// Top-level directories of an overlay that are never game files, as the Factory's replay
+// developer skips them: the art and audio library its assets step imports, the approved
+// frames its visual QA compares against, and the boot bridge it applies only to a game
+// created from a contract-1 release (examples/wgf-golden-shared/release-1/README.md).
+const OVERLAY_SKIP_DIRS = new Set(["library", "baseline", "release-1"]);
+
+function copyOverlay(from, to, top = true) {
   for (const entry of readdirSync(from, { withFileTypes: true })) {
     if (entry.name === "README.md") continue;
+    if (top && entry.isDirectory() && OVERLAY_SKIP_DIRS.has(entry.name)) continue;
     const source = join(from, entry.name);
     const destination = join(to, entry.name);
     if (entry.isDirectory()) {
       mkdirSync(destination, { recursive: true });
-      copyOverlay(source, destination);
+      copyOverlay(source, destination, false);
     } else {
       cpSync(source, destination);
     }

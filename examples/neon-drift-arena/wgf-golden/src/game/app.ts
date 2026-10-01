@@ -9,13 +9,17 @@
 //     PlatformGameIntegration (handed in as GameContext.integration) now does that, at the
 //     moments the Factory's integration plan assigns each placement id;
 //   - the scene publishes its id and a step counter to #hud (the template's probe contract),
-//     has a pause menu, and triggers audio cues.
+//     has a pause menu, and drives the audio: the title music on the menu, the two-stem
+//     driving loop in a run - its low-pass opening and its intensity layer fading in as the
+//     speed rises - an engine loop re-pitched by speed and filtered and panned by steering, a
+//     whoosh for every wall passing the craft (a harder one for a near miss), the crash and
+//     game-over sting over ducked music.
 //
 // Determinism lives entirely in the Simulation (game/simulation.ts); this file only routes
 // input and lifecycle.
 
 import type { Game, Scene } from "@wgf/game-core";
-import type { Audio } from "../audio/audio.js";
+import type { Audio, LoopHandle } from "../audio/audio.js";
 import type { GameIntegration } from "./integration.js";
 import { Simulation } from "./simulation.js";
 
@@ -54,6 +58,12 @@ export interface AppView {
 }
 
 const SAVE_BEST = "best";
+/** Clear space (arena units) under which a wall passing the craft is a near miss. */
+const NEAR_MISS_GAP = 0.8;
+/** Speeds (arena units per second) over which the music's intensity goes from 0 to 1. */
+const CALM_SPEED = 8;
+const FULL_SPEED = 20;
+const LAYER = "music-drive-layer";
 
 export class App implements Scene {
   readonly id = "neon-drift-arena";
@@ -67,6 +77,17 @@ export class App implements Scene {
   /** Bumped once per fresh run. A generation marker: same value => same run. */
   #runId = 0;
   #steps = 0;
+  /**
+   * The opening grace: until the player first steers in a run, a wall that reaches the craft
+   * passes through it (the simulation's own revive clears it) instead of ending the run. A
+   * first-time player still reading the screen is never failed for not moving yet.
+   */
+  #steered = false;
+  #engine: LoopHandle | null = null;
+  /** Walls that have already passed the craft (and made their whoosh). */
+  #passed = new Set<number>();
+  #lastX = 0;
+  #intensity = -1;
 
   constructor(options: AppOptions) {
     this.#o = options;
@@ -103,6 +124,7 @@ export class App implements Scene {
   async load(): Promise<void> {
     const saved = Number(await this.#o.integration.load(SAVE_BEST));
     this.#best = Number.isFinite(saved) && saved > 0 ? Math.floor(saved) : 0;
+    this.#o.audio.music("music-title");
     this.#emit();
   }
 
@@ -116,14 +138,50 @@ export class App implements Scene {
     this.#steps += 1;
     this.#o.probe.dataset["steps"] = String(this.#steps);
     if (this.#phase !== "playing" || !this.#sim) return;
-    const before = this.#sim.score;
     const stillRunning = this.#sim.tick(stepMs);
-    if (!stillRunning) {
+    if (!stillRunning && !this.#steered && this.#sim.revive()) {
+      // Inside the opening grace: the wall passes through.
+    } else if (!stillRunning) {
       void this.#endRun();
       return;
     }
-    if (Math.floor(this.#sim.score / 10) > Math.floor(before / 10)) this.#o.audio.play("score");
+    this.#runSounds(this.#sim, stepMs);
     this.#emit();
+  }
+
+  /** Per step of a run: the engine, the music's intensity, a whoosh per passing wall. */
+  #runSounds(sim: Simulation, stepMs: number): void {
+    const audio = this.#o.audio;
+    this.#engine ??= audio.loop("sfx-engine", { gain: 1 });
+    const t = Math.max(0, Math.min(1, (sim.speed - CALM_SPEED) / (FULL_SPEED - CALM_SPEED)));
+    const steer = Math.max(
+      -1,
+      Math.min(1, (sim.playerX - this.#lastX) / Math.max(0.001, (6 * stepMs) / 1000)),
+    );
+    this.#lastX = sim.playerX;
+    if (this.#engine) {
+      this.#engine.setRate(0.8 + t * 0.55 + Math.abs(steer) * 0.06);
+      this.#engine.setFilter(700 + t * 2200 + Math.abs(steer) * 900);
+      this.#engine.setPan((sim.playerX / sim.arenaHalfWidth) * 0.35);
+      this.#engine.setGain(0.75 + Math.abs(steer) * 0.25);
+    }
+    if (Math.abs(t - this.#intensity) > 0.01) {
+      this.#intensity = t;
+      // The layer comes in under the base at 30 %, full by top speed; the base's low-pass
+      // opens from 3.5 kHz to fully open by just past half speed.
+      audio.setLayer(LAYER, 0.3 + 0.7 * t * t * (3 - 2 * t));
+      audio.setMusicFilter(3500 * Math.pow(20000 / 3500, Math.min(1, t * 1.8)));
+    }
+    for (const obstacle of sim.obstacles) {
+      if (obstacle.z > 0 || this.#passed.has(obstacle.id)) continue;
+      this.#passed.add(obstacle.id);
+      const side = obstacle.x - sim.playerX;
+      const gap = Math.abs(side) - obstacle.halfWidth - sim.playerHalfWidth;
+      if (gap < 0) continue; // a hit: the crash sounds instead
+      const pan = Math.max(-0.8, Math.min(0.8, side / 3));
+      if (gap < NEAR_MISS_GAP) audio.play("sfx-near-miss", { pan, vary: 60 });
+      else audio.play("sfx-pass", { pan, gain: Math.max(0.25, 1 - gap / 4), vary: 120 });
+    }
   }
 
   render(): void {
@@ -147,13 +205,14 @@ export class App implements Scene {
   play(): void {
     if (this.#phase !== "menu" || this.#o.game.paused) return;
     this.#o.audio.unlock();
-    this.#o.audio.play("tap");
+    this.#o.audio.play("ui-tap");
     this.#startRun();
   }
 
   /** Steer the current run: -1 left, +1 right, 0 coast. No effect outside a run or paused. */
   steer(direction: number): void {
     if (this.#o.game.paused) return;
+    if (direction !== 0 && this.#phase === "playing") this.#steered = true;
     this.#sim?.steer(direction);
   }
 
@@ -166,7 +225,9 @@ export class App implements Scene {
       this.#reviveUsed = true;
       // Continue the SAME deterministic run; the sim cleared the obstacles on top of us.
       this.#phase = "playing";
-      this.#o.audio.play("reward");
+      this.#o.audio.sting("ui-fanfare", { duckTo: 0.5 });
+      this.#o.audio.music("music-drive", { fade: 0.8, layers: [LAYER] });
+      this.#intensity = -1;
       this.#o.integration.gameplayStart();
       this.#emit();
       return true;
@@ -187,6 +248,7 @@ export class App implements Scene {
   toMenu(): void {
     this.#phase = "menu";
     this.#sim = null;
+    this.#o.audio.music("music-title");
     this.#emit();
   }
 
@@ -210,8 +272,13 @@ export class App implements Scene {
   #startRun(): void {
     this.#sim = new Simulation({ seed: this.#seedCounter++ });
     this.#reviveUsed = false;
+    this.#steered = false;
     this.#runId += 1;
     this.#phase = "playing";
+    this.#passed.clear();
+    this.#lastX = 0;
+    this.#intensity = -1;
+    this.#o.audio.music("music-drive", { fade: 0.8, layers: [LAYER] });
     this.#o.integration.gameplayStart();
     this.#emit();
   }
@@ -219,8 +286,15 @@ export class App implements Scene {
   async #endRun(): Promise<void> {
     this.#phase = "over";
     this.#o.integration.gameplayStop();
-    this.#o.audio.play("over");
     const score = this.#sim?.score ?? 0;
+    const audio = this.#o.audio;
+    this.#engine?.stop(0.08);
+    this.#engine = null;
+    audio.sting("sfx-crash", { duckTo: 0.15 });
+    audio.sting("sfx-game-over", { delay: 0.7, duckTo: 0.2 });
+    if (score > this.#best && this.#best > 0)
+      audio.sting("ui-fanfare", { delay: 2.4, duckTo: 0.3 });
+    audio.music("music-title", { fade: 3 });
     this.#o.integration.track("run_over", { score });
     if (score > this.#best) {
       this.#best = score;

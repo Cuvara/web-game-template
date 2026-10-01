@@ -6,7 +6,9 @@
   "title.play": "Drive",
   "hud.score": "Score",
   "hud.best": "Best",
+  "hud.objective": "Steer through the gaps in the walls - how far can you get?",
   "hud.pause": "Pause",
+  "hud.near-miss": "Close call!",
   "pause.heading": "Paused",
   "pause.resume": "Resume",
   "over.heading": "Crashed",
@@ -14,5 +16,6 @@
   "over.best": "Best",
   "over.revive": "Watch ad to revive",
   "over.restart": "Race again",
-  "note.no-ad": "No ad available - start a new drive instead."
+  "note.no-ad": "No ad available - start a new drive instead.",
+  "hud.sound": "Sound"
 }

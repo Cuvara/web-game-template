@@ -1,6 +1,9 @@
 # Generated or recorded verbatim; formatting them would change what they record.
 pnpm-lock.yaml
 docs/audits/
+# The golden ports' recorded evidence and measured audio reports, written by their tools.
+examples/*/wgf-golden/baseline/
+examples/*/wgf-golden/library/audio/render-report.json
 # Build and test output (also git-ignored).
 dist/
 build/

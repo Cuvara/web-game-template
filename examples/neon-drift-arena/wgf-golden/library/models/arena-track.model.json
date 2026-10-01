@@ -1,0 +1,139 @@
+{
+  "parts": [
+    {
+      "id": "floor",
+      "shape": "plane",
+      "size": [9.0, 0, 10.0],
+      "position": [0, 0, 0],
+      "material": "grid"
+    },
+    {
+      "id": "lane",
+      "shape": "box",
+      "size": [0.04, 0.012, 10.0],
+      "position": [1.33, 0.006, 0],
+      "mirror": "x",
+      "material": "lane"
+    },
+    {
+      "id": "dash-a",
+      "shape": "box",
+      "size": [0.08, 0.014, 1.6],
+      "position": [0, 0.007, 2.5],
+      "material": "lane"
+    },
+    {
+      "id": "dash-b",
+      "shape": "box",
+      "size": [0.08, 0.014, 1.6],
+      "position": [0, 0.007, -2.5],
+      "material": "lane"
+    },
+    {
+      "id": "grid-a",
+      "shape": "box",
+      "size": [8.4, 0.008, 0.035],
+      "position": [0, 0.004, -3.75],
+      "material": "grid-line"
+    },
+    {
+      "id": "grid-b",
+      "shape": "box",
+      "size": [8.4, 0.008, 0.035],
+      "position": [0, 0.004, -1.25],
+      "material": "grid-line"
+    },
+    {
+      "id": "grid-c",
+      "shape": "box",
+      "size": [8.4, 0.008, 0.035],
+      "position": [0, 0.004, 1.25],
+      "material": "grid-line"
+    },
+    {
+      "id": "grid-d",
+      "shape": "box",
+      "size": [8.4, 0.008, 0.035],
+      "position": [0, 0.004, 3.75],
+      "material": "grid-line"
+    },
+    {
+      "id": "edge",
+      "shape": "box",
+      "size": [0.1, 0.02, 10.0],
+      "position": [4.25, 0.01, 0],
+      "mirror": "x",
+      "material": "edge"
+    },
+    {
+      "id": "rail",
+      "shape": "box",
+      "size": [0.3, 0.42, 10.0],
+      "position": [4.62, 0.21, 0],
+      "taper": [0.6, 1.0],
+      "bevel": 0.04,
+      "mirror": "x",
+      "material": "rail"
+    },
+    {
+      "id": "rail-trim",
+      "shape": "box",
+      "size": [0.05, 0.05, 10.0],
+      "position": [4.5, 0.4, 0],
+      "mirror": "x",
+      "material": "edge"
+    },
+    {
+      "id": "pylon",
+      "shape": "cylinder",
+      "size": [0.12, 2.4, 0.12],
+      "position": [5.05, 1.2, 0],
+      "segments": 8,
+      "bevel": 0.02,
+      "mirror": "x",
+      "material": "rail"
+    },
+    {
+      "id": "pylon-arm",
+      "shape": "box",
+      "size": [0.7, 0.07, 0.12],
+      "position": [4.78, 2.36, 0],
+      "taper": [0.8, 1.0],
+      "bevel": 0.015,
+      "mirror": "x",
+      "material": "rail"
+    },
+    {
+      "id": "pylon-light",
+      "shape": "box",
+      "size": [0.42, 0.05, 0.14],
+      "position": [4.62, 2.3, 0],
+      "material": "light",
+      "mirror": "x"
+    },
+    {
+      "id": "pylon-base",
+      "shape": "cone",
+      "size": [0.38, 0.3, 0.38],
+      "position": [5.05, 0.15, 0],
+      "segments": 6,
+      "mirror": "x",
+      "material": "rail"
+    }
+  ],
+  "materials": [
+    {
+      "id": "grid",
+      "color": "#16162A",
+      "roughness": 0.85,
+      "texture": { "pattern": "checker", "size": 64, "color2": "#0B0B12", "repeat": 8 }
+    },
+    { "id": "grid-line", "color": "#2EF2FF", "emissive": "#2EF2FF", "emissive_strength": 0.35 },
+    { "id": "lane", "color": "#2EF2FF", "emissive": "#2EF2FF", "emissive_strength": 0.8 },
+    { "id": "edge", "color": "#2EF2FF", "emissive": "#2EF2FF", "emissive_strength": 2 },
+    { "id": "rail", "color": "#16162A", "metallic": 0.6, "roughness": 0.4 },
+    { "id": "light", "color": "#EDEBFF", "emissive": "#EDEBFF", "emissive_strength": 3 }
+  ],
+  "pivot": "origin",
+  "budget": { "max_triangles": 4000, "max_texture_edge": 256 }
+}

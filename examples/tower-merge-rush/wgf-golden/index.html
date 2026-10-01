@@ -7,16 +7,32 @@
     <!--
       GOLDEN-RUN REPLAY: the template's index.html with the overlay of
       examples/tower-merge-rush/index.html, written by the Factory's replay developer.
+      Styled in the design's riso-arcade identity: paper, ink, two inks (pink, blue), slab
+      buttons with a hard offset shadow, the bundled display and body faces. The faces and the
+      ui-kit card come from the runtime asset manifest at boot (src/game/runtime-assets.ts
+      writes their @font-face rules and sets --panel); nothing here names an asset file.
     -->
     <style>
+      :root {
+        --paper: #f4ede1;
+        --paper-shade: #e4d9c6;
+        --ink: #1c1a17;
+        --pink: #ff48b0;
+        --blue: #0078bf;
+        --purple: #6c3c9e;
+        --danger: #e3350d;
+        --font-display: "wgf-display";
+        --font-body: "wgf-body";
+        --target: 48px;
+      }
       html,
       body {
         margin: 0;
         height: 100%;
-        background: #0b1026;
-        color: #eef2ff;
+        background: var(--paper);
+        color: var(--ink);
         font:
-          16px/1.4 system-ui,
+          600 16px/1.4 var(--font-body),
           sans-serif;
         overflow: hidden;
         user-select: none;
@@ -32,51 +48,277 @@
       }
       #hud {
         position: absolute;
-        bottom: 4px;
+        bottom: max(4px, env(safe-area-inset-bottom));
         right: 8px;
-        opacity: 0.4;
-        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: 3px;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 12px;
         pointer-events: none;
       }
       #ui {
         position: absolute;
         inset: 0;
         pointer-events: none;
-      }
-      #ui .hud {
-        display: flex;
-        gap: 12px;
-        padding: max(10px, env(safe-area-inset-top)) 14px 0;
-        font-weight: 700;
-      }
-      #ui .spacer {
-        flex: 1;
-      }
-      #ui .screen {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 14px;
-        padding: 24px;
-        box-sizing: border-box;
-        text-align: center;
-        background: rgba(11, 16, 38, 0.8);
-        pointer-events: auto;
+        font-family: var(--font-body), sans-serif;
       }
       #ui [hidden] {
         display: none !important;
       }
-      #ui h1 {
+      #ui img {
+        -webkit-user-drag: none;
+      }
+
+      /* HUD: chips on the left, controls on the right, the objective under them. */
+      #ui .hud {
+        display: flex;
+        gap: 8px;
+        padding: max(10px, env(safe-area-inset-top)) 120px 0 max(10px, env(safe-area-inset-left));
+      }
+      #ui .chip {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 64px;
+        padding: 3px 10px 4px;
+        background: var(--paper);
+        border: 3px solid var(--ink);
+        border-radius: 4px;
+        box-shadow: 3px 3px 0 var(--ink);
+        line-height: 1.05;
+      }
+      #ui .chip small {
+        font:
+          400 14px/1.1 var(--font-display),
+          sans-serif;
+        letter-spacing: 0.02em;
+        color: var(--purple);
+        text-transform: uppercase;
+      }
+      #ui .chip b {
+        font:
+          400 20px/1.15 var(--font-display),
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+      }
+      #ui .chip.next {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0 4px;
+        max-width: 112px;
+      }
+      #ui .chip.next small {
+        flex-basis: 100%;
+        text-align: center;
+      }
+      #ui .chip.next img {
+        width: 30px;
+        height: 30px;
+        margin: -4px 0 -2px;
+      }
+      #ui .chip.next b {
+        color: var(--ink);
+      }
+      #ui .objective {
+        position: absolute;
+        top: calc(max(10px, env(safe-area-inset-top)) + 66px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: min(92vw, 560px);
         margin: 0;
-        font-size: clamp(28px, 8vmin, 56px);
-        color: #ffd166;
+        padding: 6px 14px;
+        box-sizing: border-box;
+        text-align: center;
+        font-size: 16px;
+        background: rgba(244, 237, 225, 0.92);
+        border: 2px solid var(--ink);
+        border-radius: 4px;
+      }
+      #ui .controls {
+        position: absolute;
+        top: max(10px, env(safe-area-inset-top));
+        right: max(10px, env(safe-area-inset-right));
+        display: flex;
+        gap: 8px;
+        pointer-events: auto;
+      }
+
+      /* Buttons: risograph slabs. A press drops the slab onto its shadow. */
+      #ui button {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-width: var(--target);
+        min-height: var(--target);
+        margin: 0;
+        padding: 10px 22px;
+        border: 3px solid var(--ink);
+        border-radius: 4px;
+        box-shadow: 4px 4px 0 var(--ink);
+        font:
+          400 18px/1.1 var(--font-display),
+          sans-serif;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--ink);
+        background: var(--pink);
+        cursor: pointer;
+        transition:
+          transform 60ms steps(2),
+          box-shadow 60ms steps(2);
+        -webkit-tap-highlight-color: transparent;
+      }
+      #ui button:hover {
+        filter: saturate(1.15) brightness(1.04);
+      }
+      #ui button:active {
+        transform: translate(4px, 4px);
+        box-shadow: 0 0 0 var(--ink);
+      }
+      #ui button:focus-visible {
+        outline: 3px solid var(--blue);
+        outline-offset: 4px;
+      }
+      #ui button:disabled {
+        opacity: 0.55;
+        cursor: default;
+        transform: translate(4px, 4px);
+        box-shadow: none;
+      }
+      #ui button .icon {
+        width: 24px;
+        height: 24px;
+        flex: none;
+      }
+      #ui button.big {
+        min-height: 60px;
+        padding: 12px 34px;
+        font-size: 24px;
+      }
+      #ui button.big .icon {
+        width: 30px;
+        height: 30px;
+      }
+      #ui button.secondary {
+        background: var(--purple);
+        color: var(--paper);
+        font-size: 16px;
+      }
+      #ui button.secondary .icon {
+        filter: invert(0.96);
+      }
+      #ui button.icon-btn {
+        width: var(--target);
+        height: var(--target);
+        padding: 0;
+        background: var(--paper);
+      }
+      #ui button.icon-btn .icon {
+        width: 28px;
+        height: 28px;
+      }
+      #ui button.icon-btn[aria-pressed="false"] {
+        background: var(--paper-shade);
+      }
+      #ui button.icon-btn[aria-pressed="false"]::after {
+        content: "";
+        position: absolute;
+        width: 34px;
+        height: 4px;
+        background: var(--danger);
+        border: 1px solid var(--ink);
+        transform: rotate(-45deg);
+      }
+
+      /* Screens: a card on the backdrop, the ui-kit drawing as its 9-slice frame. */
+      #ui .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        box-sizing: border-box;
+        text-align: center;
+        background: radial-gradient(circle, rgba(28, 26, 23, 0.16) 1.2px, transparent 1.6px) 0 0 /
+          7px 7px rgba(244, 237, 225, 0.42);
+        pointer-events: auto;
+      }
+      #ui .card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        width: min(92vw, 480px);
+        max-height: calc(100% - 8px);
+        overflow: auto;
+        padding: 26px 24px 30px;
+        box-sizing: border-box;
+        background: var(--paper);
+        border: 3px solid var(--ink);
+        box-shadow: 8px 8px 0 var(--ink);
+        animation: stamp 260ms steps(4) both;
+      }
+      #ui[data-art="manifest"] .card {
+        border: 30px solid transparent;
+        border-image: var(--panel) 32 fill / 30px stretch;
+        box-shadow: none;
+        padding: 0 6px 8px;
+        background: none;
+      }
+      #ui [data-screen="start"] .card {
+        width: min(94vw, 560px);
+      }
+      #ui h1,
+      #ui h2 {
+        margin: 0;
+        font:
+          400 32px/1.1 var(--font-display),
+          sans-serif;
+        color: var(--purple);
+        text-transform: uppercase;
+      }
+      #ui h1 .wordmark {
+        display: block;
+        width: min(80vw, 460px);
+        height: auto;
+        margin: -6px auto 0;
       }
       #ui p {
         margin: 0;
-        max-width: 32em;
+        max-width: 30em;
+      }
+      #ui .result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #ui .result small {
+        font:
+          400 16px/1.1 var(--font-display),
+          sans-serif;
+        color: var(--purple);
+        text-transform: uppercase;
+      }
+      #ui .result b {
+        font:
+          400 56px/1 var(--font-display),
+          sans-serif;
+        color: var(--purple);
+        text-shadow:
+          4px 3px 0 var(--pink),
+          7px 5px 0 var(--blue);
+      }
+      #ui .best {
+        font:
+          400 18px/1.2 var(--font-display),
+          sans-serif;
+        color: var(--purple);
       }
       #ui .row {
         display: flex;
@@ -84,31 +326,61 @@
         gap: 10px;
         justify-content: center;
       }
-      #ui button {
-        min-width: 44px;
-        min-height: 44px;
-        padding: 12px 22px;
-        border: 0;
-        border-radius: 10px;
-        font: inherit;
-        font-weight: 800;
-        color: #0b1026;
-        background: #ffd166;
-        cursor: pointer;
-      }
-      #ui button.secondary {
-        background: #06d6a0;
-      }
-      #ui button.pause {
-        position: absolute;
-        top: max(6px, env(safe-area-inset-top));
-        right: 8px;
-        padding: 6px 12px;
-        pointer-events: auto;
-      }
       #ui .note {
         min-height: 1.4em;
-        color: #ffadad;
+        color: var(--ink);
+        font-weight: 700;
+      }
+      #ui .note:not(:empty) {
+        padding: 4px 10px;
+        border-left: 5px solid var(--danger);
+        background: var(--paper-shade);
+      }
+      #ui .bump {
+        animation: bump 240ms ease-out;
+      }
+      @keyframes bump {
+        40% {
+          transform: scale(1.25);
+        }
+      }
+      @keyframes stamp {
+        from {
+          transform: scale(1.12) rotate(-1.5deg);
+          opacity: 0;
+        }
+      }
+      @media (max-width: 480px) {
+        #ui .hud {
+          gap: 6px;
+          padding-right: 116px;
+        }
+        #ui .chip {
+          min-width: 50px;
+          padding: 2px 5px 3px;
+        }
+        #ui .chip.next {
+          max-width: 92px;
+        }
+        #ui .objective {
+          top: calc(max(10px, env(safe-area-inset-top)) + 64px);
+          font-size: 14px;
+        }
+        #ui button.big {
+          font-size: 20px;
+        }
+      }
+      /* A portrait phone shows the next piece large on the board; the HUD keeps score and best. */
+      @media (orientation: portrait) and (max-width: 600px) {
+        #ui .chip.next {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #ui .card,
+        #ui .bump {
+          animation: none;
+        }
       }
     </style>
   </head>

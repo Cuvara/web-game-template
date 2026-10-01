@@ -1,0 +1,309 @@
+{
+  "verdict": "PASS",
+  "commit": "3ec5539f2c18afaedb6dcacf56c29274d2387349",
+  "checks": [
+    {
+      "id": "assets.present",
+      "status": "PASS",
+      "required": true,
+      "summary": "9 required asset(s) delivered, none a placeholder, all passing their quality checks",
+      "route": "assets",
+      "measured": {
+        "missing": [],
+        "placeholder": [],
+        "quality_not_pass": [],
+        "ok": 9
+      },
+      "expected": "every required-tier asset: a manifest item, placeholder false, quality.verdict pass"
+    },
+    {
+      "id": "assets.loaded",
+      "status": "PASS",
+      "required": true,
+      "summary": "every required asset with a file (8) was fetched by the page during play",
+      "route": "develop",
+      "measured": {
+        "fetched": [
+          "/assets/assets.json",
+          "/assets/environments/arena-kit-1.glb",
+          "/assets/environments/arena-kit-2.glb",
+          "/assets/fonts/fonts-1.woff2",
+          "/assets/fonts/fonts-2.woff2",
+          "/assets/fonts/fonts-3.woff2",
+          "/assets/icons/icons-1.svg",
+          "/assets/icons/icons-2.svg",
+          "/assets/icons/icons-3.svg",
+          "/assets/index-CI81-Tpp.js",
+          "/assets/index-D1nhyusT.js",
+          "/assets/models/craft.glb",
+          "/assets/models/wall.glb",
+          "/assets/textures/sky.png",
+          "/assets/ui/ui-kit.svg",
+          "/assets/ui/wordmark.svg",
+          "/assets/vfx/crash-vfx.png"
+        ],
+        "unfetched": [],
+        "failed_requests": [],
+        "no_file": [],
+        "runtime_manifest_fetched": true
+      },
+      "expected": "every required asset's file (runtime manifest url/atlas) fetched with a 2xx/3xx"
+    },
+    {
+      "id": "assets.runtime",
+      "status": "PASS",
+      "required": true,
+      "summary": "all 9 required assets exist, are referenced, loaded, and - for entity assets - rendered and visible in play",
+      "route": "develop",
+      "measured": {
+        "arena-kit": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "role": "environment",
+          "failed_at": null
+        },
+        "craft": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "rendered": true,
+          "visible": true,
+          "visible_measured": {
+            "largest_area_fraction": 0.0208,
+            "box_not_background": 0.9634
+          },
+          "role": "player",
+          "failed_at": null
+        },
+        "crash-vfx": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "role": "vfx",
+          "failed_at": null
+        },
+        "fonts": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "role": "font",
+          "failed_at": null
+        },
+        "icons": {
+          "exists": true,
+          "role": "icon",
+          "failed_at": null
+        },
+        "sky": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "role": "background",
+          "failed_at": null
+        },
+        "ui-kit": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "role": "ui",
+          "failed_at": null
+        },
+        "wall": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "rendered": true,
+          "visible": true,
+          "visible_measured": {
+            "largest_area_fraction": 0.0387,
+            "box_not_background": 0.8467
+          },
+          "role": "threat",
+          "failed_at": null
+        },
+        "wordmark": {
+          "exists": true,
+          "referenced": true,
+          "loaded": true,
+          "role": "ui",
+          "failed_at": null
+        }
+      },
+      "expected": "exists -> referenced -> loaded -> rendered -> visible for every required asset (rendered and visible for roles collectible, goal, hazard, player, projectile, target, threat)"
+    },
+    {
+      "id": "assets.used",
+      "status": "PASS",
+      "required": true,
+      "summary": "all 8 readable entities are drawn from runtime assets",
+      "route": "develop",
+      "project": "desktop",
+      "measured": {
+        "entities": 8,
+        "unreported": [],
+        "not_from_asset": [],
+        "unknown_asset": []
+      },
+      "expected": "every goal, player, projectile, target, threat entity: asset set, render in ['asset', 'composite']",
+      "assets": ["craft", "wall"]
+    },
+    {
+      "id": "scene.no_primitives",
+      "status": "PASS",
+      "required": true,
+      "summary": "none of 8 readable entities is drawn as a primitive",
+      "route": "develop",
+      "project": "desktop",
+      "measured": {
+        "primitive": [],
+        "unreported": []
+      },
+      "expected": "no readable-role entity with render `primitive`",
+      "assets": ["craft", "wall"]
+    },
+    {
+      "id": "ui.overlap",
+      "status": "PASS",
+      "required": true,
+      "summary": "no interactive element overlaps another or the HUD text",
+      "route": "develop",
+      "project": "desktop",
+      "measured": [],
+      "expected": "< 16 px shared area"
+    },
+    {
+      "id": "ui.text",
+      "status": "PASS",
+      "required": true,
+      "summary": "all 45 measured texts meet contrast and size",
+      "route": "develop",
+      "project": "desktop",
+      "measured": {
+        "low_contrast": [],
+        "too_small": [],
+        "measured": 45,
+        "undetermined": 0
+      },
+      "expected": {
+        "contrast": ">= 4.5:1 (large text >= 3.0:1)",
+        "font_px": ">= 12"
+      }
+    },
+    {
+      "id": "ui.styled",
+      "status": "PASS",
+      "required": true,
+      "summary": "no control is drawn in the browser's default style",
+      "route": "develop",
+      "project": "desktop",
+      "measured": [],
+      "expected": "every control's computed style differs from the user-agent default"
+    },
+    {
+      "id": "ui.states",
+      "status": "PASS",
+      "required": true,
+      "summary": "seen: lost, retry",
+      "route": "develop",
+      "project": "desktop",
+      "measured": ["lost", "paused", "playing", "retry", "title"],
+      "expected": ["lost", "retry"],
+      "frames": ["state-lost", "state-retry"]
+    },
+    {
+      "id": "assets.used",
+      "status": "PASS",
+      "required": true,
+      "summary": "all 10 readable entities are drawn from runtime assets",
+      "route": "develop",
+      "project": "mobile",
+      "measured": {
+        "entities": 10,
+        "unreported": [],
+        "not_from_asset": [],
+        "unknown_asset": []
+      },
+      "expected": "every goal, player, projectile, target, threat entity: asset set, render in ['asset', 'composite']",
+      "assets": ["craft", "wall"]
+    },
+    {
+      "id": "scene.no_primitives",
+      "status": "PASS",
+      "required": true,
+      "summary": "none of 10 readable entities is drawn as a primitive",
+      "route": "develop",
+      "project": "mobile",
+      "measured": {
+        "primitive": [],
+        "unreported": []
+      },
+      "expected": "no readable-role entity with render `primitive`",
+      "assets": ["craft", "wall"]
+    },
+    {
+      "id": "ui.targets",
+      "status": "PASS",
+      "required": true,
+      "summary": "all 5 measured targets are at least 48 px",
+      "route": "develop",
+      "project": "mobile",
+      "measured": {
+        "small": [],
+        "measured": 5
+      },
+      "expected": ">= 48 x 48 CSS px"
+    },
+    {
+      "id": "ui.overlap",
+      "status": "PASS",
+      "required": true,
+      "summary": "no interactive element overlaps another or the HUD text",
+      "route": "develop",
+      "project": "mobile",
+      "measured": [],
+      "expected": "< 16 px shared area"
+    },
+    {
+      "id": "ui.text",
+      "status": "PASS",
+      "required": true,
+      "summary": "all 45 measured texts meet contrast and size",
+      "route": "develop",
+      "project": "mobile",
+      "measured": {
+        "low_contrast": [],
+        "too_small": [],
+        "measured": 45,
+        "undetermined": 0
+      },
+      "expected": {
+        "contrast": ">= 4.5:1 (large text >= 3.0:1)",
+        "font_px": ">= 12"
+      }
+    },
+    {
+      "id": "ui.styled",
+      "status": "PASS",
+      "required": true,
+      "summary": "no control is drawn in the browser's default style",
+      "route": "develop",
+      "project": "mobile",
+      "measured": [],
+      "expected": "every control's computed style differs from the user-agent default"
+    },
+    {
+      "id": "ui.states",
+      "status": "PASS",
+      "required": true,
+      "summary": "seen: lost, retry",
+      "route": "develop",
+      "project": "mobile",
+      "measured": ["lost", "paused", "playing", "retry", "title"],
+      "expected": ["lost", "retry"],
+      "frames": ["state-lost", "state-retry"]
+    }
+  ],
+  "failed": [],
+  "routes": []
+}
