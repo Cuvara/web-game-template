@@ -11,14 +11,13 @@
 // WGF_ENGINE and picks the engine from the argument at run time.
 
 import type { Renderer } from "@wgf/game-core";
-
-export type Engine = "pixijs" | "phaserjs" | "threejs";
+import type { EngineType } from "../core/game-config.js";
 
 /**
  * The engine's renderer. `engine`, if passed, must be the one the build was made for — a
  * mismatch means the code and the config disagree, and the other engine is not in the bundle.
  */
-export async function createRenderer(engine?: Engine): Promise<Renderer> {
+export async function createRenderer(engine?: EngineType): Promise<Renderer> {
   const built = import.meta.env.WGF_ENGINE;
   if (built !== undefined && engine !== undefined && engine !== built) {
     throw new Error(

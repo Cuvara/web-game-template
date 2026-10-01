@@ -76,35 +76,9 @@ Additive — contract stays `2`, no new dependency, no existing behaviour change
 
 ### Phaser as a second 2D engine
 
-`engine.type` accepts `phaserjs`, implemented by `@wgf/phaser-framework` (Phaser 3.90.0).
-Additive — contract stays `2`, `pixijs` remains the 2D default and what an untouched scaffold
-carries, and no existing build changes. This is the framework increment only: the engine
-matrix suites (`ALL_ENGINES` in `scripts/_shared.mjs`, the SDK browser matrix) still cover
-`pixijs` and `threejs`, and the Factory does not yet offer `phaserjs` in a tech plan.
-
-#### Added
-
-- **`PhaserRenderer`** — a `Renderer` like the other two. Phaser's own `TimeStep` is stopped
-  the moment it boots and the renderer steps Phaser once per drawn frame from `render()`, so
-  `@wgf/game-core`'s fixed-timestep loop stays the only loop: the simulation and the drawing
-  cannot disagree about how much time passed, and `Game.pause()` still stops everything during
-  an ad break. `destroy()` performs one manual step after `game.destroy(true)`, because Phaser
-  defers its teardown to the next step and with the TimeStep stopped there would never be one.
-- **`src/rendering/phaserjs/`** — the only place a game may import `phaser`, matching the
-  existing `pixijs` and `threejs` slots.
-- **`pnpm build:engine <engine.type>`** — builds the template against one engine without
-  editing `game.config.yaml`, so an engine the committed config does not name is still proved
-  by the normal build and the unchanged e2e suite. `verify.yml` runs it for every other engine
-  the template implements: an engine nothing builds is an engine that rots.
-- **`tests/e2e/lifecycle.spec.ts`** — asserts the built game stops stepping _and_ drawing
-  while the tab is hidden and resumes with it. That is the portal's ad-break path, and it is
-  what catches a renderer that kept a loop of its own.
-
-#### Changed
-
-- `Renderer.kind` widens to `"pixijs" | "phaserjs" | "threejs"`, and `ENGINES` in
-  `src/core/game-config.ts` gains `phaserjs`. A game that pins an earlier ref is unaffected;
-  the enum only widens.
+Released as [1.2.0] below, and merged back into main. Unchanged since: the engine-matrix
+suites (`ALL_ENGINES` in `scripts/_shared.mjs`, the SDK browser matrix) still cover `pixijs`
+and `threejs`, and the Factory does not yet offer `phaserjs` in a tech plan.
 
 ### Three.js game foundation (`wgf.template.version` 1.2.0)
 
@@ -220,6 +194,42 @@ game written against contract 1 needs its game code moved into `createGame` (bel
   and production-build docs describe per-platform builds and packaging; the adapter table
   lists all eight platforms; Y8, GameDistribution and GameMonetize have Factory core profiles
   at `1.0.0` (marked unverified there).
+
+## [1.2.0] — 2026-09-28
+
+Phaser as a second 2D engine. `engine.type` accepts `phaserjs` alongside `pixijs` and
+`threejs`; a title gains it by naming it in its tech plan. Nothing about an existing PixiJS or
+Three.js game changes — both build, boot and smoke exactly as before — and no game is obliged
+to move.
+
+### Added
+
+- **`@wgf/phaser-framework`** (`packages/phaser-framework/`, Phaser 3.90.0): `PhaserRenderer`
+  behind the existing `Renderer` seam. Phaser's own TimeStep is stopped the moment it boots
+  and the renderer steps Phaser once per drawn frame, so `@wgf/game-core` remains the only
+  loop: one `requestAnimationFrame`, one clock, and `Game.pause()` still stops everything
+  during an ad break. `destroy()` steps Phaser once after `game.destroy(true)` because Phaser
+  defers its teardown to the next step, which a stopped TimeStep would never deliver.
+  Gameplay that must be frame-rate independent belongs in game-core's fixed `update(stepMs)`;
+  Phaser scene `update(time, delta)` is for presentation.
+- `src/rendering/phaserjs/`, the game's own Phaser rendering code, alongside the existing
+  `pixijs/` and `threejs/` directories.
+- **`pnpm build:engine <engine.type>`** (`scripts/verify/engine-build.mjs`): builds against
+  the committed config with only `engine.type` changed, so an engine the config does not name
+  is still built and smoke-tested. `verify.yml` runs it for every other engine.
+- `tests/e2e/lifecycle.spec.ts`: the built game stops stepping and drawing while the tab is
+  hidden and resumes with it — the ad-break requirement every profile states, and the check
+  that an engine shipping its own loop has not kept it running.
+
+### Changed
+
+- `import.meta.env.WGF_ENGINE` is defined from `game.config.yaml` at build time
+  (`scripts/build/game-config-plugin.ts`), and `createRenderer` compares against it directly.
+  Rollup drops the engines a build does not use: a PixiJS build no longer carries the
+  Three.js chunk, and carries no Phaser. `createRenderer(engine)` still selects at run time in
+  a bundle built without the plugin (the SDK matrix harness), and refuses an engine the build
+  was not made for.
+- `Renderer.kind` accepts `"phaserjs"`.
 
 ## [1.1.0] — 2026-09-24
 

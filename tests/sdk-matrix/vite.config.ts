@@ -1,7 +1,9 @@
 // The SDK matrix harness builds like a game would: the template's real boot pieces
 // (renderer selection, game loop, bindPlatform) and the real adapters from package source,
-// with each portal's SDK replaced by the mock in tests/sdk/portals.ts. Both engines are in
-// the bundle because the engine is a URL parameter here rather than a config choice.
+// with each portal's SDK replaced by the mock in tests/sdk/portals.ts. Every engine is in
+// the bundle because the engine is a URL parameter here rather than a config choice, so
+// every engine package needs an alias, even one the matrix does not drive (phaserjs):
+// without it the import in createRenderer resolves to an unbuilt dist/ and the build fails.
 //
 // Built into /build/sdk-matrix (git-ignored) and served by `vite preview` — never the dev
 // server, like every other Playwright suite in this repository.
@@ -20,6 +22,7 @@ export default defineConfig({
       "@wgf/game-core": packageSource("game-core"),
       "@wgf/platform-sdk": packageSource("platform-sdk"),
       "@wgf/pixi-framework": packageSource("pixi-framework"),
+      "@wgf/phaser-framework": packageSource("phaser-framework"),
       "@wgf/three-framework": packageSource("three-framework"),
     },
   },
