@@ -3,7 +3,7 @@
 // GOLDEN-RUN REPLAY, written by hand for the Factory's golden-run replay developer; not
 // agent-written. TEMPORARY: see ../README.md. The golden ports implement the template's
 // contract 2 - src/game/index.ts, createGame(context) - but the Factory creates its games from
-// its pinned release (v1.2.0), whose main.ts boots the template's own BootScene and knows
+// its pinned release (v1.2.0), whose main.ts starts the template's own boot scene and knows
 // nothing of createGame. The replay developer writes this file over that main.ts, and
 // ./game/context.ts beside it, only when the repository has no src/game/context.ts.
 //
