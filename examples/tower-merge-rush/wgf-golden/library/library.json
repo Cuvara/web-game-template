@@ -1,0 +1,147 @@
+{
+  "library": {
+    "id": "tower-merge-rush-golden",
+    "about": "Production art for the 2D golden run's Tower Merge Rush, in the design's riso-arcade identity kit. Mapped by requirement id for the drop-merge archetype's ids, and by role for any other id the design gives the same role. Every SVG is written by tools/make_art.py (authored for web-game-template, CC0-1.0). The fonts are subset WOFF2 builds of OFL-1.1 Google Fonts families; their licences are fonts/*-OFL.txt."
+  },
+  "items": [
+    {
+      "requirement": "pieces",
+      "files": [
+        "svg/pieces/piece-1.svg",
+        "svg/pieces/piece-2.svg",
+        "svg/pieces/piece-3.svg",
+        "svg/pieces/piece-4.svg",
+        "svg/pieces/piece-5.svg",
+        "svg/pieces/piece-6.svg",
+        "svg/pieces/piece-7.svg",
+        "svg/pieces/piece-8.svg"
+      ],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "role": "target",
+      "files": [
+        "svg/pieces/piece-1.svg",
+        "svg/pieces/piece-2.svg",
+        "svg/pieces/piece-3.svg",
+        "svg/pieces/piece-4.svg",
+        "svg/pieces/piece-5.svg",
+        "svg/pieces/piece-6.svg",
+        "svg/pieces/piece-7.svg",
+        "svg/pieces/piece-8.svg"
+      ],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "requirement": "track-frame",
+      "files": ["svg/board/track-frame.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "role": "environment",
+      "files": ["svg/board/track-frame.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "requirement": "backdrop",
+      "files": ["svg/board/backdrop.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "role": "background",
+      "files": ["svg/board/backdrop.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "requirement": "merge-vfx",
+      "files": ["svg/vfx/merge-burst.svg", "svg/vfx/merge-streak.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "role": "vfx",
+      "files": ["svg/vfx/merge-burst.svg", "svg/vfx/merge-streak.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "requirement": "ui-kit",
+      "files": ["svg/ui/ui-kit.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "requirement": "wordmark",
+      "files": ["svg/ui/wordmark.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py); letters are Bungee outlines (OFL-1.1, The Bungee Project Authors)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "role": "ui",
+      "files": ["svg/ui/ui-kit.svg"],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "requirement": "icons",
+      "files": [
+        "svg/icons/play.svg",
+        "svg/icons/pause.svg",
+        "svg/icons/retry.svg",
+        "svg/icons/menu.svg",
+        "svg/icons/sound.svg",
+        "svg/icons/ad.svg"
+      ],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "role": "icon",
+      "files": [
+        "svg/icons/play.svg",
+        "svg/icons/pause.svg",
+        "svg/icons/retry.svg",
+        "svg/icons/menu.svg",
+        "svg/icons/sound.svg",
+        "svg/icons/ad.svg"
+      ],
+      "license": "CC0-1.0",
+      "source": "authored for web-game-template examples/tower-merge-rush/wgf-golden/library (tools/make_art.py)",
+      "author": "Cuvara web-game-template contributors"
+    },
+    {
+      "requirement": "fonts",
+      "files": ["fonts/Bungee.woff2", "fonts/Figtree.woff2"],
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/tree/main/ofl (bungee, figtree); subset to Latin-1 by tools/make_art.py",
+      "author": "The Bungee Project Authors (David Jonathan Ross); The Figtree Project Authors (Erik Kennedy)",
+      "attribution": "Bungee and Figtree, SIL Open Font License 1.1; see fonts/Bungee-OFL.txt and fonts/Figtree-OFL.txt"
+    },
+    {
+      "role": "font",
+      "files": ["fonts/Bungee.woff2", "fonts/Figtree.woff2"],
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/tree/main/ofl (bungee, figtree); subset to Latin-1 by tools/make_art.py",
+      "author": "The Bungee Project Authors (David Jonathan Ross); The Figtree Project Authors (Erik Kennedy)",
+      "attribution": "Bungee and Figtree, SIL Open Font License 1.1; see fonts/Bungee-OFL.txt and fonts/Figtree-OFL.txt"
+    }
+  ]
+}

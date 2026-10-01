@@ -1,0 +1,678 @@
+{
+  "title": {
+    "state": "title",
+    "metrics": {
+      "score": 0,
+      "best": 0,
+      "next-piece": 1,
+      "merges": 0
+    },
+    "entities": [],
+    "inputs": [
+      {
+        "action": "play",
+        "input": {
+          "type": "pointer",
+          "x": 196,
+          "y": 483
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "gameplay": {
+    "state": "playing",
+    "metrics": {
+      "score": 33,
+      "best": 0,
+      "next-piece": 2,
+      "merges": 7
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 6,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-1",
+        "role": "target",
+        "x": 61,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-3",
+        "render": "asset"
+      },
+      {
+        "id": "tower-2",
+        "role": "target",
+        "x": 116,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-2",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 197,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 253,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 309,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 365,
+          "y": 364
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 359,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "merge": {
+    "state": "playing",
+    "metrics": {
+      "score": 47,
+      "best": 0,
+      "next-piece": 3,
+      "merges": 10
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 6,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 84,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 140,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 197,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 253,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 309,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 365,
+          "y": 364
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 359,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "paused": {
+    "state": "paused",
+    "metrics": {
+      "score": 47,
+      "best": 0,
+      "next-piece": 3,
+      "merges": 10
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 6,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "resume",
+        "input": {
+          "type": "pointer",
+          "x": 197,
+          "y": 384
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "near-full": {
+    "state": "playing",
+    "metrics": {
+      "score": 174,
+      "best": 0,
+      "next-piece": 4,
+      "merges": 22
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 6,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-1",
+        "role": "target",
+        "x": 61,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-2",
+        "role": "target",
+        "x": 116,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-3",
+        "role": "target",
+        "x": 171,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      },
+      {
+        "id": "tower-4",
+        "role": "target",
+        "x": 225,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-6",
+        "role": "target",
+        "x": 335,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 309,
+          "y": 364
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 359,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "game-over": {
+    "state": "lost",
+    "metrics": {
+      "score": 273,
+      "best": 273,
+      "next-piece": 4,
+      "merges": 32
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 6,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-1",
+        "role": "target",
+        "x": 61,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-2",
+        "role": "target",
+        "x": 116,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      },
+      {
+        "id": "tower-3",
+        "role": "target",
+        "x": 171,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-4",
+        "role": "target",
+        "x": 225,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-6",
+        "render": "asset"
+      },
+      {
+        "id": "tower-5",
+        "role": "target",
+        "x": 280,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-5",
+        "render": "asset"
+      },
+      {
+        "id": "tower-6",
+        "role": "target",
+        "x": 335,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-4",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "restart",
+        "input": {
+          "type": "pointer",
+          "x": 197,
+          "y": 471
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  },
+  "retry-playing": {
+    "state": "playing",
+    "metrics": {
+      "score": 2,
+      "best": 273,
+      "next-piece": 1,
+      "merges": 0
+    },
+    "entities": [
+      {
+        "id": "tower-0",
+        "role": "target",
+        "x": 6,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-1",
+        "render": "asset"
+      },
+      {
+        "id": "tower-3",
+        "role": "target",
+        "x": 171,
+        "y": 412,
+        "w": 52,
+        "h": 112,
+        "visible": true,
+        "asset": "pieces-1",
+        "render": "asset"
+      }
+    ],
+    "inputs": [
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 84,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 140,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 253,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 309,
+          "y": 364
+        }
+      },
+      {
+        "action": "drop",
+        "input": {
+          "type": "pointer",
+          "x": 365,
+          "y": 364
+        }
+      },
+      {
+        "action": "pause",
+        "input": {
+          "type": "pointer",
+          "x": 359,
+          "y": 34
+        }
+      }
+    ],
+    "assets_loaded": [
+      "backdrop",
+      "fonts",
+      "fonts-1",
+      "fonts-2",
+      "icons",
+      "icons-1",
+      "icons-2",
+      "icons-3",
+      "icons-4",
+      "icons-5",
+      "icons-6",
+      "merge-vfx",
+      "merge-vfx-1",
+      "merge-vfx-2",
+      "pieces",
+      "pieces-1",
+      "pieces-2",
+      "pieces-3",
+      "pieces-4",
+      "pieces-5",
+      "pieces-6",
+      "track-frame",
+      "ui-kit",
+      "wordmark"
+    ]
+  }
+}

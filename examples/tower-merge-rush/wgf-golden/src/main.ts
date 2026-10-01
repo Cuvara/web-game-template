@@ -5,22 +5,26 @@
 // examples/tower-merge-rush in place of the template boot scene - ported by the Factory's
 // golden-run replay developer, not written by an agent. The boot lines are the template's
 // own, unchanged, so the Factory's `sdk` step can route them through its integration.
+// Loading also brings in the design's art: public/assets/assets.json is fetched once, the
+// identity's fonts are bundled through @font-face and awaited, and the board's textures and
+// the overlay's images are loaded by asset id before the title screen shows.
 
 import { Game } from "@wgf/game-core";
 import { createPlatform } from "@wgf/platform-sdk";
 import availableLocales from "virtual:locales";
+import { RuntimeAssets } from "./assets/runtime-assets.js";
 import { Audio } from "./audio/audio.js";
 import { config, primaryPlatform } from "./core/config.js";
 import { loadLocale } from "./core/i18n.js";
 import { installProbe } from "./core/probe.js";
 import { App } from "./game/app.js";
 import { installPlayProbe } from "./game/play-probe.js";
-import { bindColumnInput } from "./input/columns.js";
+import { bindColumnInput, columnFromClientX } from "./input/columns.js";
 import { bindPlatform } from "./platform/bind.js";
 import { DefaultGameIntegration } from "./platform/default-integration.js";
 import { createRenderer } from "./rendering/create-renderer.js";
 import { createBoardView } from "./rendering/pixijs/board.js";
-import { Screens } from "./ui/screens.js";
+import { Screens, uiArt } from "./ui/screens.js";
 
 function element(id: string): HTMLElement {
   const found = document.getElementById(id);
@@ -47,15 +51,23 @@ async function main(): Promise<void> {
   document.documentElement.lang = i18n.locale;
   platform.reportLoadingProgress(0.4);
 
+  const assets = await RuntimeAssets.fetch();
+  await assets.loadFonts({ id: "fonts", role: "font" });
+  const art = uiArt(assets);
+  await assets.preloadImages(art.ids);
+  platform.reportLoadingProgress(0.5);
+
   const renderer = await createRenderer(config.engine.type);
   platform.reportLoadingProgress(0.6);
   await renderer.init({
     container,
     width: container.clientWidth || window.innerWidth,
     height: container.clientHeight || window.innerHeight,
-    background: 0x0b1026,
+    background: 0xf4ede1,
   });
-  const view = createBoardView(renderer);
+  const view = await createBoardView(renderer, assets, { next: i18n.t("hud.next") }, (share) =>
+    platform.reportLoadingProgress(0.6 + share * 0.15),
+  );
 
   const game = new Game();
   const audio = new Audio();
@@ -67,17 +79,27 @@ async function main(): Promise<void> {
   });
   const integration = new DefaultGameIntegration(game, platform);
 
+  let presentedAt = -Infinity;
   // Forward declaration: the Screens callbacks close over `app`, which is built after them.
   // eslint-disable-next-line prefer-const
   let app: App;
-  const screens = new Screens(uiRoot, i18n, {
-    begin: () => app.dropAnywhere(),
-    continue: () => void app.continue(),
-    double: () => void app.doubleScore(),
-    restart: () => void app.restart(),
-    pause: () => app.pauseMenu(),
-    resume: () => app.resumeMenu(),
-  });
+  const screens = new Screens(
+    uiRoot,
+    i18n,
+    {
+      begin: () => app.dropAnywhere(),
+      continue: () => void app.continue(),
+      double: () => void app.doubleScore(),
+      restart: () => void app.restart(),
+      pause: () => app.pauseMenu(),
+      resume: () => app.resumeMenu(),
+      toggleSound: () => {
+        audio.setUserMuted(!audio.userMuted);
+        return !audio.userMuted;
+      },
+    },
+    art,
+  );
   app = new App({
     game,
     integration,
@@ -85,7 +107,14 @@ async function main(): Promise<void> {
     probe: hud,
     view,
     audio,
-    present: () => renderer.render(0),
+    // At most one frame per display frame: a burst of input (or a test's scripted loop)
+    // redraws once, not once per drop; the loop's next frame shows the rest.
+    present: () => {
+      const now = performance.now();
+      if (now - presentedAt < 8) return;
+      presentedAt = now;
+      renderer.render(0);
+    },
   });
   await app.load();
   platform.reportLoadingProgress(0.8);
@@ -110,6 +139,11 @@ async function main(): Promise<void> {
     dropAnywhere: () => app.dropAnywhere(),
     togglePause: () => (game.paused ? app.resumeMenu() : app.pauseMenu()),
   });
+  // The next piece hovers over the column under the pointer.
+  container.addEventListener("pointermove", (event) =>
+    view.hover(columnFromClientX(container, event.clientX)),
+  );
+  container.addEventListener("pointerleave", () => view.hover(null));
 
   platform.reportLoadingProgress(1);
   await platform.signalReady();
@@ -132,7 +166,7 @@ async function main(): Promise<void> {
   });
   installGameHooks(app, game, platform);
   // After installProbe, which replaces window.__wgf__.
-  installPlayProbe({ app, game, surface: container, ui: uiRoot });
+  installPlayProbe({ app, game, surface: container, ui: uiRoot, view, assets });
 
   hud.dataset["ready"] = "true";
 }

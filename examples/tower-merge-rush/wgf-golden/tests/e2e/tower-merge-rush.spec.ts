@@ -152,3 +152,73 @@ test("drives through the hooks on every viewport @responsive", async ({ page }, 
   expect(await page.evaluate(() => (window as unknown as W).__game.levelAt(2))).toBe(1);
   expect(info.project.name).toBeTruthy();
 });
+
+// The art guard. A golden build draws every tower from the design's art: an entity drawn as a
+// primitive, or by no manifest asset, or by a stand-in, fails; so does an asset the runtime
+// manifest lists that the game never fetched. A build with no runtime manifest at all is the
+// greybox, before the assets step - there is no art to hold it to, and the test says so.
+test("draws every tower from the runtime asset manifest and loads all of it @loading @core-loop", async ({
+  page,
+}) => {
+  const fetched = new Set<string>();
+  page.on("response", (response) => {
+    if (response.ok()) fetched.add(new URL(response.url()).pathname);
+  });
+  const manifestResponse = await page.request.get("/assets/assets.json");
+  const isManifest =
+    manifestResponse.ok() && (manifestResponse.headers()["content-type"] ?? "").includes("json");
+  test.skip(!isManifest, "no public/assets/assets.json: a greybox build has no art");
+  const manifest = (await manifestResponse.json()) as {
+    assets: Record<string, { url?: string; placeholder?: boolean; variants?: string[] }>;
+  };
+  const { errors } = await open(page);
+
+  await page.locator('[data-action="play"]').click();
+  const box = (await page.locator("#game").boundingBox())!;
+  for (const col of [0, 2, 4, 6, 1]) {
+    await page.mouse.click(box.x + ((col + 0.5) * box.width) / 7, box.y + box.height * 0.5);
+  }
+  const snap = await page.evaluate(() =>
+    (
+      window as unknown as {
+        __wgf__: {
+          play: {
+            snapshot(): {
+              entities: { id: string; asset: string | null; render: string }[];
+              assets_loaded: string[];
+            };
+          };
+        };
+      }
+    ).__wgf__.play.snapshot(),
+  );
+
+  expect(snap.entities.length).toBeGreaterThan(0);
+  for (const entity of snap.entities) {
+    expect(entity.render, `${entity.id} is drawn as ${entity.render}`).toBe("asset");
+    expect(entity.asset, `${entity.id} names no runtime asset`).not.toBeNull();
+    const entry = manifest.assets[entity.asset!];
+    expect(entry, `${entity.id}: ${entity.asset} is not in assets.json`).toBeDefined();
+    expect(entry!.placeholder, `${entity.id}: ${entity.asset} is a placeholder`).not.toBe(true);
+  }
+
+  // Every asset with a file was requested and loaded (a counted asset's own entry is its
+  // first drawing, so its drawings stand for it).
+  for (const [id, entry] of Object.entries(manifest.assets)) {
+    if (!entry.url) continue;
+    expect(fetched, `${entry.url} (${id}) was never fetched`).toContain(`/assets/${entry.url}`);
+    expect(snap.assets_loaded, `${id} is not in the probe's assets_loaded`).toContain(id);
+  }
+
+  // The UI is set in the bundled faces, never a system fallback.
+  const faces = await page.evaluate(() =>
+    [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family.replace(/"/g, "")),
+  );
+  expect(faces).toContain("wgf-display");
+  expect(faces).toContain("wgf-body");
+  const family = await page
+    .locator('[data-action="pause"]')
+    .evaluate((el) => getComputedStyle(el).fontFamily);
+  expect(family).toContain("wgf-display");
+  expect(errors).toEqual([]);
+});
