@@ -455,10 +455,14 @@ export class Y8Platform implements Platform {
         this.#adInProgress = false;
         endOnScreen();
         const status = info?.breakStatus;
-        const appeared = started || status === "viewed" || status === "dismissed";
-        // A reward break that reported "viewed" without adViewed still means watched through.
-        if (outcome === null && status === "viewed") outcome = "viewed";
-        if (outcome === null && status === "dismissed") outcome = "dismissed";
+        // Only beforeAd proves an ad appeared. breakStatus alone does not: "on a
+        // frequency-capped break, info is just: { breakStatus: "viewed" }", and a capped break
+        // runs neither before-ad nor after-ad (https://docs.y8.com/sdk/advertising/).
+        const appeared = started;
+        // A reward break that opened and reported "viewed" without adViewed still means
+        // watched through.
+        if (started && outcome === null && status === "viewed") outcome = "viewed";
+        if (started && outcome === null && status === "dismissed") outcome = "dismissed";
         if (appeared) this.#usage.recordAdShown(kind);
         resolve({
           result: appeared
@@ -615,6 +619,11 @@ function skipReason(status: string | undefined, fallback: AdSkipReason): AdSkipR
   switch (status) {
     case "frequencyCapped":
       return "too-soon";
+    // Reached only when beforeAd never ran: no ad appeared, whatever the status claims. The
+    // docs give a capped break exactly this shape.
+    case "viewed":
+    case "dismissed":
+      return "not-ready";
     case "noAdPreloaded":
     case "notReady":
     case "timeout":

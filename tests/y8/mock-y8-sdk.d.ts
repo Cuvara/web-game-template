@@ -14,6 +14,7 @@ export type Y8AdScript =
   | "other"
   | "reject"
   | "silent"
+  | "capped-as-viewed"
   | "stall"
   | "late"
   | "duplicate"
