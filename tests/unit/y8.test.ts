@@ -518,6 +518,28 @@ describe("Y8 interstitial", () => {
     },
   );
 
+  // Regression: the docs give a frequency-capped break the info `{ breakStatus: "viewed" }`
+  // with no before-ad or after-ad. The adapter used to count that as an ad shown.
+  it("a break reporting viewed without beforeAd showed nothing", async () => {
+    const { platform, events } = await setup({ ad: "capped-as-viewed" });
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
+    expect(events).toEqual([]);
+    expect(platform.usage.adsShown.interstitial).toBe(0);
+  });
+
+  it("a reward break reporting viewed without beforeAd or adViewed grants nothing", async () => {
+    const { platform } = await setup({ ad: "capped-as-viewed" });
+    await expect(platform.showRewarded()).resolves.toEqual({
+      shown: false,
+      rewarded: false,
+      reason: "not-ready",
+    });
+    expect(platform.usage.adsShown.rewarded).toBe(0);
+  });
+
   it("showAd rejecting resolves unshown as an error", async () => {
     const { platform } = await setup({ ad: "reject" });
     await expect(platform.showInterstitial()).resolves.toEqual({ shown: false, reason: "error" });

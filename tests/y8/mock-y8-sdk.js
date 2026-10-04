@@ -132,6 +132,10 @@ export function createY8Mock(target, options) {
           done("viewed");
         });
         return undefined;
+      case "capped-as-viewed":
+        // A frequency-capped break as the docs describe its info, `{ breakStatus: "viewed" }`,
+        // with no before-ad, after-ad or reward callback.
+        return microtask(() => fire("adBreakDone", { breakStatus: "viewed" }));
       case "silent":
         return undefined;
       default:

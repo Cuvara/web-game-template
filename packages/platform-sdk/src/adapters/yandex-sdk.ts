@@ -21,9 +21,20 @@ export interface YandexAdCallbacks {
   onError?(error: unknown): void;
 }
 
-export interface YandexRewardedCallbacks extends YandexAdCallbacks {
+/**
+ * Not an extension of {@link YandexAdCallbacks}: the rewarded video's onClose carries no
+ * reliable `wasShown`. The docs' callback table says only "Called when the video ad closes"
+ * (the fullscreen ad's row is the one that documents the argument), and the real SDK calls
+ * it with no argument, so a completed rewarded ad would read as unshown.
+ */
+export interface YandexRewardedCallbacks {
+  /** "Called when the video ad is shown on the screen." */
+  onOpen?(): void;
   /** The only signal that a reward was earned. */
   onRewarded?(): void;
+  /** "Called when the video ad closes." Expect no argument. */
+  onClose?(wasShown?: boolean): void;
+  onError?(error: unknown): void;
 }
 
 export interface YandexPlayer {

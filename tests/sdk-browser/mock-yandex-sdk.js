@@ -30,7 +30,7 @@
         calls.push("adv.showRewardedVideo");
         callbacks.onOpen?.();
         callbacks.onRewarded?.();
-        callbacks.onClose?.(true);
+        callbacks.onClose?.(); // the real SDK passes no wasShown here
       },
     },
     EVENTS: {
