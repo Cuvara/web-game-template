@@ -27,9 +27,10 @@ elevated shell on Windows.
 - [docs/sdk.md](docs/sdk.md) — the platform SDK and each adapter's audit
 - [docs/production-build.md](docs/production-build.md) — per-platform builds and packages
 - [docs/testing.md](docs/testing.md) — the three test layers
-- [docs/ci-cd.md](docs/ci-cd.md) — the seven pipelines and the two gates
+- [docs/ci-cd.md](docs/ci-cd.md) — the pipelines, and why none of them publishes
 - [docs/release.md](docs/release.md) — freezing a candidate
-- [docs/publishing.md](docs/publishing.md) — what is automated and what cannot be
+- [docs/publishing.md](docs/publishing.md) — who publishes (the Factory's publisher, with a
+  person authorizing it), never CI
 - [examples/poki-compliance-demo](examples/poki-compliance-demo/README.md) — every Poki SDK
   path, audited and tested
 - [compliance/poki-compliance-report.md](compliance/poki-compliance-report.md) — what is
@@ -86,7 +87,7 @@ src/
   ui/ audio/ input/ assets/ analytics/     slots for the game
 
 config/platforms/   platform profiles vendored from the Factory at the pinned version
-scripts/            build, verify, release and publish tooling (plain ESM, no framework)
+scripts/            build, verify and release tooling (plain ESM, no framework)
 tests/              unit, integration, sdk, e2e, verify
 ```
 
@@ -119,17 +120,21 @@ Game code calls `GameIntegration` / `PlatformGameplay`, which drive `@wgf/platfo
 platform has a profile in the Factory and an adapter here, and each is built separately: a
 build carries only its own platform's adapter.
 
-| Platform     | Profile         | Adapter                                                               | Upload automated             |
-| ------------ | --------------- | --------------------------------------------------------------------- | ---------------------------- |
-| Generic Web  | ✅              | ✅                                                                    | n/a — self-hosted            |
-| Yandex Games | ✅              | ✅                                                                    | no — no public API           |
-| Poki         | ✅              | ✅                                                                    | yes — `@poki/cli`            |
-| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                                       | no — no public API           |
-| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves                     | no — email / contact form    |
-| GameDist.    | ✅ (unverified) | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`                | no — developer panel         |
-| Y8           | ✅ (unverified) | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md))          | no — Developer Portal upload |
-| GameMonetize | ✅ (unverified) | ✅ HTML5 SDK — interstitial only; needs a Game ID                     | no — dashboard upload        |
-| GamePix      | proposed        | ✅ JS SDK v3 ([docs/platforms/gamepix.md](docs/platforms/gamepix.md)) | no — dashboard upload        |
+| Platform     | Profile         | Adapter                                                               |
+| ------------ | --------------- | --------------------------------------------------------------------- |
+| Generic Web  | ✅              | ✅                                                                    |
+| Yandex Games | ✅              | ✅                                                                    |
+| Poki         | ✅              | ✅                                                                    |
+| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                                       |
+| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves                     |
+| GameDist.    | ✅ (unverified) | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`                |
+| Y8           | ✅ (unverified) | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md))          |
+| GameMonetize | ✅ (unverified) | ✅ HTML5 SDK — interstitial only; needs a Game ID                     |
+| GamePix      | proposed        | ✅ JS SDK v3 ([docs/platforms/gamepix.md](docs/platforms/gamepix.md)) |
+
+No upload is automated here, for any portal. CI builds, tests and packages; publication is
+the Factory's publisher, with a person logging in to the portal and authorizing the upload
+and the submission ([docs/publishing.md](docs/publishing.md)).
 
 "✅ (unverified)" is a Factory core profile at `1.0.0` marked `status: unverified` there.
 "proposed" is a profile written here (`config/platforms/gamepix.yaml`) that the Factory does
@@ -156,20 +161,24 @@ validation.
 | `build.yml`     | push to `develop`, or called | build + Cloudflare Pages preview     |
 | `verify.yml`    | PR into `main`, or called    | the `verify_suite_green` guard       |
 | `release.yml`   | tag `v*`, or dispatch        | freeze a candidate. Does not publish |
-| `publish.yml`   | dispatch only                | gate **G6**                          |
 | `campaign.yml`  | dispatch only                | gate **G7**                          |
 | `bootstrap.yml` | first push in a new repo     | one-time setup, then deletes itself  |
 
-Outside the seven, `yandex-demo.yml`, `crazygames.yml` and `gamevui-demo.yml` build, audit and
+Outside the six, `yandex-demo.yml`, `crazygames.yml` and `gamevui-demo.yml` build, audit and
 browser-test the compliance examples, and `live-portal-validation.yml` runs the opt-in live SDK
 checks. They guard the adapters; none is a gate.
 
-`publish.yml` and `campaign.yml` run in GitHub environments with required reviewers. That is
-the gate — and both workflows refuse to run if their environment has none, because an
-environment nobody configured is created implicitly with no protection and holds nothing back.
+No workflow publishes to a portal, and no portal credential belongs in the repository or the
+organization. Publication (gate G6) is the Factory's publisher, with a person logging in to the
+portal and authorizing the upload and the submission. `release.yml` stops at a draft GitHub
+Release.
+
+`campaign.yml` runs in a GitHub environment with required reviewers. That is gate G7 — and the
+workflow refuses to run if its environment has none, because an environment nobody configured
+is created implicitly with no protection and holds nothing back.
 
 **Required reviewers are unavailable on private repositories under a free plan.** A private
-game repository on a free organization cannot enforce G6 or G7 this way.
+game repository on a free organization cannot enforce G7 this way.
 
 ## Testing
 

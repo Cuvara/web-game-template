@@ -1,12 +1,13 @@
-# Release — freeze a candidate. It does not publish.
+# Release — freeze a candidate. It does not publish, and no workflow here does.
 #
-# Everything up to the moment a build becomes public is automated here: CI, the verify
-# suite, per-platform packaging, the immutable manifest, checksums, and one
-# platform-publication record per target carrying its assertion results.
+# Everything CI owns is automated here: CI, the verify suite, per-platform packaging, each
+# platform's facts and assertion results, the immutable manifest and checksums.
 #
-# Then it stops. Making a build public is gate G6, which is irreversible and never
-# auto-approves — portals cache and index, so there is no undo. publish.yml is a separate,
-# manually dispatched workflow behind an environment with required reviewers.
+# Then it stops, as a draft GitHub Release. Publishing to a portal is gate G6, which is
+# irreversible and never auto-approves — portals cache and index, so there is no undo. The
+# Factory's publisher does it (web-game-factory, docs/portal-publishing-architecture.md), with
+# a person logging in to the portal and authorizing the upload and the submission. No portal
+# credential lives in this repository, its workflows or the organization.
 #
 # The candidate is immutable from here. Any change produces a new release rather than an
 # edit to this one, which is what makes a rollback a republish of a known-good manifest
@@ -117,7 +118,6 @@ jobs:
           node scripts/release/make-manifest.mjs \
             --release "$RELEASE_ID" --version "$VERSION" \
             --kind "${{ inputs.kind || 'content' }}" --state rc
-          node scripts/publish/make-publication.mjs --release "$RELEASE_ID"
 
       - name: Summary
         env:
@@ -126,7 +126,7 @@ jobs:
           {
             echo "### Release ${RELEASE_ID} — ${{ steps.meta.outputs.version }}"
             echo
-            echo "State \`rc\`, frozen. **Not published** — publication is gate G6, run \`publish.yml\`."
+            echo "State \`rc\`, frozen. **Not published** — publication is gate G6, run by the Factory's publisher with a person authorizing it."
             echo
             echo '```'
             cat "release/${RELEASE_ID}/checksums.txt"
@@ -150,7 +150,7 @@ jobs:
           gh release create "v${VERSION}" \
             --draft \
             --title "${RELEASE_ID} — v${VERSION}" \
-            --notes "Frozen release candidate. Publication requires gate G6 — run publish.yml." \
+            --notes "Frozen release candidate. Publication is gate G6, run by the Factory's publisher." \
             "release/${RELEASE_ID}"/*.zip \
             "release/${RELEASE_ID}/checksums.txt" \
             "release/${RELEASE_ID}/manifest.json" \

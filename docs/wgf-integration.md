@@ -60,7 +60,8 @@ verify    pnpm build:platforms         # build/platforms/<id>/dist + build.json 
         ▼
 release   pnpm release:package  --release rN
           pnpm release:manifest --release rN --version <semver> --state rc
-          pnpm publish:prepare  --release rN
+        ▼
+publish   the Factory's publisher — a person logs in to each portal and authorizes it; not CI
 ```
 
 CI enforces the same gates: `ci.yml` runs lint, typecheck, unit, integration, the SDK

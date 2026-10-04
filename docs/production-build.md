@@ -61,8 +61,8 @@ unzip -l release/r1/<platform>.zip | grep -c '\.map'   # → 0
   `hosting: self-hosted` package is the wrapper `index.html` only.
 - `packages.json` — per package `checksum`, `content_digest`, `files`, `size_mb`,
   `dist_digest` and the build it came from; `checksums.txt`.
-- `manifest.json` (`pnpm release:manifest`) and `publications/<platform>.json`
-  (`pnpm publish:prepare`).
+- `manifest.json` (`pnpm release:manifest`). The platform-publication record is the
+  Factory's (`platform-validate`), not written here.
 
 The packager refuses a build that is missing, built from another commit than `HEAD`, built
 with `portal_configured: false`, changed since it was built (its dist no longer hashes to the

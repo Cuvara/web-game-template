@@ -8,7 +8,6 @@
 //     <platform>.zip     — one package per targeted platform
 //     packages.json      — per package: checksum, content digest, dist digest, build info
 //     checksums.txt
-//     publications/<platform>.json
 //
 // Every platform is built separately (`pnpm build:platforms`), because a build bundles only
 // its own portal's adapter. So <platform>.zip is made from build/platforms/<id>/dist — never
