@@ -10,6 +10,16 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Fixed — Yandex rewarded result
+
+- **Yandex rewarded video resolved unshown.** One `callbacks` object served both ad kinds and
+  took `shown` from `onClose(wasShown)`. Yandex documents `wasShown` for the fullscreen ad;
+  the rewarded video's `onClose` is "Called when the video ad closes" and the real SDK calls
+  it with no argument, so every completed rewarded ad resolved `{ shown: false, rewarded:
+true, reason: "not-ready" }` and was never counted as shown. A rewarded ad is now shown
+  when `onOpen` or `onRewarded` fired; the late reward, the cap, one ad at a time and never
+  rejecting are unchanged. Test fakes now close a rewarded video with `onClose()`.
+
 ### Added — GamePix
 
 Additive — contract stays `2`; existing platforms and their builds are unchanged. A title

@@ -100,11 +100,17 @@ Fixed in this change: the portal stops `GameplayAPI` itself on a tab switch, so
 (the launch ad, 4.7) and mutes on window blur (1.3) — previously only the demo did; a
 second ad while one is open reports `busy`.
 
+Fixed 2026-10-04: a completed rewarded video resolved `{ shown: false, rewarded: true,
+reason: "not-ready" }`. The adapter read `wasShown` from the rewarded `onClose`, but the
+docs' rewarded callback table says only "Called when the video ad closes" (the
+`wasShown` argument is documented in the fullscreen table) and the real SDK passes none.
+A rewarded ad now counts as shown when `onOpen` or `onRewarded` fired; the test fakes
+close a rewarded video with `onClose()` as the SDK does.
+
 Known limitations:
 
 - Needs a real draft to confirm: when the portal's own `start()` runs relative to
-  `game_api_resume`; whether `setData` merges or replaces; a skipped rewarded ad's
-  `onClose` value; whether the launch ad can fire before `init()` resolves.
+  `game_api_resume`; whether `setData` merges or replaces; whether the launch ad can fire before `init()` resolves.
 - No leaderboards, purchases or login — not implemented, and not claimed in capabilities.
 - The 60 s interstitial floor is a local policy; the docs leave frequency to the portal.
 
