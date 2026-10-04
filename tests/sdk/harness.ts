@@ -144,22 +144,26 @@ const yandex: Harness = {
     // The portal raises game_api_pause while its ad is on screen and game_api_resume after
     // (https://yandex.com/dev/games/doc/en/sdk/sdk-events), so the fake does too.
     const emit = (event: string): void => listeners.get(event)?.forEach((l) => l());
+    // Only the fullscreen ad's onClose gets wasShown; the real SDK closes a rewarded video
+    // with onClose() and no argument (https://yandex.com/dev/games/doc/en/sdk/sdk-adv).
+    const close = (callbacks: YandexRewardedCallbacks, rewarded: boolean, wasShown: boolean) =>
+      rewarded ? callbacks.onClose?.() : callbacks.onClose?.(wasShown);
     const playAd = (callbacks: YandexRewardedCallbacks, rewarded: boolean): void => {
       switch (ad) {
         case "play":
           emit("game_api_pause");
           callbacks.onOpen?.();
           if (rewarded) callbacks.onRewarded?.();
-          callbacks.onClose?.(true);
+          close(callbacks, rewarded, true);
           emit("game_api_resume");
           return;
         case "no-fill":
-          callbacks.onClose?.(false);
+          close(callbacks, rewarded, false);
           return;
         case "closed-early":
           emit("game_api_pause");
           callbacks.onOpen?.();
-          callbacks.onClose?.(true);
+          close(callbacks, rewarded, true);
           emit("game_api_resume");
           return;
         case "error":

@@ -450,8 +450,12 @@ export class YandexPlatform implements Platform {
           this.#events.emit("ad:start", { kind });
           hooks?.onStart?.();
         },
-        onClose: (wasShown: boolean) => {
-          const shown = wasShown === true;
+        onClose: (wasShown?: boolean) => {
+          // The fullscreen ad's onClose(wasShown) is documented and trusted. The rewarded
+          // video's onClose comes with no argument from the real SDK ("Called when the video
+          // ad closes", sdk-adv), so there the ad counts as shown when it was seen on screen
+          // or paid a reward. Without this every completed rewarded ad resolved unshown.
+          const shown = wasShown === true || (kind === "rewarded" && (opened || rewarded));
           // A reward that arrived after the game already got a not-rewarded result: tell it
           // once, and only if the resolved result did not already grant. `!closed` keeps it
           // to a single emit even if onClose is reached after onError already ran end().

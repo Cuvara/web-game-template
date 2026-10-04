@@ -20,7 +20,8 @@ import {
   type YandexSdk,
 } from "@wgf/platform-sdk";
 
-type AdScript = (callbacks: YandexRewardedCallbacks) => void;
+type AdScript = (callbacks: YandexAdCallbacks) => void;
+type RewardedScript = (callbacks: YandexRewardedCallbacks) => void;
 
 class ManualTimers implements Timers {
   now = 0;
@@ -63,10 +64,12 @@ function fakeSdk(overrides: { lang?: string; player?: YandexPlayer | Error } = {
     callbacks.onOpen?.();
     callbacks.onClose?.(true);
   };
-  let rewarded: AdScript = (callbacks) => {
+  // The real SDK calls the rewarded video's onClose with no argument; only the fullscreen
+  // ad's onClose gets wasShown (https://yandex.com/dev/games/doc/en/sdk/sdk-adv).
+  let rewarded: RewardedScript = (callbacks) => {
     callbacks.onOpen?.();
     callbacks.onRewarded?.();
-    callbacks.onClose?.(true);
+    callbacks.onClose?.();
   };
 
   const sdk: YandexSdk = {
@@ -108,7 +111,7 @@ function fakeSdk(overrides: { lang?: string; player?: YandexPlayer | Error } = {
     player,
     fire: (event: string) => listeners.get(event)?.forEach((listener) => listener()),
     setFullscreen: (script: AdScript) => (fullscreen = script),
-    setRewarded: (script: AdScript) => (rewarded = script),
+    setRewarded: (script: RewardedScript) => (rewarded = script),
   };
 }
 
@@ -363,9 +366,63 @@ describe("YandexPlatform ads", () => {
     // Watched part of it and closed: shown, but no reward.
     fake.setRewarded((callbacks) => {
       callbacks.onOpen?.();
-      callbacks.onClose?.(true);
+      callbacks.onClose?.();
     });
     await expect(platform.showRewarded()).resolves.toEqual({ shown: true, rewarded: false });
+  });
+
+  // Regression: onClose() with no argument used to resolve a completed rewarded ad as
+  // { shown: false, rewarded: true, reason: "not-ready" } and never count it as shown.
+  it("counts a rewarded video closed with no argument as shown when it opened", async () => {
+    const fake = fakeSdk();
+    fake.setRewarded((callbacks) => {
+      callbacks.onOpen?.();
+      callbacks.onRewarded?.();
+      callbacks.onClose?.();
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    await expect(platform.showRewarded()).resolves.toEqual({ shown: true, rewarded: true });
+    expect(platform.usage.adsShown.rewarded).toBe(1);
+  });
+
+  it("counts a rewarded video as shown when onRewarded fired without onOpen", async () => {
+    const fake = fakeSdk();
+    fake.setRewarded((callbacks) => {
+      callbacks.onRewarded?.();
+      callbacks.onClose?.();
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    await expect(platform.showRewarded()).resolves.toEqual({ shown: true, rewarded: true });
+    expect(platform.usage.adsShown.rewarded).toBe(1);
+  });
+
+  it("reports a rewarded video closed with no argument and never opened as not-ready", async () => {
+    const fake = fakeSdk();
+    fake.setRewarded((callbacks) => callbacks.onClose?.());
+    const platform = platformWith(fake);
+    await platform.initialize();
+    await expect(platform.showRewarded()).resolves.toEqual({
+      shown: false,
+      rewarded: false,
+      reason: "not-ready",
+    });
+    expect(platform.usage.adsShown.rewarded).toBe(0);
+  });
+
+  it("still trusts the fullscreen ad's documented wasShown", async () => {
+    const fake = fakeSdk();
+    fake.setFullscreen((callbacks) => {
+      callbacks.onOpen?.();
+      callbacks.onClose?.(false);
+    });
+    const platform = platformWith(fake);
+    await platform.initialize();
+    await expect(platform.showInterstitial()).resolves.toEqual({
+      shown: false,
+      reason: "not-ready",
+    });
   });
 
   it("allows only one ad on screen at a time", async () => {
@@ -375,7 +432,7 @@ describe("YandexPlatform ads", () => {
       callbacks.onOpen?.();
       close = () => {
         callbacks.onRewarded?.();
-        callbacks.onClose?.(true);
+        callbacks.onClose?.();
       };
     });
     const platform = platformWith(fake);
@@ -454,7 +511,7 @@ describe("YandexPlatform ads", () => {
       callbacks.onOpen?.();
       callbacks.onError?.(new Error("mid-roll broke"));
       // The portal still closes the break afterwards; it must not produce a second result.
-      callbacks.onClose?.(true);
+      callbacks.onClose?.();
     });
     const platform = platformWith(fake);
     await platform.initialize();
@@ -476,7 +533,7 @@ describe("YandexPlatform ads", () => {
       callbacks.onOpen?.();
       callbacks.onRewarded?.();
       callbacks.onRewarded?.();
-      callbacks.onClose?.(true);
+      callbacks.onClose?.();
     });
     const platform = platformWith(fake);
     await platform.initialize();
@@ -506,7 +563,7 @@ describe("YandexPlatform ads", () => {
     // The reward arrives late and is announced once.
     late!.onOpen?.();
     late!.onRewarded?.();
-    late!.onClose?.(true);
+    late!.onClose?.();
     expect(lateRewards).toEqual(["rewarded"]);
     warn.mockRestore();
   });
@@ -716,7 +773,7 @@ describe("round-1 review fixes", () => {
       reason: "busy",
     });
     late!.onRewarded?.();
-    late!.onClose?.(true);
+    late!.onClose?.();
     expect(rewards).toEqual(["rewarded"]);
     await expect(platform.showInterstitial()).resolves.toEqual({ shown: true });
     warn.mockRestore();

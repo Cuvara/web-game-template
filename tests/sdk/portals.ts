@@ -112,11 +112,15 @@ function yandex(options: HarnessOptions): PortalHarness {
   const listeners = new Map<string, Set<() => void>>();
   const data: Record<string, unknown> = {};
 
+  // Only the fullscreen ad's onClose gets wasShown; the real SDK closes a rewarded video
+  // with onClose() and no argument (https://yandex.com/dev/games/doc/en/sdk/sdk-adv).
+  const close = (callbacks: YandexRewardedCallbacks, rewarded: boolean, wasShown: boolean) =>
+    rewarded ? callbacks.onClose?.() : callbacks.onClose?.(wasShown);
   const play = (callbacks: YandexRewardedCallbacks, rewarded: boolean): void => {
-    if (ad === "no-fill") return callbacks.onClose?.(false);
+    if (ad === "no-fill") return close(callbacks, rewarded, false);
     callbacks.onOpen?.();
     if (ad === "complete" && rewarded) callbacks.onRewarded?.();
-    callbacks.onClose?.(true);
+    close(callbacks, rewarded, true);
   };
 
   const sdk: YandexSdk = {
