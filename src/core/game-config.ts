@@ -27,6 +27,7 @@ export const KNOWN_PLATFORM_IDS = [
   "y8",
   "gamedistribution",
   "gamemonetize",
+  "gamepix",
 ] as const;
 
 export interface PlatformEntry {

@@ -80,6 +80,21 @@ describe("prepare-integration", () => {
     ]);
   });
 
+  it("gamepix: the documented <head> script, both ad kinds, no id to configure", () => {
+    const { integration, problems } = buildIntegration(
+      config(["gamepix"], ["interstitial", "rewarded"]),
+      sdk,
+      { now },
+    );
+    expect(integration.platforms[0]).toMatchObject({
+      adapter: "GamePixPlatform",
+      sdk: { source: sdk.GAMEPIX_SDK_URL, loaded: "html-head" },
+      unserved_ad_kinds: [],
+      capabilities: { loadingApi: "required", interstitialMinIntervalS: null },
+    });
+    expect(problems).toEqual([]);
+  });
+
   it("gamemonetize: loaded at runtime, interstitial only, and needs its Game ID", () => {
     const placeholderId = "test0000000000000000000000000000";
     const withId = (entry: Record<string, unknown>) => {

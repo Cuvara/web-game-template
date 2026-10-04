@@ -44,6 +44,10 @@
       "types": "./dist/adapters/gamemonetize.d.ts",
       "import": "./dist/adapters/gamemonetize.js"
     },
+    "./adapters/gamepix": {
+      "types": "./dist/adapters/gamepix.d.ts",
+      "import": "./dist/adapters/gamepix.js"
+    },
     "./sdk-signatures.json": "./sdk-signatures.json"
   },
   "files": [

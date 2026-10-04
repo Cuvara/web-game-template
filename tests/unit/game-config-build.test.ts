@@ -117,6 +117,8 @@ describe("portal ids on platform entries", () => {
     expect(missing(entry("gamemonetize"))).toEqual(["game_id"]);
     expect(missing(entry("gamedistribution"))).toEqual(["game_id"]);
     expect(missing(entry("poki"))).toEqual([]);
+    // GamePix's dashboard identifies the game; its build needs no id.
+    expect(missing(entry("gamepix"))).toEqual([]);
     expect(missing(entry("y8", { app_id: "a" }))).toEqual([]);
   });
 });
