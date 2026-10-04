@@ -58,6 +58,7 @@ const THIRD_PARTY_ADS = [
   "adinplay",
   "gamedistribution",
   "gamemonetize",
+  "gamepix",
   "adsterra",
   "propellerads",
   "vungle",
@@ -90,6 +91,7 @@ const OTHER_PORTALS = [
   "gamevui",
   "gamedistribution",
   "gamemonetize",
+  "gamepix",
   "kongregate",
   "armorgames",
   "armor games",
@@ -506,8 +508,14 @@ export function auditSize(files) {
 export function auditSource(files) {
   const findings = [];
   const ALLOWED = /packages\/platform-sdk\/src\/storage\.ts$/;
+  // GamePix's documented save API is a member of its SDK, `GamePix.localStorage`
+  // (https://partners.gamepix.com/sdk/doc/javascript) - the portal's storage, not the
+  // browser's. In its adapter, that member (`sdk.localStorage`, `localStorage?:` in the SDK
+  // type) is not a finding; a bare or window-level localStorage there still is.
+  const GAMEPIX_ADAPTER = /packages\/platform-sdk\/src\/adapters\/gamepix\.ts$/;
   for (const { path, text } of files) {
-    if (ALLOWED.test(path.replace(/\\/g, "/"))) continue;
+    const normalized = path.replace(/\\/g, "/");
+    if (ALLOWED.test(normalized)) continue;
     // Comments do not touch storage.
     const code = text
       .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
@@ -515,6 +523,13 @@ export function auditSource(files) {
     for (const match of code.matchAll(
       /\b(localStorage|sessionStorage|indexedDB|document\.cookie)\b/g,
     )) {
+      if (GAMEPIX_ADAPTER.test(normalized) && match[1] === "localStorage") {
+        const before = code.slice(Math.max(0, match.index - 16), match.index);
+        const after = code.slice(match.index + match[0].length);
+        const member = /\.$/.test(before) && !/\b(window|globalThis|self)\.$/.test(before);
+        const declared = /^\s*\??:/.test(after) && !/[.\w]$/.test(before);
+        if (member || declared) continue;
+      }
       findings.push({
         severity: "error",
         rule: "unsafe-storage",

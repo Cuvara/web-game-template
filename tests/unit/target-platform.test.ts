@@ -10,6 +10,7 @@ import {
   CRAZYGAMES_SDK_URL,
   GAMEDISTRIBUTION_SDK_URL,
   GAMEMONETIZE_SDK_URL,
+  GAMEPIX_SDK_URL,
   KNOWN_PLATFORM_IDS,
   POKI_SDK_URL,
   Y8_SDK_URL,
@@ -97,6 +98,7 @@ describe("sdk-signatures.json", () => {
     ["crazygames", CRAZYGAMES_SDK_URL],
     ["gamedistribution", GAMEDISTRIBUTION_SDK_URL],
     ["gamemonetize", GAMEMONETIZE_SDK_URL],
+    ["gamepix", GAMEPIX_SDK_URL],
     ["poki", POKI_SDK_URL],
     ["y8", Y8_SDK_URL],
   ])("%s: a signature matches the adapter's SDK URL", (id, url) => {
@@ -108,6 +110,7 @@ describe("sdk-signatures.json", () => {
       crazygames: CRAZYGAMES_SDK_URL,
       gamedistribution: GAMEDISTRIBUTION_SDK_URL,
       gamemonetize: GAMEMONETIZE_SDK_URL,
+      gamepix: GAMEPIX_SDK_URL,
       poki: POKI_SDK_URL,
       y8: Y8_SDK_URL,
     };

@@ -55,7 +55,8 @@ describe.each(PORTALS)("%s", (portal) => {
       await harness.platform.signalReady();
       await harness.platform.signalReady();
       expect(count(harness.calls, "init")).toBe(harness.hasSdk ? 1 : 0);
-      expect(count(harness.calls, "ready")).toBe(harness.forwardsLifecycle ? 1 : 0);
+      const forwardsLoading = harness.forwardsLoading ?? harness.forwardsLifecycle;
+      expect(count(harness.calls, "ready")).toBe(forwardsLoading ? 1 : 0);
       expect(harness.platform.usage.signalReadyCalls).toBe(2);
     });
 

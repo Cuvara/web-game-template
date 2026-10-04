@@ -53,6 +53,7 @@ sdk-report status:
 | GameVui          | implemented, no SDK | `GameVuiPlatform`: local saves, no requestable ad; all applicable scenarios pass; browser: SDK matrix. See [../sdk.md](../sdk.md)                          |
 | Y8               | implemented         | all scenarios pass; no loading/gameplay API, so those are counted, not forwarded; browser: SDK matrix and smoke. See [y8.md](y8.md)                        |
 | GameMonetize     | implemented         | all applicable scenarios pass; rewarded is `unsupported` (none documented); browser: SDK matrix and template build. See [gamemonetize.md](gamemonetize.md) |
+| GamePix          | implemented         | all applicable scenarios pass; `loaded()` forwarded, gameplay counted, not forwarded; browser: SDK matrix and template build. See [gamepix.md](gamepix.md) |
 
 ### Fixed while building this
 

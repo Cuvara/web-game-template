@@ -54,6 +54,7 @@ const platforms = [
   "y8",
   "gamedistribution",
   "gamemonetize",
+  "gamepix",
 ];
 const matrix = {};
 for (const p of platforms) {

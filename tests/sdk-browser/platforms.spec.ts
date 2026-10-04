@@ -15,6 +15,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { MOCK_SDK_SOURCE as MOCK_CRAZYGAMES } from "../crazygames/mock-sdk.js";
 import { createY8Mock } from "../y8/mock-y8-sdk.js";
 import { MOCK_SDK_SOURCE as MOCK_GAMEMONETIZE } from "../gamemonetize/mock-sdk.js";
+import { MOCK_SDK_SOURCE as MOCK_GAMEPIX } from "../gamepix/mock-sdk.js";
 
 // The engines scripts/verify/sdk-smoke-build.mjs built: both in the template, the game's own
 // engine in a game repository.
@@ -22,6 +23,7 @@ const ENGINES = testedEngines() as readonly ("pixijs" | "threejs")[];
 const POKI_SDK_URL = "https://game-cdn.poki.com/scripts/v2/poki-sdk.js";
 const CRAZYGAMES_SDK_URL = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
 const GAMEMONETIZE_SDK_URL = "https://api.gamemonetize.com/sdk.js";
+const GAMEPIX_SDK_URL = "https://integration.gamepix.com/sdk/v3/gamepix.sdk.js";
 const MOCK_YANDEX = readFileSync(resolve(import.meta.dirname, "mock-yandex-sdk.js"), "utf8");
 const MOCK_POKI = readFileSync(
   resolve(import.meta.dirname, "..", "poki", "mock-poki-sdk.js"),
@@ -49,6 +51,8 @@ declare global {
     __y8Mock?: Record<string, unknown>;
     __gmCalls?: string[];
     __gmEmit?: (name: string) => void;
+    __gpCalls?: string[];
+    __gpViolations?: string[];
   }
 }
 
@@ -76,6 +80,11 @@ async function boot(page: Page, bundle: string, sdk: Sdk = "mock"): Promise<stri
     sdk === "block"
       ? route.abort()
       : route.fulfill({ contentType: "text/javascript", body: MOCK_GAMEMONETIZE }),
+  );
+  await page.route(GAMEPIX_SDK_URL, (route) =>
+    sdk === "block"
+      ? route.abort()
+      : route.fulfill({ contentType: "text/javascript", body: MOCK_GAMEPIX }),
   );
   await page.goto(`/${bundle}/`);
   await expect(page.locator("#hud")).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
@@ -210,6 +219,42 @@ for (const engine of ENGINES) {
     test(`gamemonetize: the game still boots when the SDK is blocked`, async ({ page }) => {
       await boot(page, `${engine}-gamemonetize`, "block");
       expect(await advances(page)).toBe(true);
+    });
+
+    test(`gamepix: the SDK runs first in <head>, loading then loaded() once, nothing misused`, async ({
+      page,
+    }) => {
+      const errors = await boot(page, `${engine}-gamepix`);
+      expect(await page.evaluate(() => window.__wgf__!.platformId)).toBe("gamepix");
+      const calls = await page.evaluate(() => window.__gpCalls!);
+      // The documented integration: the first script on the page.
+      expect(calls[0]).toBe("first-script");
+      const loading = calls.filter((c) => c.startsWith("loading:"));
+      expect(loading.length).toBeGreaterThan(0);
+      expect(loading.at(-1)).toBe("loading:100");
+      expect(calls.filter((c) => c === "loaded")).toHaveLength(1);
+      expect(calls.indexOf("loaded")).toBeGreaterThan(calls.lastIndexOf("loading:100"));
+      expect(await page.evaluate(() => window.__gpViolations!)).toEqual([]);
+      expect(await advances(page)).toBe(true);
+
+      // "When the user switches to a new browser tab, game must pause (including audio)."
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", {
+          configurable: true,
+          get: () => "hidden",
+        });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      expect(await advances(page)).toBe(false);
+      await expect(page.locator("html")).toHaveAttribute("data-audio-muted", "true");
+      expect(errors).toEqual([]);
+    });
+
+    test(`gamepix: the game still boots when the SDK is blocked`, async ({ page }) => {
+      const errors = await boot(page, `${engine}-gamepix`, "block");
+      expect(await page.evaluate(() => window.__wgf__!.platformId)).toBe("gamepix");
+      expect(await advances(page)).toBe(true);
+      expect(errors).toEqual([]);
     });
 
     test(`gamemonetize: a build without a Game ID never requests the SDK`, async ({ page }) => {

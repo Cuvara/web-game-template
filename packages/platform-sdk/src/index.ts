@@ -69,6 +69,22 @@ export {
   type GameMonetizeSdkState,
 } from "./adapters/gamemonetize.js";
 export {
+  GAMEPIX_CAPABILITIES,
+  GAMEPIX_LANGUAGES,
+  GAMEPIX_SDK_URL,
+  GamePixPlatform,
+  GamePixStorage,
+  gamePixGlobal,
+  loadGamePixSdk,
+  type GamePixAdResult,
+  type GamePixLocalStorage,
+  type GamePixOptions,
+  type GamePixSdk,
+  type GamePixSdkCall,
+  type GamePixSdkLoader,
+  type GamePixSdkState,
+} from "./adapters/gamepix.js";
+export {
   CRAZYGAMES_CAPABILITIES,
   CrazyGamesPlatform,
   type CrazyGamesMode,

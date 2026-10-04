@@ -17,6 +17,7 @@ import {
   CrazyGamesPlatform,
   GameDistributionPlatform,
   GameMonetizePlatform,
+  GamePixPlatform,
   GameVuiPlatform,
   GenericWebPlatform,
   MemoryStorageBackend,
@@ -42,6 +43,7 @@ import {
   type GdAdScript,
 } from "../gamedistribution/fake-sdk.js";
 import { createGameMonetizeMock, type GmAdScript } from "../gamemonetize/mock-sdk.js";
+import { createGamePixMock, type GpAdScript } from "../gamepix/mock-sdk.js";
 
 /** How the portal answers the next ad request. */
 export type AdScript =
@@ -594,6 +596,50 @@ const gamemonetize: Harness = {
   },
 };
 
+// -- GamePix -----------------------------------------------------------------------------
+// Fake of the documented JS surface: loading(n), loaded(), interstitialAd() and rewardAd()
+// resolving { success }, lang(), localStorage. https://partners.gamepix.com/sdk/doc/javascript
+// · tests/gamepix/mock-sdk.ts. GamePix raises no pause of its own and has no gameplay call;
+// the game is paused around each ad by the adapter itself.
+
+const GAMEPIX_AD: Record<AdScript, GpAdScript> = {
+  play: "play",
+  "no-fill": "no-fill",
+  "closed-early": "closed-early",
+  error: "reject",
+  "stall-open": "stall",
+};
+
+const gamepix: Harness = {
+  id: "gamepix",
+  adapter: "implemented",
+  ads: ["interstitial", "rewarded"],
+  portalPauses: false,
+  cloudStorage: false,
+  hasSdk: true,
+  forwardsGameplay: false,
+  async create(script: SdkScript = "ok") {
+    const timers = new ManualTimers();
+    const mock = createGamePixMock({
+      timers,
+      sdk:
+        script === "unavailable" ? "missing" : script === "init-fails" ? "loaded-throws" : "ready",
+    });
+    const platform = new GamePixPlatform({
+      namespace: "conformance",
+      loadSdk: mock.loadSdk,
+      timers,
+      storage: new MemoryStorageBackend(),
+    });
+    return {
+      platform,
+      calls: mock.calls,
+      setAd: (next) => mock.setAd(GAMEPIX_AD[next]),
+      advance: (ms) => timers.advance(ms),
+    };
+  },
+};
+
 export const HARNESSES: readonly Harness[] = [
   genericWeb("generic-web"),
   yandex,
@@ -603,4 +649,5 @@ export const HARNESSES: readonly Harness[] = [
   y8,
   gamedistribution,
   gamemonetize,
+  gamepix,
 ];

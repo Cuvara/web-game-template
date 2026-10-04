@@ -15,6 +15,7 @@ import {
   CrazyGamesPlatform,
   GameDistributionPlatform,
   GameMonetizePlatform,
+  GamePixPlatform,
   GameVuiPlatform,
   MemoryStorageBackend,
   PokiPlatform,
@@ -39,6 +40,7 @@ import {
   type GdAdScript,
 } from "../gamedistribution/fake-sdk.js";
 import { createGameMonetizeMock } from "../gamemonetize/mock-sdk.js";
+import { createGamePixMock, type GpAdScript } from "../gamepix/mock-sdk.js";
 
 /** The portals the SDK module targets. */
 export const PORTALS = [
@@ -49,6 +51,7 @@ export const PORTALS = [
   "y8",
   "gamedistribution",
   "gamemonetize",
+  "gamepix",
 ] as const;
 export type Portal = (typeof PORTALS)[number];
 
@@ -77,9 +80,15 @@ export interface PortalHarness {
   /**
    * Whether the SDK takes loading-finished and gameplay start/stop calls ("ready",
    * "gameplayStart", "gameplayStop"). False for GameVui (no SDK), Y8, GameDistribution and GameMonetize (their
-   * SDKs have no such calls; the adapter tracks them locally).
+   * SDKs have no such calls; the adapter tracks them locally), and for GamePix, whose SDK takes
+   * loaded() ("ready") but has no gameplay call.
    */
   readonly forwardsLifecycle: boolean;
+  /**
+   * Whether the SDK takes loading-finished ("ready") when it takes no gameplay calls. True
+   * for GamePix (loaded()); otherwise loading follows `forwardsLifecycle`.
+   */
+  readonly forwardsLoading?: boolean;
   /** Script the next ad requests. */
   setAd(outcome: AdOutcome): void;
   /** The portal takes / returns the foreground by itself, where it can. */
@@ -448,6 +457,64 @@ function gamemonetize(options: HarnessOptions): PortalHarness {
   };
 }
 
+// -- GamePix -----------------------------------------------------------------------------
+
+const GAMEPIX_AD = {
+  complete: "play",
+  "no-fill": "no-fill",
+  "closed-early": "closed-early",
+} as const satisfies Record<AdOutcome, GpAdScript>;
+
+function gamepix(options: HarnessOptions): PortalHarness {
+  // The shared mock (tests/gamepix/mock-sdk.ts), renamed to the neutral vocabulary: the
+  // script load -> init, loaded() -> ready, interstitialAd() / rewardAd() -> ad:*. loading(n)
+  // has no neutral name and is not listed. GamePix has no gameplay call, so none is recorded.
+  const mock = createGamePixMock({
+    timers: new HeldTimers(),
+    sdk:
+      options.sdk === "missing"
+        ? "missing"
+        : options.sdk === "init-fails"
+          ? "loaded-throws"
+          : "ready",
+    ad: GAMEPIX_AD[options.ad ?? "complete"],
+  });
+  const calls: string[] = [];
+  const platform = new GamePixPlatform({
+    namespace: "matrix",
+    loadSdk: async () => {
+      calls.push("init");
+      const sdk = await mock.loadSdk();
+      if (!sdk) return null;
+      return {
+        ...sdk,
+        loaded: () => {
+          calls.push("ready");
+          return sdk.loaded();
+        },
+        interstitialAd: () => {
+          calls.push("ad:interstitial");
+          return sdk.interstitialAd();
+        },
+        rewardAd: () => {
+          calls.push("ad:rewarded");
+          return sdk.rewardAd();
+        },
+      };
+    },
+    timers: new HeldTimers(),
+    storage: new MemoryStorageBackend(),
+  });
+  return {
+    platform,
+    calls,
+    hasSdk: true,
+    forwardsLifecycle: false,
+    forwardsLoading: true,
+    setAd: (outcome) => mock.setAd(GAMEPIX_AD[outcome]),
+  };
+}
+
 export function createHarness(portal: Portal, options: HarnessOptions = {}): PortalHarness {
   switch (portal) {
     case "yandex":
@@ -464,5 +531,7 @@ export function createHarness(portal: Portal, options: HarnessOptions = {}): Por
       return gamedistribution(options);
     case "gamemonetize":
       return gamemonetize(options);
+    case "gamepix":
+      return gamepix(options);
   }
 }

@@ -66,7 +66,15 @@ describe("sdk-signatures.json", () => {
   // Every platform is listed, so adding one is a deliberate edit here; the SDK-less ones list
   // nothing, which is what makes their artifacts scan as "none".
   it("gives every portal that ships an SDK a signature, and the SDK-less platforms none", () => {
-    const withSdk = ["crazygames", "gamedistribution", "gamemonetize", "poki", "y8", "yandex"];
+    const withSdk = [
+      "crazygames",
+      "gamedistribution",
+      "gamemonetize",
+      "gamepix",
+      "poki",
+      "y8",
+      "yandex",
+    ];
     for (const id of withSdk) expect(SIGNATURES[id]?.length ?? 0).toBeGreaterThan(0);
     expect(SIGNATURES["generic-web"]).toEqual([]);
     expect(SIGNATURES["gamevui"]).toEqual([]);
@@ -81,6 +89,7 @@ describe("sdk-signatures.json", () => {
       y8: "https://cdn.y8.com/minimal-sdk/2-0/y8.min.js",
       gamedistribution: "https://html5.api.gamedistribution.com/main.min.js",
       gamemonetize: "https://api.gamemonetize.com/sdk.js",
+      gamepix: "https://integration.gamepix.com/sdk/v3/gamepix.sdk.js",
     };
     for (const [portal, url] of Object.entries(urls)) {
       const matched = Object.entries(SIGNATURES)
@@ -115,6 +124,15 @@ describe("platform_sdk is derived from the artifact", () => {
   it("finds a signature in shipped HTML, not only in scripts", () => {
     write("dist/index.html", `<script src="https://api.gamemonetize.com/sdk.js"></script>`);
     expect(facts("gamemonetize").package.platform_sdk).toBe("gamemonetize");
+  });
+
+  it("reads a GamePix build by the <head> script the build injects", () => {
+    write(
+      "dist/index.html",
+      `<head><script src="https://integration.gamepix.com/sdk/v3/gamepix.sdk.js"></script></head>`,
+    );
+    write("dist/assets/index.js", GENERIC_BUNDLE);
+    expect(facts("gamepix").package.platform_sdk).toBe("gamepix");
   });
 
   it("ignores source maps and non-script assets, which do not ship SDK code", () => {

@@ -12,8 +12,10 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
+import { GAMEPIX_SDK_URL } from "@wgf/platform-sdk";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { stringify } from "yaml";
+import { GAMEPIX_SDK_URL as PLUGIN_GAMEPIX_SDK_URL } from "../../scripts/build/game-config-plugin.js";
 // @ts-expect-error — plain ESM script without type declarations.
 import { buildPlatforms } from "../../scripts/build/build-platforms.mjs";
 // @ts-expect-error — plain ESM script without type declarations.
@@ -76,6 +78,7 @@ const RUNS: Record<Engine, { platforms: ReturnType<typeof entry>[]; env: NodeJS.
       entry("generic-web", "required"),
       entry("y8", "optional", { app_id: "wgf-test-app", game_id: "wgf-test-game" }),
       entry("yandex", "optional"),
+      entry("gamepix", "optional"),
     ],
     env: {},
   },
@@ -210,6 +213,26 @@ describe.each(ENGINES)("build:platforms, %s", (engine) => {
     for (const signature of ENGINE_SIGNATURES[other]) expect(text).not.toContain(signature);
   });
 });
+
+// GamePix's build is in the pixijs run; a repository that tests only another engine has none.
+if (ENGINES.includes("pixijs")) {
+  describe("build:platforms, the gamepix SDK", () => {
+    // GamePix's one Mandatory step: its script, synchronous, the first script in <head>
+    // (https://partners.gamepix.com/sdk/doc/javascript). The plugin's literal must be the
+    // adapter's URL.
+    it("is the first script in <head>, synchronous, at the adapter's URL", () => {
+      expect(PLUGIN_GAMEPIX_SDK_URL).toBe(GAMEPIX_SDK_URL);
+      const html = readFileSync(
+        resolve(ROOT, results.pixijs.out, "gamepix", "dist", "index.html"),
+        "utf8",
+      );
+      const head = html.slice(html.indexOf("<head"), html.indexOf("</head>"));
+      const first = head.match(/<script\b[^>]*>/)?.[0] ?? "";
+      expect(first).toContain(`src="${GAMEPIX_SDK_URL}"`);
+      expect(first).not.toMatch(/\basync\b|\bdefer\b|type="module"/);
+    });
+  });
+}
 
 describe("build:platforms refuses before building anything", () => {
   const writeConfig = (platforms: ReturnType<typeof entry>[]): string => {

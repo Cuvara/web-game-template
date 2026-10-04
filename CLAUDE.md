@@ -6,8 +6,8 @@ is [docs/factory-contract.md](docs/factory-contract.md); this page is the part y
 
 ## What this repository is
 
-One web game for HTML5 portals (Poki, CrazyGames, Yandex, GameDistribution, GameMonetize, Y8,
-GameVui, self-hosted). The template supplies the loop, renderer, platform adapters, boot
+One web game for HTML5 portals (Poki, CrazyGames, Yandex, GameDistribution, GameMonetize,
+GamePix, Y8, GameVui, self-hosted). The template supplies the loop, renderer, platform adapters, boot
 sequence, build, tests and release tooling. You write the game.
 
 - Engine: `engine.type` in `game.config.yaml` (`pixijs`, `phaserjs` or `threejs`). Use only
@@ -71,8 +71,8 @@ the template.
 ## Rules
 
 - Never import or reference a portal SDK (`YaGames`, `PokiSDK`, `window.CrazyGames`,
-  `gdsdk`, `sdk.showBanner`, `y8`, …) or call a `Platform` method from game code. Never call
-  `createPlatform`.
+  `gdsdk`, `sdk.showBanner`, `GamePix`, `y8`, …) or call a `Platform` method from game code.
+  Never call `createPlatform`.
 - Advance game state only in fixed-step `update()`; never with `requestAnimationFrame` or
   `setTimeout`.
 - Do not write `#hud[data-ready|data-scene|data-steps|data-engine|data-platform]`; `main.ts`

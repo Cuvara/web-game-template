@@ -52,7 +52,7 @@ publishing: { enabled: <bool> }
 
 ### `platforms[]`
 
-- `id` ∈ `generic-web yandex poki crazygames gamevui y8 gamedistribution gamemonetize`
+- `id` ∈ `generic-web yandex poki crazygames gamevui y8 gamedistribution gamemonetize gamepix`
   (`KNOWN_PLATFORM_IDS`). Unknown id → error. An id listed twice → error.
 - `profile` must match `^[a-z][a-z0-9-]*@\d+\.\d+\.\d+$` and its id part must equal `id`.
 - `role`: `required` or `optional`.

@@ -67,6 +67,9 @@ export const PLATFORMS = [
     ad_kinds: ["interstitial"],
     env: { WGF_ALLOW_UNCONFIGURED_PORTAL: "1" },
   },
+  // GamePix needs no id: the build carries the documented <script> first in <head>, and the
+  // browser test serves a mock in its place.
+  { id: "gamepix", profile: "gamepix@1.0.0", ad_kinds: ["interstitial", "rewarded"] },
 ];
 
 // The game imports the @wgf/* packages from their dist, as `pnpm build` does.
