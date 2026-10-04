@@ -7,9 +7,9 @@
 //   build/sdk/sdk-report.json    the Factory's sdk-report artifact (sdk-report.schema.json)
 //
 // This PREPARES integration; it does not perform one. It makes no network request, loads
-// no portal script, and never uploads or submits anything: publishing belongs to the
-// release pipeline (GitHub Actions, behind the G5/G6 gates), and portal submission is a
-// human checklist (scripts/publish/make-publication.mjs). The feature statuses it writes
+// no portal script, and never uploads or submits anything: CI only builds, tests and
+// packages, and publication (gate G6) is the Factory's publisher, with a person logging in
+// to the portal and authorizing the upload and the submission. The feature statuses it writes
 // are "partial" for every portal SDK feature on purpose — they were exercised against
 // mocked SDKs (tests/sdk-matrix, tests/unit/sdk-contract.test.ts), not a live portal.
 //

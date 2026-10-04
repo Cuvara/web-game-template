@@ -105,7 +105,6 @@ stated. Scripts under `scripts/` print one-line errors, never stacks, for expect
 | `pnpm assert --platform <id>` [`--facts <p>`] [`--out <p>`]                                                                                                       | `config/platforms/<id>.yaml` at the pinned version, `build/facts/<id>.json` | results printed; `[{ criterion_id, measured, breached, severity, … }]` written only with `--out` (convention: `build/assertions/<id>.json`) | 0 no blocking breach, 1 a blocking breach, 2 usage / no profile / no facts                                                                    |
 | `pnpm release:package --release r<n>` [`--platform <id>`]                                                                                                         | `build/platforms/` (§4)                                                     | `release/r<n>/<id>.zip`, `packages.json`, `checksums.txt`                                                                                   | 2 bad usage, 1 refused (§8) — nothing written on refusal                                                                                      |
 | `pnpm release:manifest --release r<n> --version <semver>` [`--kind initial\|content\|hotfix\|rollback`] [`--state draft\|rc`] [`--freeze`] [`--changelog <text>`] | `release/r<n>/packages.json`, config                                        | `release/r<n>/manifest.json`                                                                                                                | 1 refused (§8); a re-run with identical content is a no-op success                                                                            |
-| `pnpm publish:prepare --release r<n>` [`--platform <id>`] [`--state submitted`] [`--portal-reference <id>`] [`--submitted-by <name>`]                             | `release/r<n>/manifest.json`, `build/assertions/<id>.json`, profile         | `release/r<n>/publications/<id>.json` (state `validated` / `validation-failed`, human checklist)                                            | 2 bad usage; 1 missing manifest or assertion results, or any platform `validation-failed`                                                     |
 
 Game-independent helpers also exist (`test:sdk:matrix`, `test:sdk:live`, `test:poki`,
 `test:crazygames`, `demo:*`, `audit:*`); they exercise the template's adapters and examples.
@@ -362,7 +361,6 @@ release/r<n>/
                        commit_sha, portal_configured } }]
   checksums.txt     "<hex>  <id>.zip" per line
   manifest.json     release-manifest (Factory schema) — release:manifest
-  publications/<id>.json                                — publish:prepare
 ```
 
 `release:manifest` refuses when `--version` ≠ `game.version`, `packages.json` is missing, the
@@ -372,6 +370,11 @@ commit, or an existing `manifest.json` differs in anything but its timestamps. I
 `target_platforms[].profile_version` from the pins, and `status: final` + `frozen_at` with
 `--state rc` or `--freeze`. The contract number stays in `package.json` (the manifest schema
 has no field for it).
+
+Nothing in the template publishes. The release directory ends at `manifest.json`; the
+`platform-publication` record, the upload and the submission belong to the Factory's publisher,
+with a person logging in to each portal and authorizing it. The template has no
+`publish:prepare` script, no `publish.yml`, and no portal credential in CI.
 
 ## 9. What the Factory writes, and never touches
 

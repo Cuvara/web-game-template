@@ -49,8 +49,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Same reasoning as publish.yml: an environment nobody configured is created
-          # implicitly with no protection, so naming it is not a gate. G7 spends real money.
+          # An environment nobody configured is created implicitly with no protection, so
+          # naming it is not a gate. G7 spends real money.
           rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/campaign-spend" \
                     --jq '[.protection_rules[].type] | join(",")' 2>/dev/null || echo "unreadable")
           echo "campaign-spend protection rules: ${rules:-none}"

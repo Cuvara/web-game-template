@@ -11,7 +11,6 @@ release/<release-id>/
   <platform>.zip           — one package per targeted platform, from its own build
   checksums.txt
   packages.json            — checksum, content_digest, dist_digest and build info per package
-  publications/<id>.json   — one per platform, carrying its assertion results
 ```
 
 Each `<platform>.zip` is made from `build/platforms/<platform>/dist` (`pnpm build:platforms`),
@@ -40,9 +39,14 @@ git tag v1.2.0 && git push origin v1.2.0
 
 `release.yml` then runs CI, runs the verify suite, builds every platform
 (`pnpm build:platforms`), measures each build, packages per platform, evaluates
-each platform's assertions, writes the manifest and publications, and opens a **draft**
-GitHub Release. A draft because publishing the GitHub Release is itself a publication, and
-publication is gate G6.
+each platform's assertions, writes the manifest, uploads the release directory as a workflow
+artifact, and opens a **draft** GitHub Release. Then it stops.
+
+CI builds, tests and packages; it never publishes. Publication to a portal is gate G6, done by
+the Factory's publisher (web-game-factory, `docs/portal-publishing-architecture.md`) with a
+person logging in to the portal and authorizing the upload and the submission. No portal
+secret belongs in this repository or the organization. The GitHub Release stays a draft, an
+internal record of the candidate.
 
 By hand, the same sequence is:
 
@@ -54,7 +58,6 @@ pnpm release:package  --release r1                 # refuses stale or unconfigur
 pnpm facts  --platform <id>                        # merge static + runtime facts
 pnpm assert --platform <id> --out build/assertions/<id>.json
 pnpm release:manifest --release r1 --version 1.2.0 --state rc
-pnpm publish:prepare  --release r1
 ```
 
 ## Release ids

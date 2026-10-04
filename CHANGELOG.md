@@ -10,6 +10,35 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Removed — CI never publishes a game
+
+CI builds, tests, verifies and packages; it no longer publishes anything to a portal.
+Publication (gate G6) is the Factory's publisher (web-game-factory,
+`docs/portal-publishing-architecture.md`), with a person logging in to the portal and
+authorizing the upload and the submission. No portal secret belongs in a game repository or
+the organization.
+
+Contract change (stays `2`): `publish:prepare` leaves §3 of
+[docs/factory-contract.md](docs/factory-contract.md) and `publications/<id>.json` leaves the
+release directory. A game builds and plays exactly as before; the Factory, whose
+`platform-validate` and `submit` now own the `platform-publication` record, must stop expecting
+`.github/workflows/publish.yml` and `scripts/publish/` in the pinned template.
+
+- **`.github/workflows/publish.yml`** deleted: the Poki CLI upload (`npx @poki/cli upload`
+  with `WGF_POKI_AUTH_JSON` / `WGF_POKI_GAME_ID`), `make-publication --state submitted` and the
+  per-portal checklists.
+- **`scripts/publish/make-publication.mjs`** and the **`publish:prepare`** script deleted.
+- `release.yml` no longer writes publication records; it keeps ci, verify,
+  `build:platforms`, `test:verify`, `release:package`, facts and assertions,
+  `make-manifest --state rc`, the artifact upload and the draft GitHub Release.
+- `bootstrap.yml` no longer creates the `production` environment, and grants and copies only
+  an allowlist: the secrets `WGF_CF_*` and `WGF_LIVE_OPT_IN`, the variables `WGF_CF_*`,
+  `WGF_Y8_APP_ID`, `WGF_Y8_GAME_ID` and `WGF_GAMEMONETIZE_GAME_ID` (public ids a build bakes
+  in). A portal credential left in the organization is never granted to a game. `develop`,
+  `campaign-spend` and the Cloudflare Pages develop preview are unchanged.
+- `docs/ci-cd.md`, `docs/publishing.md`, `docs/release.md`, `docs/production-build.md`,
+  `docs/sdk.md`, `docs/wgf-integration.md`, `docs/factory-contract.md` and `README.md` say so.
+
 ### Fixed — Yandex rewarded result, Y8 capped break
 
 - **Yandex rewarded video resolved unshown.** One `callbacks` object served both ad kinds and

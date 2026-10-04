@@ -1,7 +1,12 @@
 # CI/CD
 
-Seven workflows. Two of them are named by the Factory as implementing a lifecycle guard;
-two are gates wearing a GitHub environment; the rest move artifacts around.
+Six workflows. Two of them are named by the Factory as implementing a lifecycle guard; one
+is a gate wearing a GitHub environment; the rest move artifacts around.
+
+**CI builds, tests and packages. It never publishes a game to a portal.** Publication (gate
+G6) is the Factory's publisher (web-game-factory, `docs/portal-publishing-architecture.md`),
+with a person logging in to the portal and authorizing the upload and the submission. No
+portal credential belongs in this repository, its workflows or the organization.
 
 | Workflow        | Trigger                      | What it is                           |
 | --------------- | ---------------------------- | ------------------------------------ |
@@ -9,11 +14,10 @@ two are gates wearing a GitHub environment; the rest move artifacts around.
 | `build.yml`     | push to `develop`, or called | build + develop preview deploy       |
 | `verify.yml`    | PR into `main`, or called    | the `verify_suite_green` guard       |
 | `release.yml`   | tag `v*`, or dispatch        | freeze a candidate. Does not publish |
-| `publish.yml`   | dispatch only                | gate **G6**                          |
 | `campaign.yml`  | dispatch only                | gate **G7**                          |
 | `bootstrap.yml` | first push in a new repo     | one-time setup, then deletes itself  |
 
-Outside the seven, `crazygames.yml`, `yandex-demo.yml` and `gamevui-demo.yml` build, audit and
+Outside the six, `crazygames.yml`, `yandex-demo.yml` and `gamevui-demo.yml` build, audit and
 browser-test the template's compliance examples, and `live-portal-validation.yml` runs the
 opt-in live SDK checks (`pnpm test:sdk:live`). They guard the adapters; none is a gate.
 
@@ -23,8 +27,8 @@ opt-in live SDK checks (`pnpm test:sdk:live`). They guard the adapters; none is 
 no manifest. It exists so the game can be played.
 
 **release** — tag `v1.2.0`, get CI, the verify suite, per-platform packages, an immutable
-manifest with checksums, and one publication record per platform. Then it stops, as a draft
-GitHub Release.
+manifest with checksums, and each platform's assertion results. Then it stops, as a draft
+GitHub Release. Nothing after that runs in CI.
 
 It is the same build in both. A develop build that differs from a release build is a develop
 build that proves nothing.
@@ -73,44 +77,50 @@ a build must be judged by the rules in force when its plan was approved.
 An assertion that cannot be evaluated counts as breached. A fact nobody measured must not
 satisfy a blocking rule by omission.
 
-## Gates are environments
+## G7 is an environment; G6 is not in CI
 
-`publish.yml` runs in the `production` environment and `campaign.yml` in `campaign-spend`.
-Put **required reviewers** on both. GitHub then holds the job until a human approves and
-records who did — which is G6 and G7 made real.
+`campaign.yml` runs in the `campaign-spend` environment. Put **required reviewers** on it.
+GitHub then holds the job until a human approves and records who did — which is G7 made real.
 
 An environment with no reviewers is not a gate, and this is a trap rather than an oversight:
 GitHub creates an environment **implicitly, with no protection**, the first time a job names
-one. A workflow can say `environment: production`, run unimpeded, and look gated. So both gate
-workflows read their environment's protection rules as their first step and **refuse to run**
-when there are no required reviewers.
+one. A workflow can say `environment: campaign-spend`, run unimpeded, and look gated. So
+`campaign.yml` reads its environment's protection rules as its first step and **refuses to
+run** when there are no required reviewers.
 
-`bootstrap.yml` creates all three environments in a new repository and seeds the person who
-pushed as the reviewer, so the gap never exists.
+`bootstrap.yml` creates `develop` and `campaign-spend` in a new repository and seeds the
+person who pushed as the `campaign-spend` reviewer, so the gap never exists. There is no
+`production` environment: no workflow publishes, so there is nothing for one to hold.
 
 > **Required reviewers are unavailable on private repositories under a free plan.** A private
-> game repository on a free organization cannot enforce G6 or G7 through environments. The
-> options are to make the repository public, upgrade the plan, or accept that publication is
-> guarded by convention — and in the third case both gate workflows will refuse to run, which
-> is the intended outcome for an irreversible action.
+> game repository on a free organization cannot enforce G7 through an environment. The options
+> are to make the repository public, upgrade the plan, or accept that spend is guarded by
+> convention — and in the third case `campaign.yml` refuses to run, which is the intended
+> outcome for an irreversible action.
 
-## Publishing is not automated, and mostly cannot be
+## Publishing is not CI's job
 
-The Factory's publish stage says no portal APIs are integrated, by design. Independently of
-that, it is also the state of the world: of the platforms in the profile set, only Poki has
-a CLI that runs headlessly. Yandex, CrazyGames and GameVui accept a ZIP through a console a
-person logs into.
-
-So `publish.yml` uploads to Poki when `WGF_POKI_AUTH_JSON` is set, and for everything else
-produces the package and a checklist built from that platform's own profile — its required
-locales, its screenshot minimum, its past rejection reasons. Uploading to Poki is not
-releasing on Poki either; requesting review stays a human action.
+Publication is irreversible: portals cache and index what they receive. It is the Factory's
+publisher, driven by a person who logs in to each portal console and authorizes the upload and
+the submission. There is no `publish.yml`, no Poki CLI upload, no `publish:prepare` script and
+no portal token or session in CI. See [publishing.md](publishing.md).
 
 ## Secrets and variables
 
 Organization-scoped, prefixed `WGF_`, visible only to selected repositories so nothing here
 touches the organization's other secrets. Managed by
 `web-game-factory/scripts/wgf-org-setup.sh`.
+
+What CI reads, and all a new repository is given:
+
+- secrets — `WGF_CF_API_TOKEN` (develop preview deploy) and `WGF_LIVE_OPT_IN` (opt-in live
+  SDK checks);
+- variables — `WGF_CF_*` (Cloudflare account and project prefix) and the portal **ids** a
+  build bakes in: `WGF_Y8_APP_ID`, `WGF_Y8_GAME_ID`, `WGF_GAMEMONETIZE_GAME_ID`. An id is
+  public — it ships in the bundle — and is not a credential.
+
+**No portal credential** (a Poki `auth.json`, a portal token, a console session) belongs in
+the repository or the organization. CI has no step that could use one.
 
 An unset secret holds the sentinel `__UNSET__`. Workflows check for it, skip the step, and
 say so in the run summary — a missing credential should not look like a broken pipeline.
@@ -122,8 +132,9 @@ artifact.
 
 `bootstrap.yml` runs on the first push, authenticating as the organization's bot app through
 the `APP_ID` and `APP_PRIVATE_KEY` organization secrets. It grants the repository access to
-the `WGF_*` organization secrets, copies the `WGF_*` organization variables down to repository
-level, creates the three environments with the pusher as a required reviewer, sets `GAME_ID`
+the allowlisted `WGF_*` organization secrets above, copies the allowlisted `WGF_*` variables
+down to repository level, creates `develop` and `campaign-spend` (the pusher as the
+`campaign-spend` reviewer), sets `GAME_ID`
 and `GAME_NAME` from the repository name, rewrites `game.config.yaml`, and deletes itself.
 
 Those two app secrets are the single place a game pipeline reads something outside the `WGF_*`

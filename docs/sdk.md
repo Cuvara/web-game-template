@@ -71,9 +71,9 @@ the way the documentation says; they cannot prove what the portal does with it.
 - `build/sdk/sdk-report.json` — the Factory's `sdk-report` artifact. Portal features are
   `partial`, never `working`: they were observed against mocks, not a live portal.
 
-It makes no network request. **Publishing is not the SDK module's job**: it belongs to the
-release pipeline (GitHub Actions, behind gates G5 and G6), and portal submission is the
-human checklist `scripts/publish/make-publication.mjs` writes.
+It makes no network request. **Publishing is not the SDK module's job**, nor CI's: CI
+builds, tests and packages, and publication (gate G6) is the Factory's publisher, with a
+person logging in to the portal and authorizing the upload and the submission.
 
 ## Audit against current portal documentation (2026-09-23)
 

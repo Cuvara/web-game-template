@@ -15,6 +15,12 @@
 #   variables — are readable, so they are copied down to repository level. That is what makes
 #               them visible and editable in this repository's Settings.
 #
+# Both go through an allowlist of what a workflow or a build here actually reads. No portal
+# credential is granted or copied: CI never publishes to a portal. The Factory's publisher
+# does, with a person logging in and authorizing it (web-game-factory,
+# docs/portal-publishing-architecture.md), so a portal secret has no business in a game
+# repository or in the organization.
+#
 # It finishes by deleting itself. A bootstrap that can run again is a bootstrap that will,
 # on some later push, quietly reset a game's configuration.
 
@@ -81,9 +87,11 @@ jobs:
         run: |
           set -euo pipefail
           # Only secrets scoped to selected repositories need this; one set to all
-          # repositories is already visible here.
+          # repositories is already visible here. The allowlist is every secret a workflow
+          # here reads: the develop preview deploy (WGF_CF_*) and the live SDK opt-in. A portal
+          # credential, should one still exist in the organization, is never granted.
           gh api "orgs/${ORG}/actions/secrets" --paginate \
-            --jq '.secrets[] | select(.name | startswith("WGF_")) | select(.visibility == "selected") | .name' \
+            --jq '.secrets[] | select(.name | test("^WGF_(CF_[A-Z0-9_]+|LIVE_OPT_IN)$")) | select(.visibility == "selected") | .name' \
           | while read -r name; do
               # PUT is idempotent — re-running adds nothing and fails nothing.
               gh api -X PUT "orgs/${ORG}/actions/secrets/${name}/repositories/${REPO_ID}"
@@ -98,8 +106,11 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          # The non-portal variables (WGF_CF_*) and the portal ids a build reads
+          # (scripts/build/game-config-plugin.ts: y8 app and game id, gamemonetize game id). An
+          # id is public — it ends up in the shipped bundle — and is not a credential.
           gh api "orgs/${ORG}/actions/variables" --paginate \
-            --jq '.variables[] | select(.name | startswith("WGF_")) | [.name, .value] | @tsv' \
+            --jq '.variables[] | select(.name | test("^WGF_(CF_[A-Z0-9_]+|Y8_APP_ID|Y8_GAME_ID|GAMEMONETIZE_GAME_ID)$")) | [.name, .value] | @tsv' \
           | while IFS=$'\t' read -r name value; do
               # Create, or update if it is already there. Either way the repository ends up
               # holding an editable copy the game's owner can override.
@@ -119,8 +130,11 @@ jobs:
         run: |
           set -euo pipefail
           # Without this the environments do not exist, and GitHub creates them implicitly —
-          # with no protection — the first time publish.yml or campaign.yml names one. The
-          # gate would look configured and hold nothing back, which is the worst of both.
+          # with no protection — the first time campaign.yml names one. The gate would look
+          # configured and hold nothing back, which is the worst of both.
+          #
+          # There is no production environment: no workflow here publishes to a portal (G6 is
+          # the Factory's publisher, with a person logging in and authorizing it).
           #
           # The person who pushed is seeded as the reviewer so the gate is never empty. Add
           # or replace reviewers afterwards; what must not happen is zero of them.
@@ -129,19 +143,18 @@ jobs:
           gh api -X PUT "repos/${REPO}/environments/develop" --silent
           echo "created develop (no protection — it is a preview channel, not a gate)"
 
-          for env in production campaign-spend; do
-            if printf '{"reviewers":[{"type":"User","id":%s}]}' "$actor_id" \
-               | gh api -X PUT "repos/${REPO}/environments/${env}" --input - --silent 2>/dev/null; then
-              echo "created ${env} with @${GITHUB_ACTOR} as a required reviewer"
+          env=campaign-spend
+          if printf '{"reviewers":[{"type":"User","id":%s}]}' "$actor_id" \
+             | gh api -X PUT "repos/${REPO}/environments/${env}" --input - --silent 2>/dev/null; then
+            echo "created ${env} with @${GITHUB_ACTOR} as a required reviewer"
+          else
+            gh api -X PUT "repos/${REPO}/environments/${env}" --silent || true
+            if [ "$IS_PRIVATE" = "true" ]; then
+              echo "::warning title=${env} is not a gate::Required reviewers are unavailable on a private repository under a free plan. G7 cannot be enforced here through an environment — make this repository public, upgrade the plan, or accept that the gate is convention only. campaign.yml will refuse to run until one of those is true."
             else
-              gh api -X PUT "repos/${REPO}/environments/${env}" --silent || true
-              if [ "$IS_PRIVATE" = "true" ]; then
-                echo "::warning title=${env} is not a gate::Required reviewers are unavailable on a private repository under a free plan. G6/G7 cannot be enforced here through environments — make this repository public, upgrade the plan, or accept that the gate is convention only. publish.yml and campaign.yml will refuse to run until one of those is true."
-              else
-                echo "::warning title=${env} has no reviewers::Could not set a required reviewer. Add one by hand before publishing."
-              fi
+              echo "::warning title=${env} has no reviewers::Could not set a required reviewer. Add one by hand before proposing a campaign."
             fi
-          done
+          fi
 
       - name: Set this game's identity
         if: steps.guard.outputs.run == 'true'
@@ -192,8 +205,9 @@ jobs:
           git add game.config.yaml
           git commit -q -m "chore: bootstrap ${{ steps.identity.outputs.game_id }} from web-game-template
 
-          Set game identity, copied the WGF organization variables into this repository, and
-          granted it access to the organization's WGF secrets. Removing this workflow: it is
+          Set game identity, copied the allowlisted WGF organization variables into this
+          repository, and granted it access to the organization's CI secrets (no portal
+          credential: publication is the Factory's publisher). Removing this workflow: it is
           meant to run once, and a second run would reset the configuration.
 
           Secrets are inherited from the organization and were not copied — GitHub does not
@@ -210,8 +224,8 @@ jobs:
           {
             echo "### Bootstrapped \`${{ steps.identity.outputs.game_id }}\`"
             echo
-            echo "- Access granted to the organization's \`WGF_*\` secrets"
-            echo "- \`WGF_*\` organization variables copied here and now editable in Settings"
+            echo "- Access granted to the organization's CI secrets (\`WGF_CF_*\`, \`WGF_LIVE_OPT_IN\`); no portal credential"
+            echo "- \`WGF_CF_*\` and build-read portal id variables copied here and editable in Settings"
             echo "- \`GAME_ID\` and \`GAME_NAME\` set from the repository name"
             echo "- \`game.config.yaml\` updated; this workflow removed"
             echo
