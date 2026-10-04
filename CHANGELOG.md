@@ -10,7 +10,7 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
-### Fixed — Yandex rewarded result
+### Fixed — Yandex rewarded result, Y8 capped break
 
 - **Yandex rewarded video resolved unshown.** One `callbacks` object served both ad kinds and
   took `shown` from `onClose(wasShown)`. Yandex documents `wasShown` for the fullscreen ad;
@@ -19,6 +19,11 @@ whatever was here at the ref its tech plan pinned.
 true, reason: "not-ready" }` and was never counted as shown. A rewarded ad is now shown
   when `onOpen` or `onRewarded` fired; the late reward, the cap, one ad at a time and never
   rejecting are unchanged. Test fakes now close a rewarded video with `onClose()`.
+- **Y8 counted a capped break as an ad shown.** The adapter took `breakStatus: "viewed"` or
+  `"dismissed"` as proof an ad appeared, and `"viewed"` as a reward, even when `beforeAd` never
+  ran. Y8's docs give a frequency-capped break exactly that info, "`{ breakStatus: "viewed" }`",
+  and say a capped break runs neither before-ad nor after-ad. Only `beforeAd` now proves an ad
+  appeared; such a break resolves unshown, `not-ready`, and grants nothing.
 
 ### Added — GamePix
 
