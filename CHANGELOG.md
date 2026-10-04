@@ -10,6 +10,39 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Added — GamePix
+
+Additive — contract stays `2`; existing platforms and their builds are unchanged. A title
+gains GamePix by targeting `gamepix@1.0.0`.
+
+- **`createPlatform("gamepix")`** — `GamePixPlatform` (`@wgf/platform-sdk/adapters/gamepix`),
+  written against GamePix's JavaScript SDK reference, submission guidelines and developer
+  program as read on 2026-10-04 (<https://partners.gamepix.com/sdk/doc/javascript>,
+  <https://partners.gamepix.com/guidelines/submission>,
+  <https://partners.gamepix.com/developers>). A `gamepix` build carries the documented
+  `https://integration.gamepix.com/sdk/v3/gamepix.sdk.js` as the first, synchronous script in
+  `<head>` (the one Mandatory step); no other build does. `loading(0-100)` while loading and
+  `loaded()` once at `signalReady()`, with no SDK call but `lang()` before it; interstitial
+  (`interstitialAd()`, every break, no local interval) and rewarded (`rewardAd()`, reward only
+  on `success: true`), one at a time so the SDK never sees `..._CALLED_TWICE`, the game held
+  for the whole request and `ad:start`/`ad:end` only for an ad that played, a 60 s deadline,
+  `ad:late-reward`; gameplay tracked locally (the JS SDK has no gameplay call); saves on
+  `GamePix.localStorage` after `loaded()`, mirrored in local storage, with saves made while
+  loading replayed into it; `language` from `GamePix.lang()`. No id to configure. A blocked
+  script boots a plain web game.
+- `config/platforms/gamepix.yaml` — a **proposed** profile in the Factory's platform-profile
+  schema (`status: unverified`, every figure cited, `null` where undocumented); not in
+  `pinned.json`. The Factory has none yet.
+- `gamepix` in `KNOWN_PLATFORM_IDS` (registry and `game-config.ts`), `sdk-signatures.json`
+  (`integration.gamepix.com`), `sdk:prepare` (`loaded: html-head`), the SDK browser smoke, the
+  Poki audit's foreign-portal lists, and the live-portal matrix (UNVERIFIED: no live spec).
+- Tests: `tests/gamepix/mock-sdk.ts` (Node and browser forms, recording every documented
+  misuse error), `tests/unit/gamepix.test.ts`, GamePix in the conformance suite, the
+  cross-portal contract, the SDK matrix, the template build smoke and `build:platforms`.
+  Nothing contacts GamePix. See `docs/platforms/gamepix.md`.
+- `PortalHarness.forwardsLoading` (tests/sdk/portals.ts): an SDK that takes loading-finished
+  but no gameplay call.
+
 ### Scaling foundation
 
 Three example games already solve this three incompatible ways, and all three re-derive the

@@ -126,6 +126,7 @@ conformance entry.
 | Y8               | `adapters/y8/`               | JS SDK 2-0: interstitial + rewarded, cloud storage for signed-in players; needs `app_id` (build fails without). See [platforms/y8.md](platforms/y8.md)                                                         |
 | GameDistribution | `adapters/gamedistribution/` | Interstitial + rewarded (`SDK_REWARDED_WATCH_COMPLETE` only), foreground events, deadlines; needs `game_id`; self-hosted wrapper packaging. See [platforms/gamedistribution.md](platforms/gamedistribution.md) |
 | GameMonetize     | `adapters/gamemonetize.ts`   | `sdk.showBanner()` interstitial only; needs `game_id` (build fails without). See [platforms/gamemonetize.md](platforms/gamemonetize.md)                                                                        |
+| GamePix          | `adapters/gamepix.ts`        | JS SDK v3 first in `<head>`: `loading()`/`loaded()`, interstitial + rewarded, `GamePix.localStorage`, `lang()`; no id. See [platforms/gamepix.md](platforms/gamepix.md)                                        |
 
 ## What crosses the boundary out
 

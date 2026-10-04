@@ -119,18 +119,21 @@ Game code calls `GameIntegration` / `PlatformGameplay`, which drive `@wgf/platfo
 platform has a profile in the Factory and an adapter here, and each is built separately: a
 build carries only its own platform's adapter.
 
-| Platform     | Profile         | Adapter                                                      | Upload automated             |
-| ------------ | --------------- | ------------------------------------------------------------ | ---------------------------- |
-| Generic Web  | ✅              | ✅                                                           | n/a — self-hosted            |
-| Yandex Games | ✅              | ✅                                                           | no — no public API           |
-| Poki         | ✅              | ✅                                                           | yes — `@poki/cli`            |
-| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                              | no — no public API           |
-| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves            | no — email / contact form    |
-| GameDist.    | ✅ (unverified) | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`       | no — developer panel         |
-| Y8           | ✅ (unverified) | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md)) | no — Developer Portal upload |
-| GameMonetize | ✅ (unverified) | ✅ HTML5 SDK — interstitial only; needs a Game ID            | no — dashboard upload        |
+| Platform     | Profile         | Adapter                                                               | Upload automated             |
+| ------------ | --------------- | --------------------------------------------------------------------- | ---------------------------- |
+| Generic Web  | ✅              | ✅                                                                    | n/a — self-hosted            |
+| Yandex Games | ✅              | ✅                                                                    | no — no public API           |
+| Poki         | ✅              | ✅                                                                    | yes — `@poki/cli`            |
+| CrazyGames   | ✅              | ✅ HTML5 SDK v3                                                       | no — no public API           |
+| GameVui      | ✅ (unverified) | ✅ no-SDK — GameVui publishes no SDK; local saves                     | no — email / contact form    |
+| GameDist.    | ✅ (unverified) | ✅ GD HTML5 SDK — `docs/platforms/gamedistribution.md`                | no — developer panel         |
+| Y8           | ✅ (unverified) | ✅ JS SDK 2-0 ([docs/platforms/y8.md](docs/platforms/y8.md))          | no — Developer Portal upload |
+| GameMonetize | ✅ (unverified) | ✅ HTML5 SDK — interstitial only; needs a Game ID                     | no — dashboard upload        |
+| GamePix      | proposed        | ✅ JS SDK v3 ([docs/platforms/gamepix.md](docs/platforms/gamepix.md)) | no — dashboard upload        |
 
 "✅ (unverified)" is a Factory core profile at `1.0.0` marked `status: unverified` there.
+"proposed" is a profile written here (`config/platforms/gamepix.yaml`) that the Factory does
+not have yet.
 
 The Yandex adapter, and a small game that exercises it through every moment moderation
 checks, are described in [examples/yandex-compliance-demo](examples/yandex-compliance-demo/README.md)
@@ -202,6 +205,7 @@ Foundation and pipelines implemented and exercised on real runners.
 | Y8 adapter (see `docs/platforms/y8.md`)                                      | done  |
 | GameDistribution adapter and self-hosted wrapper                             | done  |
 | GameMonetize adapter (see `docs/platforms/gamemonetize.md`)                  | done  |
+| GamePix adapter (see `docs/platforms/gamepix.md`)                            | done  |
 | Contract 2: per-platform builds, `createGame` game API, `sdk:check`          | done  |
 | Contract 2: facts from the artifact, per-platform release, `golden:check`    | done  |
 | `src/{ui,audio,input,assets,analytics}`, `config/{environments,performance}` | empty |
