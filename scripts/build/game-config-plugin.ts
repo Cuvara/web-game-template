@@ -75,6 +75,18 @@ export function loadGameConfig(
   return validateGameConfig(raw);
 }
 
+/**
+ * The platform a build is for: the first `role: required` entry, else the first. Must agree
+ * with primaryPlatform in src/core/config.ts, which picks the id main.ts passes to
+ * createPlatform (tests/integration/platform-build.test.ts checks both).
+ */
+export function selectedPlatform(config: GameConfig): GameConfig["platforms"][number] {
+  const entry =
+    config.platforms.find((candidate) => candidate.role === "required") ?? config.platforms[0];
+  if (!entry) throw new Error("game.config.yaml declares no platforms");
+  return entry;
+}
+
 export interface GameConfigPluginOptions {
   /** Absolute path to game.config.yaml. */
   readonly configPath: string;
@@ -103,12 +115,18 @@ export function gameConfigPlugin(options: GameConfigPluginOptions): Plugin {
     // drop the engines this build does not use — and their chunks with them. Without it
     // every build carries every engine the template implements, which is megabytes against
     // caps as low as the Factory GameVui profile's 50 MB.
+    //
+    // The platform, the same way and for the same reason: createPlatform in
+    // packages/platform-sdk/src/registry.ts guards each adapter with a comparison against
+    // __WGF_PLATFORM__, so the bundle carries the selected platform's adapter alone. A build
+    // with every adapter carries every portal's SDK URL and globals, which CrazyGames' audit
+    // fails as unexpected_dependencies and other profiles assert against.
     config() {
+      const config = loadGameConfig(options.configPath);
       return {
         define: {
-          "import.meta.env.WGF_ENGINE": JSON.stringify(
-            loadGameConfig(options.configPath).engine.type,
-          ),
+          "import.meta.env.WGF_ENGINE": JSON.stringify(config.engine.type),
+          __WGF_PLATFORM__: JSON.stringify(selectedPlatform(config).id),
         },
       };
     },
@@ -168,12 +186,11 @@ export function gameConfigPlugin(options: GameConfigPluginOptions): Plugin {
     // resulting race — the script may run before or after it listens for y8sdk.ready.
     transformIndexHtml() {
       const config = validateGameConfig(parse(readFileSync(options.configPath, "utf8")));
-      const primary =
-        config.platforms.find((entry) => entry.role === "required") ?? config.platforms[0];
-      if (primary?.id === "crazygames") {
+      const primary = selectedPlatform(config);
+      if (primary.id === "crazygames") {
         return [{ tag: "script", attrs: { src: CRAZYGAMES_SDK_URL }, injectTo: "head-prepend" }];
       }
-      if (primary?.id === "y8" && readPlatformConfig().y8) {
+      if (primary.id === "y8" && readPlatformConfig().y8) {
         return [
           { tag: "script", attrs: { src: Y8_SDK_URL, async: true }, injectTo: "head-prepend" },
         ];

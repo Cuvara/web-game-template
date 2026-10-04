@@ -58,40 +58,83 @@ export interface CreatePlatformOptions {
   readonly portalGameId?: string | null;
 }
 
+// The platform a production build is for, as a string literal. scripts/build/
+// game-config-plugin.ts defines it from game.config.yaml (the first required entry, else the
+// first: the same choice as primaryPlatform in src/core/config.ts). Every case below is
+// guarded by a comparison against it, so a build keeps only its own adapter: Rollup folds
+// the others to `false` and drops them, with their SDK URLs and globals. Portals reject a
+// bundle carrying another portal's SDK ("Only Ads requested through the CrazyGames SDK are
+// allowed", https://docs.crazygames.com/requirements/ads/). Undefined outside such a build
+// (unit tests, tsc consumers), where every adapter stays available.
+declare const __WGF_PLATFORM__: string | undefined;
+const BUILD_PLATFORM: string | undefined =
+  typeof __WGF_PLATFORM__ === "string" ? __WGF_PLATFORM__ : undefined;
+
 export function isPlatformId(value: string): value is PlatformId {
   return (KNOWN_PLATFORM_IDS as readonly string[]).includes(value);
 }
 
 export function createPlatform(id: string, options: CreatePlatformOptions): Platform {
+  if (BUILD_PLATFORM !== undefined && id !== BUILD_PLATFORM) {
+    throw new Error(
+      `This build is for "${BUILD_PLATFORM}" and carries only that adapter; ` +
+        `createPlatform("${id}") needs a build whose game.config.yaml selects "${id}".`,
+    );
+  }
+  // Each guard is `BUILD_PLATFORM === undefined || BUILD_PLATFORM === "<id>"`, written out
+  // rather than through a helper so Rollup can fold it to a constant.
   switch (id) {
     case "generic-web":
-      return new GenericWebPlatform({ namespace: options.namespace });
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "generic-web") {
+        return new GenericWebPlatform({ namespace: options.namespace });
+      }
+      break;
     case "crazygames":
-      return new CrazyGamesPlatform({ namespace: options.namespace });
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "crazygames") {
+        return new CrazyGamesPlatform({ namespace: options.namespace });
+      }
+      break;
     case "yandex":
-      return new YandexPlatform({ namespace: options.namespace });
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "yandex") {
+        return new YandexPlatform({ namespace: options.namespace });
+      }
+      break;
     case "poki":
-      return new PokiPlatform({ namespace: options.namespace });
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "poki") {
+        return new PokiPlatform({ namespace: options.namespace });
+      }
+      break;
     case "gamevui":
-      return new GameVuiPlatform({ namespace: options.namespace });
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "gamevui") {
+        return new GameVuiPlatform({ namespace: options.namespace });
+      }
+      break;
     case "y8":
-      return new Y8Platform({ namespace: options.namespace, config: options.y8 });
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "y8") {
+        return new Y8Platform({ namespace: options.namespace, config: options.y8 });
+      }
+      break;
     case "gamedistribution":
-      // Throws without a valid Game ID: a GameDistribution build that cannot earn must not
-      // boot as though it could.
-      return new GameDistributionPlatform({
-        namespace: options.namespace,
-        gameId: options.gamedistribution?.gameId ?? "",
-      });
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "gamedistribution") {
+        // Throws without a valid Game ID: a GameDistribution build that cannot earn must not
+        // boot as though it could.
+        return new GameDistributionPlatform({
+          namespace: options.namespace,
+          gameId: options.gamedistribution?.gameId ?? "",
+        });
+      }
+      break;
     case "gamemonetize":
-      return new GameMonetizePlatform({
-        namespace: options.namespace,
-        gameId: options.portalGameId ?? null,
-      });
-    default:
-      throw new Error(
-        `Unknown platform "${id}". Known ids: ${KNOWN_PLATFORM_IDS.join(", ")}. ` +
-          `Adding a platform starts with a profile in core/reference/platforms/.`,
-      );
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "gamemonetize") {
+        return new GameMonetizePlatform({
+          namespace: options.namespace,
+          gameId: options.portalGameId ?? null,
+        });
+      }
+      break;
   }
+  throw new Error(
+    `Unknown platform "${id}". Known ids: ${KNOWN_PLATFORM_IDS.join(", ")}. ` +
+      `Adding a platform starts with a profile in core/reference/platforms/.`,
+  );
 }
