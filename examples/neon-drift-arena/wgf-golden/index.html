@@ -56,8 +56,10 @@
         position: absolute;
         bottom: max(4px, env(safe-area-inset-bottom));
         right: 8px;
+        padding: 1px 6px;
         font-size: 12px;
         color: #9a98b8;
+        background: var(--ground);
         pointer-events: none;
       }
       #ui {
@@ -74,6 +76,19 @@
         left: max(14px, env(safe-area-inset-left));
         right: max(14px, env(safe-area-inset-right));
         height: 52px;
+      }
+      /*
+        The HUD sits over the scene - the sun is behind the score - so every HUD text has an
+        opaque plate of its own: cyan on the pink sun is 2.3:1, unreadable at a glance.
+      */
+      .hud-best,
+      .hud-score {
+        padding: 4px 8px;
+        background: var(--surface);
+        border: 1px solid rgba(46, 242, 255, 0.35);
+      }
+      .hud-score {
+        padding: 2px 10px;
       }
       .hud-best {
         position: absolute;
@@ -123,7 +138,7 @@
         margin: 0;
         padding: 6px 14px;
         border: 2px solid rgba(46, 242, 255, 0.45);
-        background: rgba(11, 11, 18, 0.62);
+        background: var(--surface);
         text-align: center;
         font: 500 14px/1.35 var(--font-body);
         color: var(--ink);
@@ -133,7 +148,12 @@
         left: 0;
         right: 0;
         bottom: 26%;
-        margin: 0;
+        width: max-content;
+        max-width: calc(100% - 28px);
+        box-sizing: border-box;
+        margin: 0 auto;
+        padding: 6px 16px;
+        background: var(--surface);
         text-align: center;
         font: 800 clamp(22px, 5vmin, 40px) / 1 var(--font-display);
         letter-spacing: 0.04em;
