@@ -4,7 +4,9 @@
 // CrazyGames gameplayStop on hide), and bindPlatform does it for every game main.ts boots.
 // Game-agnostic: it reads window.__wgf__.paused() and #hud[data-steps], never game markup.
 
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+// The portal SDK is the repository's mock, never the network (portal-sdk.ts).
+import { expect, test } from "./portal-sdk.js";
 
 async function setVisibility(page: Page, state: "hidden" | "visible"): Promise<void> {
   // Headless tabs cannot really be hidden; overriding the two properties and raising the

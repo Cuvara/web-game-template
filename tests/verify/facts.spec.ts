@@ -54,21 +54,6 @@ interface GameConfigPlatform {
   readonly role?: string;
 }
 
-// A portal's own ad stack loads third-party sub-resources the game cannot control: Google's
-// IMA bridge, for one, requests over http from imasdk.googleapis.com when a portal SDK pulls
-// it in. `insecure_requests` measures the GAME's own resources — the thing an https_only
-// profile is asserting about — so those third-party ad-SDK hosts are not counted here, the
-// same boundary the e2e smoke audit already draws. A portal's transport is the portal's.
-const THIRD_PARTY_AD_HOSTS = [
-  "imasdk.googleapis.com",
-  "googleads",
-  "googlesyndication",
-  "doubleclick",
-  "pagead",
-  "amazon-adsystem.com",
-  "publisher-services.amazon",
-];
-
 /**
  * The portal SDK hosts to block, from the same signature list collect-facts scans the
  * artifact with. Signatures that are not hosts (a global's name) cannot match a URL and are
@@ -150,11 +135,10 @@ async function measure(
   const insecureRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
-    if (
-      url.startsWith("http://") &&
-      !url.startsWith("http://localhost") &&
-      !THIRD_PARTY_AD_HOSTS.some((host) => url.includes(host))
-    )
+    // Every request the page makes, no host excluded: the portal SDKs are blocked below, so
+    // nothing third-party loads and there is nothing to excuse. A portal script's own
+    // transport is checked from an https origin (tests/e2e/https-origin.spec.ts), not here.
+    if (url.startsWith("http://") && !url.startsWith("http://localhost"))
       insecureRequests.push(url);
   });
   await blockPortalSdks(page, matchers);
