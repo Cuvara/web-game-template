@@ -8,7 +8,9 @@
 // Phaser's TimeStep at boot so that the simulation and the drawing have one clock, and a
 // renderer that kept its own would keep stepping here while the game is paused.
 
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+// The portal SDK is the repository's mock, never the network (portal-sdk.ts).
+import { expect, test } from "./portal-sdk.js";
 
 /** Replaces document.visibilityState and fires the event the binding listens for. */
 async function setHidden(page: Page, hidden: boolean): Promise<void> {

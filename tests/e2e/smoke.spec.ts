@@ -10,7 +10,13 @@
 // data-engine|data-platform], window.__wgf__), never a scene id or a game's own markup. The
 // @tags are the aspects the Factory's verification maps to Playwright specs.
 
-import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { type Page } from "@playwright/test";
+// Whichever portal the bundle was built for, its SDK is the repository's mock (portal-sdk.ts):
+// the suite never reaches a portal or an ad network, and `external` records anything that
+// still would.
+import { PORTAL_SDK_MOCKS, expect, test } from "./portal-sdk.js";
 import { ENGINES } from "../../src/core/game-config.js";
 
 // Read from the one list rather than repeating it here. A second copy goes stale the moment
@@ -92,4 +98,35 @@ test("makes no insecure requests @boot", async ({ page }) => {
   await boot(page);
 
   expect(insecure).toEqual([]);
+});
+
+test("boots without reaching the network: the portal SDK is the repository's mock @boot", async ({
+  page,
+  external,
+}) => {
+  await boot(page);
+  // A moment past ready, so a portal script that fetches after init has had the chance to.
+  await page.waitForTimeout(1_000);
+  expect(external).toEqual([]);
+});
+
+test("every portal SDK the adapters can load has a mock here", () => {
+  // sdk-signatures.json lists, per platform, the hosts its SDK is fetched from (Yandex's is
+  // same-origin and named by its global instead). A host with no mock would be live traffic.
+  const signatures = JSON.parse(
+    readFileSync(
+      resolve(import.meta.dirname, "../../packages/platform-sdk/sdk-signatures.json"),
+      "utf8",
+    ),
+  ) as Record<string, string[]>;
+  const isHost = (needle: string): boolean => /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(needle);
+  const mocked = new Map(PORTAL_SDK_MOCKS.map((mock) => [mock.platform, mock.url]));
+  for (const [platform, needles] of Object.entries(signatures)) {
+    for (const host of needles.filter(isHost)) {
+      const url = mocked.get(platform);
+      expect(url, `${platform}: no mock for its SDK host ${host}`).toBeDefined();
+      expect(new URL(url!).hostname.endsWith(host), `${platform}: mock URL vs ${host}`).toBe(true);
+    }
+  }
+  expect(mocked.get("yandex")).toBe("/sdk.js");
 });

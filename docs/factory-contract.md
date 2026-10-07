@@ -323,6 +323,16 @@ Inherited, game-agnostic specs (every game keeps them green unchanged):
 the `sdk` conformance project and the SDK browser smoke. A game adds its own specs under
 `tests/e2e/` for `@start @input @progression @game-over @restart`.
 
+No e2e spec reaches the network. `tests/e2e/portal-sdk.ts` serves every portal SDK an adapter
+can load from the repository's own mock (whichever platform `dist/` was built for), and its
+`test` export does so automatically for every page; specs - a game's own included - import
+`test` and `expect` from `./portal-sdk.js`, not from `@playwright/test`. Its `external` fixture
+lists any request that still left the machine, and `smoke.spec.ts` asserts it is empty and that
+every SDK host in `packages/platform-sdk/sdk-signatures.json` has a mock.
+`tests/e2e/https-origin.spec.ts` serves the same build from an https origin and requires every
+request to be https, with no host exempt. A real portal script's own transport needs the
+network and is the live suite's (`pnpm test:sdk:live`), never the smoke suite's.
+
 **Runtime facts** (`build/runtime-facts/<id>.json`): `platform`, `artifact`, `package`
 (`calls_loading_api`, `insecure_requests`, `external_links`, `mobile_supported`,
 `perf.time_to_interactive_s`, `perf.lowend_android_fps`), `adsRequested`, `observed`

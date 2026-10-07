@@ -5,7 +5,9 @@
 // window and visual-viewport changes; this checks the canvas actually follows and that the
 // page never scrolls sideways. Game-agnostic: reads only #game and its canvas.
 
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+// The portal SDK is the repository's mock, never the network (portal-sdk.ts).
+import { expect, test } from "./portal-sdk.js";
 
 const SIZES = [
   { width: 360, height: 640 },
