@@ -130,3 +130,36 @@ test("every portal SDK the adapters can load has a mock here", () => {
   }
   expect(mocked.get("yandex")).toBe("/sdk.js");
 });
+
+test("a right-click or a long press opens no browser menu over the game @boot", async ({
+  page,
+}) => {
+  // Yandex 1.6.1.8 (desktop) and 1.6.2.7 (mobile). Headless Chromium draws no menu, so the
+  // event is read instead: the menu opens exactly when contextmenu is not cancelled.
+  await boot(page);
+  await page.evaluate(() => {
+    const seen: boolean[] = [];
+    (window as unknown as { __menus: boolean[] }).__menus = seen;
+    // Read after dispatch has finished, so every listener on the page has had its say.
+    document.addEventListener("contextmenu", (event) => {
+      setTimeout(() => seen.push(event.defaultPrevented));
+    });
+  });
+  const viewport = page.viewportSize() ?? { width: 800, height: 600 };
+  await page.mouse.click(viewport.width / 2, viewport.height / 2, { button: "right" });
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __menus: boolean[] }).__menus))
+    .toEqual([true]);
+
+  // A long press raises the same event on the element under the finger: the canvas, the
+  // page around it, or a DOM control laid over it.
+  const opened = await page.evaluate(() =>
+    ["#game canvas", "body", "#ui", "#hud"].flatMap((selector) => {
+      const element = document.querySelector(selector);
+      if (!element) return [];
+      const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+      return element.dispatchEvent(event) ? [selector] : [];
+    }),
+  );
+  expect(opened).toEqual([]);
+});

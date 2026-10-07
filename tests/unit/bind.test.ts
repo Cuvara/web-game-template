@@ -511,3 +511,18 @@ describe("bindPlatform — sound off without focus (Yandex 1.3)", () => {
     binding.dispose();
   });
 });
+
+describe("context menu", () => {
+  it("cancels the browser menu a right-click or long press opens, and stops on dispose", () => {
+    const game = new Game({ scheduler: new ManualScheduler() });
+    const binding = bindPlatform(game, new GenericWebPlatform({ namespace: "t" }));
+    const menu = new Event("contextmenu", { cancelable: true });
+    window.dispatchEvent(menu);
+    expect(menu.defaultPrevented).toBe(true);
+
+    binding.dispose();
+    const after = new Event("contextmenu", { cancelable: true });
+    window.dispatchEvent(after);
+    expect(after.defaultPrevented).toBe(false);
+  });
+});

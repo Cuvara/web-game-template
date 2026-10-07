@@ -18,6 +18,8 @@
         /* Portals frame the game; a stray selection highlight reads as a bug. */
         user-select: none;
         -webkit-user-select: none;
+        /* No long-press callout on iOS, which raises no contextmenu event to cancel. */
+        -webkit-touch-callout: none;
         touch-action: none;
       }
       #game {

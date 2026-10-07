@@ -64,6 +64,8 @@ const adBreakActive = new WeakSet<Game>();
 
 const FIRST_INPUT_EVENTS = ["pointerdown", "keydown", "touchstart"] as const;
 
+const onContextMenu = (event: Event): void => event.preventDefault();
+
 /**
  * Games owed a gameplayStart when their tab returns: a break that should have resumed
  * gameplay ended while the tab was hidden. Set only in that case, and cleared on the next
@@ -181,6 +183,11 @@ export function bindPlatform(
   document.addEventListener("visibilitychange", onVisibilityChange);
   window.addEventListener("blur", onBlur);
   window.addEventListener("focus", onFocus);
+  // No browser context menu over the game: a right-click or a long press must not open it
+  // (Yandex 1.6.1.8 desktop, 1.6.2.7 mobile; a menu over play reads as a broken game on any
+  // portal). The whole page is the game, so it is cancelled page-wide. Only the default is
+  // cancelled: a game that uses the right button still receives the event.
+  window.addEventListener("contextmenu", onContextMenu);
 
   // The portal holding the foreground — Yandex's game_api_pause, including the ad it shows
   // by itself at launch, or any ad the adapter brackets — pauses the game under its own
@@ -269,6 +276,7 @@ export function bindPlatform(
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("blur", onBlur);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("contextmenu", onContextMenu);
       offLost();
       offGained();
       clearWatchdog();
