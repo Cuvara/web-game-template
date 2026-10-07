@@ -10,8 +10,9 @@
 //
 // Specs import `test` and `expect` from here instead of from @playwright/test. The `external`
 // fixture is automatic: every page is stubbed before the spec's first `page.goto`, and the
-// fixture's value lists every request that still went to another host - the evidence that the
-// run stayed off the network.
+// fixture's value lists every request that still went to another host, and the fixture fails
+// the test if any did - so every spec, not only the one that looks, proves it stayed off the
+// network.
 //
 // A portal SDK the adapters can load with no mock here fails "every portal SDK has a mock"
 // in smoke.spec.ts, which reads packages/platform-sdk/sdk-signatures.json - so adding an
@@ -19,7 +20,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { test as base, type Page } from "@playwright/test";
+import { expect, test as base, type Page } from "@playwright/test";
 import {
   CRAZYGAMES_SDK_URL,
   GAMEDISTRIBUTION_SDK_URL,
@@ -105,7 +106,10 @@ export async function stubPortalSdks(
 export const test = base.extend<{ external: string[] }>({
   external: [
     async ({ page }, use) => {
-      await use(await stubPortalSdks(page));
+      const external = await stubPortalSdks(page);
+      await use(external);
+      // Every spec, not only the one that looks: nothing may have left the machine.
+      expect(external, "requests that left the machine").toEqual([]);
     },
     { auto: true },
   ],
