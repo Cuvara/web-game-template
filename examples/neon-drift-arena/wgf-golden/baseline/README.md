@@ -2,6 +2,15 @@
 
 Frames of the built game, played - not rendered offline, not mocked.
 
+**Not re-captured for the HUD plates (2026-10-07, `fix/golden-hud-contrast`)**: every HUD
+text (score, best, objective, near-miss callout, the probe's name) now sits on an opaque plate,
+because the Factory's production gate reads a text over the canvas against the worst region
+of the frame behind it, and the cyan SCORE label over the pink sun in these frames measures
+2.27:1 (the white score 2.7:1). The plates change a few hundred pixels at the top of the
+gameplay frames; these frames still show the HUD without them. Re-capture them from a real
+golden 3D run (the method below) before relying on them for anything finer than the baseline
+judge's 0.70 similarity.
+
 **Re-captured again 2026-10-02** for the audio branch (`dyCuong03/agent-game-audio`): the game
 now shows a sound toggle in the bottom-left corner on every screen, so every frame changed. Same
 method as below - a real golden 3D run (Factory lock `golden_ports` at this branch merged with
