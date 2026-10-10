@@ -31,17 +31,22 @@ const SIGNATURES = {
 } as const;
 type Portal = keyof typeof SIGNATURES;
 const PORTALS = Object.keys(SIGNATURES) as Portal[];
+// Targets with no portal SDK: their build must carry none. generic-web is the scaffold's
+// default target, so the most common build of all.
+const NO_SDK = ["generic-web", "gamevui"] as const;
+type Target = Portal | (typeof NO_SDK)[number];
+const TARGETS: Target[] = [...PORTALS, ...NO_SDK];
 
-const GAME_IDS: Partial<Record<Portal, string>> = {
+const GAME_IDS: Partial<Record<Target, string>> = {
   gamedistribution: "0123456789abcdef0123456789abcdef",
   gamemonetize: "test000000000000000000000000000a",
 };
 
-function configFor(target: Portal): Record<string, unknown> {
+function configFor(target: Target): Record<string, unknown> {
   // The target is the required entry; another portal rides along as optional, which is the
   // case that used to leak every adapter into the bundle.
   const other: Portal = target === "yandex" ? "poki" : "yandex";
-  const entry = (id: Portal, role: string) => ({
+  const entry = (id: Target, role: string) => ({
     id,
     profile: `${id}@1.0.0`,
     role,
@@ -71,7 +76,7 @@ function bundleText(dir: string): string {
 }
 
 const work = mkdtempSync(join(tmpdir(), "wgf-platform-build-"));
-const bundles = {} as Record<Portal, string>;
+const bundles = {} as Record<Target, string>;
 
 beforeAll(() => {
   // The app imports @wgf/platform-sdk from its dist, as `pnpm build` does.
@@ -80,17 +85,17 @@ beforeAll(() => {
     stdio: "pipe",
     shell: process.platform === "win32",
   });
-  for (const portal of PORTALS) {
-    const configPath = join(work, `${portal}.game.config.yaml`);
-    writeFileSync(configPath, stringify(configFor(portal)));
-    const outDir = join(work, portal);
+  for (const target of TARGETS) {
+    const configPath = join(work, `${target}.game.config.yaml`);
+    writeFileSync(configPath, stringify(configFor(target)));
+    const outDir = join(work, target);
     execFileSync("pnpm", ["exec", "vite", "build", "--outDir", outDir, "--emptyOutDir"], {
       cwd: ROOT,
       stdio: "pipe",
       shell: process.platform === "win32",
       env: { ...process.env, WGF_GAME_CONFIG: configPath, WGF_Y8_APP_ID: "test-app" },
     });
-    bundles[portal] = bundleText(outDir);
+    bundles[target] = bundleText(outDir);
   }
 }, 600_000);
 
@@ -106,6 +111,13 @@ describe("a build carries the selected platform's adapter alone", () => {
         if (other !== target)
           expect(SIGNATURES[other].test(text), `${other} in a ${target} build`).toBe(false);
       }
+    });
+  }
+  for (const target of NO_SDK) {
+    it(`${target}: no portal SDK at all`, () => {
+      const text = bundles[target];
+      for (const portal of PORTALS)
+        expect(SIGNATURES[portal].test(text), `${portal} in a ${target} build`).toBe(false);
     });
   }
 });
