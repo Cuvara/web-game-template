@@ -60,9 +60,10 @@ export interface CreatePlatformOptions {
 
 // The platform a production build is for, as a string literal. scripts/build/
 // game-config-plugin.ts defines it from game.config.yaml (the first required entry, else the
-// first: the same choice as primaryPlatform in src/core/config.ts). Every case below is
-// guarded by a comparison against it, so a build keeps only its own adapter: Rollup folds
-// the others to `false` and drops them, with their SDK URLs and globals. Portals reject a
+// first: the same choice as primaryPlatform in src/core/config.ts). Every portal's case below
+// is guarded by a comparison against it, so a build keeps only its own portal adapter (plus
+// generic-web, which has no SDK): Rollup folds the others to `false` and drops them, with
+// their SDK URLs and globals. Portals reject a
 // bundle carrying another portal's SDK ("Only Ads requested through the CrazyGames SDK are
 // allowed", https://docs.crazygames.com/requirements/ads/). Undefined outside such a build
 // (unit tests, tsc consumers), where every adapter stays available.
@@ -75,20 +76,19 @@ export function isPlatformId(value: string): value is PlatformId {
 }
 
 export function createPlatform(id: string, options: CreatePlatformOptions): Platform {
-  if (BUILD_PLATFORM !== undefined && id !== BUILD_PLATFORM) {
+  // generic-web carries no portal SDK, so every build keeps it: a game's fallback, or a
+  // target the Factory boots on generic-web (factory.sdk.adapter_substitutes), still works.
+  if (BUILD_PLATFORM !== undefined && id !== BUILD_PLATFORM && id !== "generic-web") {
     throw new Error(
       `This build is for "${BUILD_PLATFORM}" and carries only that adapter; ` +
         `createPlatform("${id}") needs a build whose game.config.yaml selects "${id}".`,
     );
   }
-  // Each guard is `BUILD_PLATFORM === undefined || BUILD_PLATFORM === "<id>"`, written out
-  // rather than through a helper so Rollup can fold it to a constant.
+  // Each portal's guard is `BUILD_PLATFORM === undefined || BUILD_PLATFORM === "<id>"`,
+  // written out rather than through a helper so Rollup can fold it to a constant.
   switch (id) {
     case "generic-web":
-      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "generic-web") {
-        return new GenericWebPlatform({ namespace: options.namespace });
-      }
-      break;
+      return new GenericWebPlatform({ namespace: options.namespace });
     case "crazygames":
       if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "crazygames") {
         return new CrazyGamesPlatform({ namespace: options.namespace });

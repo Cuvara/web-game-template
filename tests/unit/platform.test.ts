@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   GenericWebPlatform,
   KNOWN_PLATFORM_IDS,
@@ -80,5 +80,43 @@ describe("MemoryStorageBackend", () => {
     await expect(storage.get("k")).resolves.toBe("v");
     await storage.remove("k");
     await expect(storage.get("k")).resolves.toBeNull();
+  });
+});
+
+// A production build defines __WGF_PLATFORM__ (scripts/build/game-config-plugin.ts) and
+// createPlatform keeps only that adapter. Stubbed here as the build defines it, before the
+// registry module is evaluated.
+describe("platform registry in a build for one platform", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  async function registryBuiltFor(target: string) {
+    vi.stubGlobal("__WGF_PLATFORM__", target);
+    vi.resetModules();
+    return import("../../packages/platform-sdk/src/registry.js");
+  }
+
+  it("creates the build's own platform", async () => {
+    const { createPlatform: create } = await registryBuiltFor("crazygames");
+    expect(create("crazygames", { namespace: "test" }).id).toBe("crazygames");
+  });
+
+  it("refuses another portal's id, naming the build's platform", async () => {
+    const { createPlatform: create } = await registryBuiltFor("crazygames");
+    expect(() => create("poki", { namespace: "test" })).toThrow(
+      /This build is for "crazygames".*createPlatform\("poki"\)/,
+    );
+    expect(() => create("yandex", { namespace: "test" })).toThrow(/This build is for "crazygames"/);
+  });
+
+  // generic-web carries no portal SDK, so every build keeps it: a game (or the Factory's
+  // adapter substitute) can still fall back to it through createPlatform.
+  it("still creates generic-web", async () => {
+    for (const target of ["crazygames", "yandex", "gamevui"]) {
+      const { createPlatform: create } = await registryBuiltFor(target);
+      expect(create("generic-web", { namespace: "test" }).id).toBe("generic-web");
+    }
   });
 });
