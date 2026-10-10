@@ -78,13 +78,15 @@ export function loadGameConfig(
 /**
  * The platform a build is for: the first `role: required` entry, else the first. Must agree
  * with primaryPlatform in src/core/config.ts, which picks the id main.ts passes to
- * createPlatform (tests/integration/platform-build.test.ts checks both).
+ * createPlatform. tests/integration/platform-build.test.ts checks this function's choice; the
+ * Factory's template-contract drift test reads the rule's text in both files, so keep the
+ * expression below as it is written.
  */
 export function selectedPlatform(config: GameConfig): GameConfig["platforms"][number] {
-  const entry =
-    config.platforms.find((candidate) => candidate.role === "required") ?? config.platforms[0];
-  if (!entry) throw new Error("game.config.yaml declares no platforms");
-  return entry;
+  const selected =
+    config.platforms.find((entry) => entry.role === "required") ?? config.platforms[0];
+  if (!selected) throw new Error("game.config.yaml declares no platforms");
+  return selected;
 }
 
 export interface GameConfigPluginOptions {
