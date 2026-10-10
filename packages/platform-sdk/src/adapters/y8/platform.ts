@@ -467,7 +467,7 @@ export class Y8Platform implements Platform {
         resolve({
           result: appeared
             ? { shown: true }
-            : { shown: false, reason: skipReason(status, fallback) },
+            : { shown: false, reason: skipReason(status, fallback, kind) },
           outcome: appeared ? outcome : null,
         });
       };
@@ -615,13 +615,20 @@ export class Y8Platform implements Platform {
  * other value the same way — carry on with the game." The contract still says why, so a
  * game can word its message ("try again later" vs "too soon").
  */
-function skipReason(status: string | undefined, fallback: AdSkipReason): AdSkipReason {
+function skipReason(
+  status: string | undefined,
+  fallback: AdSkipReason,
+  kind: "interstitial" | "rewarded",
+): AdSkipReason {
   switch (status) {
     case "frequencyCapped":
       return "too-soon";
-    // Reached only when beforeAd never ran: no ad appeared, whatever the status claims. The
-    // docs give a capped break exactly this shape.
+    // Reached only when beforeAd never ran: no ad appeared, whatever the status claims.
+    // "On a frequency-capped break, info is just: { breakStatus: "viewed" }", so for an
+    // interstitial this is a capped break: too soon. "Rewarded ads are never capped", so a
+    // reward break with this shape, or any break ending dismissed, had no ad to show.
     case "viewed":
+      return kind === "interstitial" ? "too-soon" : "not-ready";
     case "dismissed":
       return "not-ready";
     case "noAdPreloaded":
