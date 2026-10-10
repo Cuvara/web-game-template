@@ -10,6 +10,49 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-10-10
+
+Platform SDK fixes on the 1.2 line. Template contract unchanged (1): no new script, path or
+config key, and a 1.2.0 game gains these by applying the patches. Nothing a game calls
+changes shape.
+
+### Fixed
+
+- **A build carries only its own portal's adapter.** Every bundle used to carry every
+  adapter, with every portal's SDK URL and globals, which CrazyGames rejects ("Only Ads
+  requested through the CrazyGames SDK are allowed") and `scripts/crazygames-audit.mjs` fails
+  as `unexpected_dependencies`. The Vite plugin defines `__WGF_PLATFORM__` from
+  `game.config.yaml` (the first `role: required` entry, else the first: the same rule as
+  `primaryPlatform`) and `createPlatform` guards each portal adapter with it, so Rollup drops
+  the others. In such a build `createPlatform` refuses another portal's id with a message
+  naming the build's platform; outside one (unit tests, `tsc` consumers) every adapter stays
+  available. `generic-web` carries no SDK and stays in every build, so a game's fallback (or
+  a target booted on generic-web) still works through `createPlatform`.
+- **Yandex rewarded video resolved unshown.** One `callbacks` object served both ad kinds and
+  took `shown` from `onClose(wasShown)`. Yandex documents `wasShown` for the fullscreen ad;
+  the rewarded video's `onClose` is "Called when the video ad closes" and the real SDK calls
+  it with no argument, so every completed rewarded ad resolved
+  `{ shown: false, rewarded: true, reason: "not-ready" }` and was never counted as shown. A
+  rewarded ad is now shown when `onOpen` or `onRewarded` fired; the late reward, the cap, one
+  ad at a time and never rejecting are unchanged. Test fakes now close a rewarded video with `onClose()`.
+- **Y8 counted a capped break as an ad shown.** The adapter took `breakStatus: "viewed"` or
+  `"dismissed"` as proof an ad appeared, and `"viewed"` as a reward, even when `beforeAd` never
+  ran. Y8's docs give a frequency-capped break exactly that info, "`{ breakStatus: "viewed" }`",
+  and say a capped break runs neither before-ad nor after-ad. Only `beforeAd` now proves an ad
+  appeared; such a break resolves unshown and grants nothing. An interstitial of that shape is
+  the documented capped break and resolves `too-soon`; a reward break ("Rewarded ads are never
+  capped") or `dismissed` without `beforeAd` resolves `not-ready`.
+- The build-target rule in `scripts/build/game-config-plugin.ts` is written exactly as the
+  Factory's template-contract drift test reads it
+  (`find((entry) => entry.role === "required") ?? config.platforms[0]`).
+
+### Tests
+
+- The build-isolation integration test covers `generic-web` and `gamevui` targets, whose
+  builds must carry no portal SDK at all.
+- `createPlatform` under a defined `__WGF_PLATFORM__`: the build's own platform, `generic-web`,
+  and the refusal of another portal's id.
+
 ## [1.2.0] — 2026-09-28
 
 Phaser as a second 2D engine. `engine.type` accepts `phaserjs` alongside `pixijs` and
