@@ -10,6 +10,21 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+### Fixed - forward-ported from 1.2.1
+
+- **generic-web stays available in every build.** The app's `@wgf/platform-sdk` narrows
+  `createPlatform` to the build's target, and refused every other id - generic-web included, so
+  a game's fallback, or a target booted on generic-web, threw. generic-web carries no portal SDK,
+  so it is now allowed beside the target (1.2.1's d84142c, ported to this branch's
+  `virtual:wgf-app-platform-sdk`, now `appPlatformSdkModule()`); any other portal's id is still
+  refused. Tests: `tests/unit/target-platform.test.ts` "the app's createPlatform".
+- **Y8: a capped interstitial resolves `too-soon`** (1.2.1's 7091919, cherry-picked): an
+  interstitial break with `breakStatus: "viewed"` and no `beforeAd` is the documented
+  frequency-capped break, not an ad shown.
+- Already on this branch by other changes: one adapter per build (`virtual:target-platform`,
+  which supersedes 1.2.1's `__WGF_PLATFORM__` guards), Yandex rewarded video shown without
+  `onClose(wasShown)`, Y8's `beforeAd` as the only proof an ad appeared.
+
 ### Removed — CI never publishes a game
 
 CI builds, tests, verifies and packages; it no longer publishes anything to a portal.
