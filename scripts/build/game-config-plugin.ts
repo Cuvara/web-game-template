@@ -122,6 +122,28 @@ export function targetPlatformModule(id: string): string {
   ].join("\n");
 }
 
+/**
+ * Source of the app's `@wgf/platform-sdk`: the package, with createPlatform narrowed to the
+ * build's target. generic-web carries no portal SDK (sdk-signatures.json lists none), so it
+ * stays available in every build - a game's fallback, or a target booted on generic-web,
+ * must not throw (web-game-template 1.2.1, d84142c). Any other id is refused.
+ */
+export function appPlatformSdkModule(): string {
+  // Resolved from this module the id is not the app's, so it reaches the real package.
+  return [
+    `export * from "@wgf/platform-sdk";`,
+    `import { TARGET_PLATFORM_ID, createTargetPlatform } from "${TARGET_PLATFORM_ID}";`,
+    `import { GenericWebPlatform } from "@wgf/platform-sdk/${adapterSubpath("generic-web")}";`,
+    `export function createPlatform(id, options) {`,
+    `  if (id === TARGET_PLATFORM_ID) return createTargetPlatform(options);`,
+    `  if (id === "generic-web") return new GenericWebPlatform({ namespace: options.namespace });`,
+    `  throw new Error("This build bundles only the " + TARGET_PLATFORM_ID +`,
+    `    " adapter; createPlatform(\\"" + id + "\\") needs a build for that platform " +`,
+    `    "(WGF_TARGET_PLATFORM, or pnpm build:platforms).");`,
+    `}`,
+  ].join("\n");
+}
+
 /** Portal settings that are per title, as the pre-v2 `virtual:platform-config` shaped them. */
 export interface PlatformConfig {
   /** Y8 App ID and Game ID, or null when the build targets another platform or has none. */
@@ -244,21 +266,7 @@ export function gameConfigPlugin(options: GameConfigPluginOptions): Plugin {
       if (id === RESOLVED_TARGET_PLATFORM_ID) {
         return targetPlatformModule(current().target.id);
       }
-      if (id === RESOLVED_APP_PLATFORM_SDK_ID) {
-        // Resolved from this module the id is not the app's, so it reaches the real package.
-        return [
-          `export * from "@wgf/platform-sdk";`,
-          `import { TARGET_PLATFORM_ID, createTargetPlatform } from "${TARGET_PLATFORM_ID}";`,
-          `export function createPlatform(id, options) {`,
-          `  if (id !== TARGET_PLATFORM_ID) {`,
-          `    throw new Error("This build bundles only the " + TARGET_PLATFORM_ID +`,
-          `      " adapter; createPlatform(\\"" + id + "\\") needs a build for that platform " +`,
-          `      "(WGF_TARGET_PLATFORM, or pnpm build:platforms).");`,
-          `  }`,
-          `  return createTargetPlatform(options);`,
-          `}`,
-        ].join("\n");
-      }
+      if (id === RESOLVED_APP_PLATFORM_SDK_ID) return appPlatformSdkModule();
       return null;
     },
     configureServer(server) {

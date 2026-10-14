@@ -21,6 +21,7 @@ import { describe, expect, it } from "vitest";
 import {
   TARGET_ADAPTERS,
   adapterSubpath,
+  appPlatformSdkModule,
   targetPlatformModule,
 } from "../../scripts/build/game-config-plugin.js";
 
@@ -72,6 +73,56 @@ describe("virtual:target-platform", () => {
     expect(source.match(/from "([^"]+)"/g)).toEqual([`from "@wgf/platform-sdk/adapters/poki"`]);
     expect(source).toContain('export const TARGET_PLATFORM_ID = "poki";');
     expect(() => targetPlatformModule("newgrounds")).toThrow(/no adapter/);
+  });
+});
+
+describe("the app's createPlatform", () => {
+  // The generated module, evaluated with stand-ins for its two imports: the build's target
+  // adapter and generic-web's.
+  function appCreatePlatform(target: string) {
+    const body = appPlatformSdkModule()
+      .split("\n")
+      .filter((line) => !line.startsWith("import ") && !line.startsWith("export * "))
+      .join("\n")
+      .replace("export function createPlatform", "return function createPlatform");
+    class GenericWebPlatform {
+      constructor(readonly options: unknown) {}
+    }
+    const createTargetPlatform = (options: unknown) => ({ target, options });
+    return new Function("TARGET_PLATFORM_ID", "createTargetPlatform", "GenericWebPlatform", body)(
+      target,
+      createTargetPlatform,
+      GenericWebPlatform,
+    ) as (id: string, options: { namespace: string }) => unknown;
+  }
+
+  it("constructs the build's target", () => {
+    expect(appCreatePlatform("crazygames")("crazygames", { namespace: "n" })).toEqual({
+      target: "crazygames",
+      options: { namespace: "n" },
+    });
+  });
+
+  it("keeps generic-web in every build: it carries no portal SDK (1.2.1, d84142c)", () => {
+    expect(signatures["generic-web"]).toEqual([]);
+    const made = appCreatePlatform("crazygames")("generic-web", { namespace: "n" }) as {
+      constructor: { name: string };
+    };
+    expect(made.constructor.name).toBe("GenericWebPlatform");
+  });
+
+  it("refuses another portal's id, naming the build's platform", () => {
+    expect(() => appCreatePlatform("crazygames")("y8", { namespace: "n" })).toThrow(
+      /bundles only the crazygames adapter; createPlatform\("y8"\)/,
+    );
+  });
+
+  it("imports generic-web's subpath and the target module only", () => {
+    expect(appPlatformSdkModule().match(/from "([^"]+)"/g)).toEqual([
+      `from "@wgf/platform-sdk"`,
+      `from "virtual:target-platform"`,
+      `from "@wgf/platform-sdk/adapters/generic-web"`,
+    ]);
   });
 });
 

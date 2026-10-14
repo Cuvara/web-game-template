@@ -519,17 +519,19 @@ describe("Y8 interstitial", () => {
   );
 
   // Regression: the docs give a frequency-capped break the info `{ breakStatus: "viewed" }`
-  // with no before-ad or after-ad. The adapter used to count that as an ad shown.
-  it("a break reporting viewed without beforeAd showed nothing", async () => {
+  // with no before-ad or after-ad. The adapter used to count that as an ad shown. Being the
+  // documented shape of a capped break, it reports the contract's reason for one, too-soon.
+  it("a break reporting viewed without beforeAd showed nothing: capped, too soon", async () => {
     const { platform, events } = await setup({ ad: "capped-as-viewed" });
     await expect(platform.showInterstitial()).resolves.toEqual({
       shown: false,
-      reason: "not-ready",
+      reason: "too-soon",
     });
     expect(events).toEqual([]);
     expect(platform.usage.adsShown.interstitial).toBe(0);
   });
 
+  // "Rewarded ads are never capped": the same info on a reward break is no cap, so not-ready.
   it("a reward break reporting viewed without beforeAd or adViewed grants nothing", async () => {
     const { platform } = await setup({ ad: "capped-as-viewed" });
     await expect(platform.showRewarded()).resolves.toEqual({
