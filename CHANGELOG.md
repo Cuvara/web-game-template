@@ -10,6 +10,54 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+## [1.2.2] — 2026-10-18
+
+GamePix as a platform on the 1.2 line. Template contract unchanged (1): no new script, path or
+config key. A game that does not target GamePix changes nothing (its bundles gain only the
+`"gamepix"` id string in `KNOWN_PLATFORM_IDS`); a 1.2.1 game gains GamePix by applying
+`git diff v1.2.1 v1.2.2` to its template-owned files, every one of which is unchanged in such a
+game, then adding a `gamepix` entry to `game.config.yaml` (the Factory vendors the profile).
+
+### Added
+
+- **GamePix adapter** (`packages/platform-sdk/src/adapters/gamepix.ts`, `createPlatform("gamepix")`),
+  the one on `main` since `20ad76e`, unchanged: `loading(0-100)` then `loaded()` once at
+  `signalReady()`, nothing but `lang()` before it; `interstitialAd()` at every break and
+  `rewardAd()` with a reward only on `success: true`, one ad at a time, the game paused and
+  silent for the whole request, a 60 s deadline and `ad:late-reward`; saves on
+  `GamePix.localStorage` after `loaded()`, mirrored locally; a blocked script boots a plain web
+  game. Guarded by `__WGF_PLATFORM__` like every portal adapter.
+- **The documented `gamepix.sdk.js` v3 tag**, synchronous and first in `<head>`, in a gamepix
+  build only (`scripts/build/game-config-plugin.ts`); `sdk:prepare` records it as `html-head`.
+- `config/platforms/gamepix.yaml`: a byte-identical copy of the Factory's
+  `gamepix@1.0.1` profile (not in `pinned.json`).
+- `docs/platforms/gamepix.md`: the audit, the contract-1 build, the 2026-10-18 re-read of
+  GamePix's public pages, and what the real v3 script does that the reference does not say
+  (pause / resume / sound hooks a GamePix frame can drive, which the adapter does not
+  register) - with what a person checks in GamePix's test tool before submitting.
+
+### Changed
+
+- The Poki source audit lists GamePix among foreign portals and ad SDKs, and does not count
+  the GamePix adapter's use of its SDK's `GamePix.localStorage` member as browser storage (a
+  bare or window-level `localStorage` there still is).
+
+### Tests
+
+- `tests/gamepix/mock-sdk.ts` (records every documented misuse error) and
+  `tests/unit/gamepix.test.ts`; GamePix in the conformance harness, the cross-portal contract
+  (`forwardsLoading`: loading-finished forwarded, no gameplay call), the SDK matrix, the SDK
+  browser smoke (the tag runs first, `loading` then one `loaded()`, no misuse, a hidden tab
+  pauses and mutes, a blocked SDK still boots), `sdk-integration` and the Poki audit.
+- The build-isolation integration test builds a gamepix target: GamePix's signature in no
+  other build, no other portal's in it, and the tag first in `<head>`, synchronous, at the
+  adapter's URL, and in no other build's page.
+
+### Not verified
+
+Nothing contacts GamePix. The real SDK inside GamePix's frame, its test tool, ads and review
+are unverified; a mock pass is not a live pass.
+
 ## [1.2.1] — 2026-10-10
 
 Platform SDK fixes on the 1.2 line. Template contract unchanged (1): no new script, path or
