@@ -39,6 +39,8 @@ function sdkSources(sdk) {
     y8: { source: sdk.Y8_SDK_URL, loaded: "html-head" },
     gamedistribution: { source: sdk.GAMEDISTRIBUTION_SDK_URL, loaded: "runtime" },
     gamemonetize: { source: sdk.GAMEMONETIZE_SDK_URL, loaded: "runtime" },
+    // The documented synchronous <script>, first in <head>, in every gamepix build.
+    gamepix: { source: sdk.GAMEPIX_SDK_URL, loaded: "html-head" },
   };
 }
 

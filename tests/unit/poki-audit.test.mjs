@@ -179,6 +179,28 @@ describe("auditSource", () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].rule).toBe("architecture");
   });
+
+  it("allows GamePix's SDK storage member in its adapter, and nothing else there", () => {
+    const findings = auditSource([
+      {
+        path: "packages/platform-sdk/src/adapters/gamepix.ts",
+        text: [
+          "interface GamePixSdk {",
+          "  localStorage?: GamePixLocalStorage;",
+          "}",
+          "this.storage.attach(sdk.localStorage);",
+          "window.localStorage.setItem('k', 'v');",
+          "const v = localStorage.getItem('k');",
+        ].join("\n"),
+      },
+      { path: "src/game/save.ts", text: "const s = sdk.localStorage;" },
+    ]);
+    expect(findings.map((f) => `${f.file}:${f.line}`)).toEqual([
+      "packages/platform-sdk/src/adapters/gamepix.ts:5",
+      "packages/platform-sdk/src/adapters/gamepix.ts:6",
+      "src/game/save.ts:1",
+    ]);
+  });
 });
 
 describe("auditSize", () => {

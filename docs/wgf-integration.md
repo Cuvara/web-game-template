@@ -113,6 +113,7 @@ fails CI.
 | CrazyGames | `adapters/crazygames/` | Full: ads with late-reward, local cooldown optimization, storage + fallback migration |
 | Poki | `adapters/poki.ts` | Full: breaks with a timeout so the game cannot deadlock; mute/pause via `withAdBreak` |
 | GameDistribution | `adapters/gamedistribution/` | Interstitial + rewarded (`SDK_REWARDED_WATCH_COMPLETE` only, exactly once, `ad:late-reward`), `SDK_GAME_PAUSE`/`START` as foreground, ad deadlines so the game cannot deadlock; requires `platforms[].game_id`; self-hosted wrapper packaging. See [platforms/gamedistribution.md](platforms/gamedistribution.md) |
+| GamePix | `adapters/gamepix.ts` | JS SDK v3 first in `<head>`: `loading()`/`loaded()`, interstitial + rewarded (reward on `success: true` only), `GamePix.localStorage`, `lang()`; no id. See [platforms/gamepix.md](platforms/gamepix.md) |
 | GameVui | *(none — by design)* | No public SDK exists; a GameVui build uses the `generic-web` adapter (local storage, no ads). `createPlatform("gamevui")` throws — the build never selects it |
 
 ## What crosses the boundary out

@@ -1,6 +1,7 @@
 // SDK matrix harness: one page, any engine × any portal adapter × any SDK condition.
 //
-//   ?engine=pixijs|threejs  &portal=yandex|crazygames|poki|gamevui|y8|gamedistribution|gamemonetize
+//   ?engine=pixijs|threejs
+//   &portal=yandex|crazygames|poki|gamevui|y8|gamedistribution|gamemonetize|gamepix
 //   &sdk=ok|missing|init-fails  &ad=complete|no-fill|closed-early
 //
 // The boot is src/main.ts's order — initialize, report progress, renderer, scene, ready,
@@ -71,6 +72,7 @@ async function main(): Promise<void> {
       portal,
       hasSdk: harness.hasSdk,
       forwardsLifecycle: harness.forwardsLifecycle,
+      forwardsLoading: harness.forwardsLoading ?? harness.forwardsLifecycle,
       calls: () => [...harness.calls],
       usage: () => platform.usage,
       state: () => ({

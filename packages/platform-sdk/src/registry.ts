@@ -11,6 +11,7 @@ import {
   type GameDistributionConfig,
 } from "./adapters/gamedistribution/platform.js";
 import { GameMonetizePlatform } from "./adapters/gamemonetize.js";
+import { GamePixPlatform } from "./adapters/gamepix.js";
 import { GameVuiPlatform } from "./adapters/gamevui.js";
 import { GenericWebPlatform } from "./adapters/generic-web.js";
 import { PokiPlatform } from "./adapters/poki.js";
@@ -33,6 +34,7 @@ export const KNOWN_PLATFORM_IDS = [
   "y8",
   "gamedistribution",
   "gamemonetize",
+  "gamepix",
 ] as const;
 
 export type PlatformId = (typeof KNOWN_PLATFORM_IDS)[number];
@@ -130,6 +132,11 @@ export function createPlatform(id: string, options: CreatePlatformOptions): Plat
           namespace: options.namespace,
           gameId: options.portalGameId ?? null,
         });
+      }
+      break;
+    case "gamepix":
+      if (BUILD_PLATFORM === undefined || BUILD_PLATFORM === "gamepix") {
+        return new GamePixPlatform({ namespace: options.namespace });
       }
       break;
   }

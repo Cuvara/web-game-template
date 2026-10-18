@@ -14,6 +14,7 @@ Game code (src/, examples/)
  ├── PokiPlatform         adapters/poki.ts          poki-sdk.js v2, loaded at runtime
  ├── GameVuiPlatform      adapters/gamevui.ts       no SDK exists — local saves, no ads
  ├── Y8Platform           adapters/y8/              cdn.y8.com 2-0, <script async> in <head>
+ ├── GamePixPlatform      adapters/gamepix.ts       gamepix.sdk.js v3, first <script> in <head>
  └── GenericWebPlatform   adapters/generic-web.ts   self-hosted, no portal
 ```
 
@@ -44,7 +45,7 @@ A new portal is a new adapter implementing this, a profile in the Factory, and a
 | Game-side scenarios  | The same portals from the game's side: `withAdBreak`, portal mute, `adAvailability`, loading once; plus one regression test per audit finding                                                                                                       | `tests/unit/sdk-contract.test.ts`, `sdk-audit-fixes.test.ts` |
 | Per-adapter detail   | Call order, timeouts, late ads, retries                                                                                                                                                                                                             | `tests/unit/{yandex,poki,crazygames}.test.ts`                |
 | Browser matrix       | PixiJS and Three.js games × every portal adapter, real renderer, loop and `bindPlatform`, desktop and mobile Chromium                                                                                                                               | `pnpm test:sdk:matrix`                                       |
-| Template build smoke | The template game itself built per platform (generic-web, Yandex, Poki, CrazyGames, GameDistribution) × engine                                                                                                                                      | `pnpm test:sdk:browser`                                      |
+| Template build smoke | The template game itself built per platform (generic-web, Yandex, Poki, CrazyGames, GameDistribution, GamePix) × engine                                                                                                                             | `pnpm test:sdk:browser`                                      |
 | Release boundary     | Integration artifacts are prepared, never published; no SDK code can upload                                                                                                                                                                         | `tests/unit/sdk-integration.test.ts`                         |
 
 Mocks implement only the documented SDK surface. They prove the adapter uses that surface
@@ -200,6 +201,22 @@ The Game ID comes from the platform entry's `game_id` or `WGF_GAMEMONETIZE_GAME_
 one the SDK is never requested. Live SDK load passes; ads, Verify Game and activation need a
 GameMonetize account. Details, every ad edge case and the publishing steps:
 [platforms/gamemonetize.md](platforms/gamemonetize.md).
+
+### GamePix — implemented (1.2.2), interstitial and rewarded
+
+Audited against GamePix's JavaScript SDK reference, submission guidelines and developer
+program (<https://partners.gamepix.com/sdk/doc/javascript>,
+<https://partners.gamepix.com/guidelines/submission>, <https://partners.gamepix.com/developers>).
+The build puts `gamepix.sdk.js` first in `<head>`, synchronous, the one Mandatory step, and
+only in a gamepix build. `loading(0-100)` while loading, `loaded()` once at `signalReady()`,
+and no other call before it but `lang()`; `interstitialAd()` at every break (GamePix decides
+the frequency) and `rewardAd()`, rewarding only on `success: true`, one at a time. GamePix has
+no ad-start event, so the game is held (`foreground:lost`) for the whole request and
+`ad:start`/`ad:end` mark only an ad that played. No gameplay call is documented for
+JavaScript, so gameplay is tracked locally. Saves use `GamePix.localStorage` after `loaded()`,
+mirrored in local storage. No id is configured. Nothing is verified live, and the real
+script's undocumented pause / resume / sound hooks are not registered. Details:
+[platforms/gamepix.md](platforms/gamepix.md).
 
 ## Factory profile findings
 

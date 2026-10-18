@@ -16,10 +16,13 @@ const PORTALS = [
   "y8",
   "gamedistribution",
   "gamemonetize",
+  "gamepix",
 ] as const;
 // Portals whose SDK takes loading-finished and gameplay calls. Y8's, GameDistribution's and
 // GameMonetize's have none.
 const FORWARDS_LIFECYCLE = new Set<string>(["yandex", "crazygames", "poki"]);
+// GamePix's takes loading-finished (loaded()) and no gameplay call.
+const FORWARDS_LOADING_ONLY = new Set<string>(["gamepix"]);
 // GameMonetize documents no rewarded call (docs/platforms/gamemonetize.md).
 const NO_REWARDED = new Set<string>(["gamevui", "gamemonetize"]);
 
@@ -87,10 +90,17 @@ for (const engine of ENGINES) {
         await expect.poll(() => steps(page), { timeout: 5_000 }).toBeGreaterThan(0);
 
         // Loading reported, gameplay not yet: it waits for the player.
+        const loadingOnly = FORWARDS_LOADING_ONLY.has(portal);
         expect(await calls(page)).toEqual(
-          forwards ? expect.arrayContaining(["init", "ready"]) : hasSdk ? ["init"] : [],
+          forwards
+            ? expect.arrayContaining(["init", "ready"])
+            : loadingOnly
+              ? ["init", "ready"]
+              : hasSdk
+                ? ["init"]
+                : [],
         );
-        if (!forwards) expect(await calls(page)).not.toContain("ready");
+        if (!forwards && !loadingOnly) expect(await calls(page)).not.toContain("ready");
         expect(await calls(page)).not.toContain("gameplayStart");
 
         await page.locator("#game canvas").click({ position: { x: 40, y: 40 } });

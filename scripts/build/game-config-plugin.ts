@@ -15,6 +15,9 @@ import { validateGameConfig, type GameConfig } from "../../src/core/game-config.
 const CRAZYGAMES_SDK_URL = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
 // Same rule, same test: must equal Y8_SDK_URL in packages/platform-sdk/src/adapters/y8/sdk.ts.
 const Y8_SDK_URL = "https://cdn.y8.com/minimal-sdk/2-0/y8.min.js";
+// Same rule: must equal GAMEPIX_SDK_URL in packages/platform-sdk/src/adapters/gamepix.ts
+// (tests/integration/platform-build.test.ts).
+export const GAMEPIX_SDK_URL = "https://integration.gamepix.com/sdk/v3/gamepix.sdk.js";
 
 const VIRTUAL_ID = "virtual:game-config";
 const LOCALES_ID = "virtual:locales";
@@ -186,11 +189,18 @@ export function gameConfigPlugin(options: GameConfigPluginOptions): Plugin {
     // Y8 documents the same place with `async` (https://docs.y8.com/sdk/intro/#installation),
     // and only for a build that has an App ID to initialize it with. The adapter handles the
     // resulting race — the script may run before or after it listens for y8sdk.ready.
+    //
+    // GamePix's one Mandatory step is its script as the first script in <head>, synchronous
+    // (https://partners.gamepix.com/sdk/doc/javascript). head-prepend puts it ahead of the
+    // game's module script; it needs no id, so every gamepix build gets it.
     transformIndexHtml() {
       const config = validateGameConfig(parse(readFileSync(options.configPath, "utf8")));
       const primary = selectedPlatform(config);
       if (primary.id === "crazygames") {
         return [{ tag: "script", attrs: { src: CRAZYGAMES_SDK_URL }, injectTo: "head-prepend" }];
+      }
+      if (primary.id === "gamepix") {
+        return [{ tag: "script", attrs: { src: GAMEPIX_SDK_URL }, injectTo: "head-prepend" }];
       }
       if (primary.id === "y8" && readPlatformConfig().y8) {
         return [

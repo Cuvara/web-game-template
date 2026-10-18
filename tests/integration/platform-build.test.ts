@@ -14,7 +14,11 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { stringify } from "yaml";
-import { selectedPlatform } from "../../scripts/build/game-config-plugin.js";
+import { GAMEPIX_SDK_URL } from "@wgf/platform-sdk";
+import {
+  GAMEPIX_SDK_URL as PLUGIN_GAMEPIX_SDK_URL,
+  selectedPlatform,
+} from "../../scripts/build/game-config-plugin.js";
 import { validateGameConfig } from "../../src/core/game-config.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -28,6 +32,8 @@ const SIGNATURES = {
   y8: /cdn\.y8\.com/,
   gamedistribution: /gamedistribution\.com|gdsdk/i,
   gamemonetize: /gamemonetize\.com/i,
+  // The SDK URL (the <head> tag and the adapter's runtime fallback) and the global.
+  gamepix: /gamepix\.com|\bGamePix\b/,
 } as const;
 type Portal = keyof typeof SIGNATURES;
 const PORTALS = Object.keys(SIGNATURES) as Portal[];
@@ -77,6 +83,7 @@ function bundleText(dir: string): string {
 
 const work = mkdtempSync(join(tmpdir(), "wgf-platform-build-"));
 const bundles = {} as Record<Target, string>;
+const pages = {} as Record<Target, string>;
 
 beforeAll(() => {
   // The app imports @wgf/platform-sdk from its dist, as `pnpm build` does.
@@ -96,6 +103,7 @@ beforeAll(() => {
       env: { ...process.env, WGF_GAME_CONFIG: configPath, WGF_Y8_APP_ID: "test-app" },
     });
     bundles[target] = bundleText(outDir);
+    pages[target] = readFileSync(join(outDir, "index.html"), "utf8");
   }
 }, 600_000);
 
@@ -120,6 +128,27 @@ describe("a build carries the selected platform's adapter alone", () => {
         expect(SIGNATURES[portal].test(text), `${portal} in a ${target} build`).toBe(false);
     });
   }
+});
+
+describe("the gamepix SDK", () => {
+  // GamePix's one Mandatory step: its script, synchronous, the first script in <head>
+  // (https://partners.gamepix.com/sdk/doc/javascript). The plugin's literal must be the
+  // adapter's URL.
+  it("is the first script in <head>, synchronous, at the adapter's URL", () => {
+    expect(PLUGIN_GAMEPIX_SDK_URL).toBe(GAMEPIX_SDK_URL);
+    const html = pages.gamepix;
+    const head = html.slice(html.indexOf("<head"), html.indexOf("</head>"));
+    const first = head.match(/<script\b[^>]*>/)?.[0] ?? "";
+    expect(first).toContain(`src="${GAMEPIX_SDK_URL}"`);
+    expect(first).not.toMatch(/\basync\b|\bdefer\b|type="module"/);
+  });
+
+  it("is in no other build's page", () => {
+    for (const target of TARGETS) {
+      if (target !== "gamepix")
+        expect(pages[target].includes(GAMEPIX_SDK_URL), `gamepix tag in ${target}`).toBe(false);
+    }
+  });
 });
 
 describe("selectedPlatform", () => {
