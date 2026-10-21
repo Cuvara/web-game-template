@@ -10,6 +10,49 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+## [1.2.3] — 2026-10-21
+
+Ad coverage per target platform, on the 1.2 line. Template contract unchanged (1): the
+Factory reads no new script, path or config key (`sdk:check` is the game's own CI guard, and
+the Factory never runs it on contract 1). A 1.2.2 game gains it by applying
+`git diff v1.2.2 v1.2.3` to its template-owned files.
+
+### Added
+
+- **`pnpm sdk:check`** (`scripts/sdk/check-integration.mjs`, rule in
+  `scripts/sdk/ad-coverage.mjs`): fails, naming the platform, the ad kind, the vendored
+  profile and `src/platform/integration-plan.ts` to regenerate, when a `platforms[]` target
+  whose profile (`config/platforms/<id>.yaml` `capabilities.ads`) offers a kind that
+  `monetization.ad_kinds` commits to has no placement of that kind listing it. Reads the plan
+  as `src/platform/gameplay.ts` does: by target id (not an adapter substitute), with
+  `breakOnContinue` covering interstitials. No plan yet (not integrated; the template itself):
+  `skipped`, exit 0.
+- `ci.yml` runs it as the `sdk-check` step of the `ci_green` guard.
+- `docs/sdk.md` (the rule) and `docs/platforms/y8.md` (Y8 requires ads: interstitials only
+  from a click on Play/Next/Retry/Continue, rewarded granted only in `adViewed`, pause and mute
+  in `beforeAd`, no preroll or adBreak, banners need approval; store media rules).
+
+### Why
+
+On 2026-10-21 Y8 returned a game built from this template: "the game is missing ads". Its
+integration plan, generated for the platforms of its original design (crazygames, yandex,
+poki), was never regenerated after the title was retargeted to Y8; the Y8 build declared
+`ad_kinds: [interstitial, rewarded]` and made no ad call. Two more titles had the same flaw.
+
+### Tests
+
+- `tests/unit/sdk-ad-coverage.test.mjs`: the incident's shape fails (both kinds, on y8 only);
+  the plan listing y8 passes; `platforms: null` covers; a platform without ads and a kind not
+  committed to require nothing; a substitute does not cover its target; `breakOnContinue`
+  covers an interstitial, not a rewarded; no plan is skipped; an unvendored profile and an
+  unreadable plan fail; a commented-out platform does not count; the CLI exits 1 on the
+  incident and 0 on the template.
+
+### Not verified
+
+Nothing contacts Y8. Whether Y8's review accepts a build that passes this check is a
+person's observation after resubmission.
+
 ## [1.2.2] — 2026-10-18
 
 GamePix as a platform on the 1.2 line. Template contract unchanged (1): no new script, path or
