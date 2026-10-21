@@ -64,6 +64,34 @@ It makes no network request. **Publishing is not the SDK module's job**: it belo
 release pipeline (GitHub Actions, behind gates G5 and G6), and portal submission is the
 human checklist `scripts/publish/make-publication.mjs` writes.
 
+## Ad coverage per target platform (`pnpm sdk:check`, 1.2.3)
+
+`pnpm sdk:check` (`scripts/sdk/check-integration.mjs`, rule in `scripts/sdk/ad-coverage.mjs`)
+fails, exit 1, when a platform the game targets would ship with no ads of a kind the title
+committed to. For every `game.config.yaml` `platforms[]` entry and every ad kind K:
+
+> K is in `monetization.ad_kinds` and in the vendored profile's `capabilities.ads`
+> (`config/platforms/<id>.yaml`) ⇒ some placement of kind K in
+> `src/platform/integration-plan.ts` has `platforms: null` or lists `<id>`.
+
+It reads the plan the way `src/platform/gameplay.ts` does at runtime: a placement matches by
+the **target** id, never by an `adapterSubstitutes` substitute, and an interstitial is also
+covered when the target is in `breakOnContinue`. A platform whose profile offers no ads, and a
+kind the title does not commit to, require nothing. The message names the platform, the kind,
+the profile and the file, and says to regenerate the plan with the Factory's `sdk` step
+(`bin/wgf resume <run> --from sdk`): the plan is generated, never hand-edited. A repository
+with no plan yet (the Factory has not integrated it, and the template itself) is reported
+`skipped` and exits 0; a target whose profile is not vendored fails. `ci.yml` runs it as the
+`sdk-check` step.
+
+Why: on 2026-10-21 Y8 returned a game built from this template with "the game is missing
+ads". Its plan was generated for the platforms of the original design (crazygames, yandex,
+poki); the title was retargeted to Y8, nothing regenerated the plan, and the Y8 build -
+`ad_kinds: [interstitial, rewarded]` - made no ad call. Two more titles had the same flaw.
+Tests: `tests/unit/sdk-ad-coverage.test.mjs` (the incident fails; listing y8 passes; a
+platform without ads and a kind not committed to require nothing; substitutes;
+`breakOnContinue`; the CLI's exit status). Y8's own ad rules: [platforms/y8.md](platforms/y8.md#ads-are-required-on-y8).
+
 ## Audit against current portal documentation (2026-09-23)
 
 Every adapter was re-read against the portal's current documentation, fetched on

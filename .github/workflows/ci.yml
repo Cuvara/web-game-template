@@ -61,6 +61,13 @@ jobs:
       - name: sdk-conformance
         run: pnpm test:sdk
 
+      # Ad coverage per target platform: every target whose vendored profile offers an ad
+      # kind game.config.yaml commits to has a placement of that kind in the integration
+      # plan (scripts/sdk/ad-coverage.mjs). Static, so it belongs on the source guard. A
+      # repository the Factory has not integrated yet (no plan) is skipped, not failed.
+      - name: sdk-check
+        run: pnpm sdk:check
+
       - name: Summary
         if: always()
         run: |
