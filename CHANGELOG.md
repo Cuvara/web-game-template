@@ -10,6 +10,36 @@ whatever was here at the ref its tech plan pinned.
 
 ## [Unreleased]
 
+## [1.2.4] — 2026-10-22
+
+Two adapter hangs fixed on the 1.2 line. Template contract unchanged (1): no new script, path
+or config key. A 1.2.3 game gains the fixes by applying `git diff v1.2.3 v1.2.4` to its
+template-owned files (`packages/platform-sdk/`).
+
+### Fixed
+
+- **Yandex: an open ad whose close is lost no longer freezes the game** (cherry-picked from
+  `main` 3bdd83d). The open timeout was cleared on `onOpen` and nothing replaced it, so an ad
+  whose `onClose`/`onError` (and the portal's `game_api_resume`) never arrived held the call,
+  the one-ad slot and the foreground for good. An open ad is now capped at `adMaxDurationMs`
+  (180 s): the call resolves unshown and unrewarded, `ad:end` is emitted and the foreground
+  handed back. A later `onRewarded` + `onClose` pays once as `ad:late-reward`.
+- **CrazyGames: `sdk.init()` is bounded, and a started ad that never ends is capped**
+  (cherry-picked from `main` 231e50a). `initialize()` awaited `sdk.init()` with no timeout, so
+  an init that never settled kept the game on a black boot screen. It now waits at most
+  `initTimeoutMs` (10 s) and boots in `unavailable` mode; a late init still makes the SDK
+  usable. A started ad is capped at `adMaxDurationMs` (180 s) with `ad:end` and
+  `foreground:gained`.
+
+### Tests
+
+`tests/unit/yandex.test.ts` and `tests/unit/crazygames.test.ts` gain the cases the two
+commits carry. Full suite: 955 passed, 2 todo.
+
+### Not verified
+
+Both are tested against the repository's SDK mocks only; no portal was contacted.
+
 ## [1.2.3] — 2026-10-21
 
 Ad coverage per target platform, on the 1.2 line. Template contract unchanged (1): the
